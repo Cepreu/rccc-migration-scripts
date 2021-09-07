@@ -1,0 +1,36 @@
+{
+  "name": "cataloguer",
+  "version": "1.0.0",
+  "description": "Assistant project for data processing automation",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "Cepreu"
+  },
+  "keywords": [
+    "5",
+    "Minut",
+    "5",
+    "minut"
+  ],
+  "author": "Sergei Krupnov",
+  "license": "ISC",
+  "dependencies": {
+    "chalk": "^4.1.2",
+    "clear": "^0.1.0",
+    "cli-progress": "^3.9.0",
+    "clui": "^0.3.6",
+    "configstore": "^6.0.0",
+    "csv-parse": "^4.16.0",
+    "csv-writer": "^1.6.0",
+    "figlet": "^1.5.2",
+    "fs-extra": "^10.0.0",
+    "inquirer": "^8.1.2",
+    "minimist": "^1.2.5",
+    "readline-sync": "^1.4.10",
+    "sqlite3": "^4.2.0"
+  }
+}
