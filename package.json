@@ -26,6 +26,8 @@
     "configstore": "^6.0.0",
     "csv-parse": "^4.16.0",
     "csv-writer": "^1.6.0",
+    "date-and-time": "^2.0.0",
+    "excel4node": "^1.7.2",
     "figlet": "^1.5.2",
     "fs-extra": "^10.0.0",
     "inquirer": "^8.1.2",

@@ -1,4 +1,5 @@
-const sql = `
+exports.buildCatalog = (packages) => {
+	const sql = `
 SELECT 
 	ProductSFDCID AS element_id,
 	ProductName AS "Product Name", 
@@ -28,7 +29,33 @@ SELECT
     OR 
 		ProductName IN (SELECT ITEM_NAME FROM packages  AS p3 WHERE oc.CatID IS NULL AND EXT_PRODUCT_ID IS NULL AND oc.ProductName=p3.ITEM_NAME )
 		)
-    AND oc.CatID='309-11-171'
     GROUP BY ProductName, ProductFamily,ChargeTerm,Parent
 	ORDER BY cast(CatID as number), ProductName
 `
+    //CSV files:
+    let filesWritten = 0
+    packages.map( p => {
+ 
+        const csvWriter = createCsvWriter({
+            path: path.resolve(process.cwd(), "results", p.name + '.csv'),
+            header: [
+                {id: 'skuId', title: 'EXT_PRODUCT_ID'},
+                {id: 'name', title: 'ITEM_NAME'},
+                {id: 'type', title: 'TYPE_NAME'},
+                {id: 'chargeTerm', title: 'CHARGE_TERM'},
+                {id: 'price', title: 'CATALOG_PRICE'},
+                {id: 'price12', title: 'CATALOG_PRICE_ANNUAL'}
+            ]
+        })
+        csvWriter
+            .writeRecords(p.products)
+            .then(() => {
+                filesWritten++
+                if (filesWritten == packages.length) {
+                    console.log (`${filesWritten} files created`)
+
+                }
+            })
+            .catch(error => console.error(error))
+    })
+}

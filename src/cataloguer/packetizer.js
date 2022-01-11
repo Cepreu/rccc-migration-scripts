@@ -3,25 +3,9 @@ const fs = require('fs')
 const path = require('path')
 const sqlite3 = require('sqlite3').verbose()
 
-const {areMutuallyExclusive, getGroupName} = require('./rules')
+const {checkItems, getGroupName} = require('./rules')
 
 SPLIT = ''
-
-const checkItems = (entitlement, packageItem) => {
-    let res = 'nomatch'
-    if (entitlement.name === packageItem.name) {
-        if (entitlement.skuId === packageItem.skuId) {
-            if (entitlement.chargeTerm === packageItem.chargeTerm ) {
-                res = (entitlement.price >= packageItem.price || entitlement.price12 >= packageItem.price12)? 'pricey': 'match'
-            }
-        } else {
-            res = 'split'
-        }
-    } else if (areMutuallyExclusive(entitlement.name, packageItem.name)) {
-        res = 'rule'
-    }
-    return res
-}
 
 const checkIfMatches = (package, order) => {
     const additions = []
@@ -35,7 +19,6 @@ const checkIfMatches = (package, order) => {
                     console.log(SPLIT)
                 case 'rule':
                     return false
-
                 case 'match':
                     fullMatch = true
                 case 'pricey':
@@ -51,7 +34,7 @@ const checkIfMatches = (package, order) => {
     }
 
     additions.forEach( e => {
-        const ind = package.products.findIndex(p => p.name === e.name && p.chargeTerm === e.chargeTerm)
+        const ind = package.products.findIndex(p => p.name === e.name && p.chargeTerm === e.chargeTerm && p.skuId === e.skuId)
         if (ind > -1) {
             if (package.products[ind].price < e.price) package.products[ind].price = e.price
             if (package.products[ind].price12 < e.price12) package.products[ind].price12 = e.price12
@@ -86,40 +69,10 @@ exports.packetizer = (order, packages) => {
 }
 
 exports.handleResult = (packages) => {
-
- 
-
     //JSON file:
     fs.writeFileSync(path.resolve(process.cwd(), 'results', 'all_packages.json'), JSON.stringify(packages,null,'\t'))
- 
-    //CSV files:
-    let filesWritten = 0
-    packages.map( p => {
-        const csvWriter = createCsvWriter({
-            path: path.resolve(process.cwd(), "results", p.name + '.csv'),
-            header: [
-                {id: 'skuId', title: 'EXT_PRODUCT_ID'},
-                {id: 'name', title: 'ITEM_NAME'},
-                {id: 'type', title: 'TYPE_NAME'},
-                {id: 'chargeTerm', title: 'CHARGE_TERM'},
-                {id: 'price', title: 'CATALOG_PRICE'},
-                {id: 'price12', title: 'CATALOG_PRICE_ANNUAL'}
-            ]
-        })
-        csvWriter
-            .writeRecords(p.products)
-            .then(() => {
-                filesWritten++
-                if (filesWritten == packages.length) {
-                    console.log (`${filesWritten} files created`)
-                    writePackagesToDB(packages)
-                }
-            })
-            .catch(error => console.error(error))
-    })
-
-
-
+    //Write to DB: 
+    writePackagesToDB(packages)
 }
 
 /*****
@@ -166,24 +119,25 @@ INSERT INTO packages(
             if (err) return console.log(err.message)
         })
 
-        const p=11
         let statement = db.prepare(insertSQL);
         // run the query over and over for each inner array
-        for (let i = 0; i < packages[p].products.length; i++) {
-            const lic = packages[p].products[i]
-            console.log(i,lic.skuId)
-            statement.run(
-                [   packages[p].name, 
-                    lic.skuId,
-                    lic.name,
-                    lic.type,
-                    lic.chargeTerm,
-                    lic.price,
-                    lic.price12
-                ], 
-                (err) => {if (err) console.log(err);}
-            )
-        } 
+        for (let p = 0; p < packages.length; p++) {
+            console.log(p,packages[p].name)
+            for (let i = 0; i < packages[p].products.length; i++) {
+                const lic = packages[p].products[i]
+                statement.run(
+                    [   packages[p].name, 
+                        lic.skuId,
+                        lic.name,
+                        lic.type,
+                        lic.chargeTerm,
+                        lic.price,
+                        lic.price12
+                    ], 
+                    (err) => {if (err) console.log(err);}
+                )
+            } 
+        }
         statement.finalize();
     })
    

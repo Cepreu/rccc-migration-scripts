@@ -111,10 +111,29 @@ exports.getGroupName = name => {
     return ind > -1? mutuallyExclusives[ind].name: 'unknown'
 }
 
-exports.areMutuallyExclusive = (name1, name2) => {
+const areMutuallyExclusive = (name1, name2) => {
     const ind1 = mutuallyExclusives.findIndex(m => -1 < m.licenses.findIndex(l => l === name1))
     const ind2 = mutuallyExclusives.findIndex(m => -1 < m.licenses.findIndex(l => l === name2))
     return ind1 >= 0 && ind2 >= 0 && ind1 != ind2
 }
 
 exports.isSeatEdition = sku => mutuallyExclusives.findIndex(m => -1 < m.licenses.findIndex(l => l === sku)) != -1
+
+
+exports.checkItems = (entitlement, packageItem) => {
+    let res = 'nomatch'
+    if (entitlement.name === packageItem.name) {
+        if (entitlement.skuId === packageItem.skuId) {
+            if (entitlement.chargeTerm === packageItem.chargeTerm ) {
+                res = (entitlement.price >= packageItem.price || entitlement.price12 >= packageItem.price12)? 'pricey': 'match'
+            }
+        } else if (entitlement.name === 'Port Overage') {
+            res = 'exception'
+        } else {
+        res = 'split'
+    }
+} else if (areMutuallyExclusive(entitlement.name, packageItem.name)) {
+        res = 'rule'
+    }
+    return res
+}

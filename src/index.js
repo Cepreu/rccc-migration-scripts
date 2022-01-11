@@ -5,7 +5,9 @@ const figlet = require('figlet')
 const { build_packages_SQL } = require('./cataloguer')
 const readLineSync = require('readline-sync')
 //const { build_feeds } = require('./migrafeeder')
-const { createBatch, prepareBatchFile } = require('./migrasqlite/prepareBatch')
+const { createBatch } = require('./migrasqlite/createBatch')
+const { createBatchEntitlements } = require('./migrasqlite/createBatchEntitlements')
+const { prepareBatchFile } = require('./migrasqlite/prepareBatch')
 
 clear()
 console.log(
@@ -14,16 +16,17 @@ console.log(
     )
 )
 
-    console.log("1) Catalogs")
-    console.log("2) Create Batch")
-    console.log("3) Entitlementss")
+    console.log("1) Create Batch")
+    console.log("2) Entitlements")
+    console.log("3) Prepare import")
 
+    const batchName = readLineSync.question("Batch name: ")
     const userRes = readLineSync.question("Pick an option: ")
     if (userRes === '1') {
-        build_packages_SQL()
+        createBatch(batchName)
     } else if (userRes === '2') {
-        createBatch('Batch01')
+        createBatchEntitlements(batchName)
     } else if (userRes === '3') {
-        prepareBatchFile('Batch01')
+        prepareBatchFile(batchName)
     }
     console.log("G'buy")

@@ -1,0 +1,187 @@
+openapi: 3.0.0
+info: 
+  version: 0.0.1
+  title: ITBS2NGBS Migration
+  description: This is Web API of the Migration Management Service
+servers:
+  - https://tobedefined.ringcentral.com/v0
+paths:
+  /batches:
+    get:
+      description: Returns list of batches 
+      parameters:
+      - state: string
+        in: query
+        description: filters batches by state
+        type: string
+        enum:
+        - all
+        - verified
+        - handled
+        required: false
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              $ref: '#/definitions/Batch'
+        '404':
+          description: A batch with the specified name was not found
+
+    post:
+      summary: Uploads a list of accounts to be migrated as a "batch" 
+      requestBody:
+        required: true
+        content: 
+          application/json:
+            schema:
+              type: object
+              properties:
+
+      responses:
+        '200':
+          description: Successfully created a new batch
+        '400':
+          description: Invalit request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+
+  /batches/{batchName}:
+    get:
+      description: Returns list of accounts based on Batch name. 
+      parameters:
+      - batchName: string
+        in: path
+        description: name of the batch
+        type: string
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              $ref: '#/definitions/Batch'
+        '404':
+          description: A batch with the specified name was not found
+
+################
+# Definitions
+################
+definitions:
+
+  Batch:
+    description: Batch groups a set of accounts to be migrated as a single operations
+    type: object
+    properties:
+      batchName:
+        type: string
+      batchNote:
+        type: string
+        required: false
+      batchAccounts:
+        type: array
+        items:
+          $ref: '#/definitions/account'
+
+  Account:
+    type: object
+    required:
+      - account_name
+    properties:
+      account_name:
+        type: string
+        description: Account name in SFDC
+      account_id:
+        type: string
+        description: Account BUID
+      catalog_package:
+        type: string
+        description: Package name in the Legacy Catalog
+      account_owner_name:
+        type: string
+        description: Account owner name
+      account_owner_email:
+        type: email
+        description: Account owner's email
+      rc_licenses:
+        type: array
+        description: List of RC Licenses:
+        items:
+          $ref: '#/definitions/RCLicense'
+      nic_licenses:
+        type: array
+        description: List of NiC licenses
+        items:
+          $ref: '#/definitions/NiCLicense'
+
+  RCLicense:
+    description: RC Entitlement item
+    type: object
+    required:
+    - catalog_id
+    - license_id
+    - license_name
+    - qtty
+    - cat_price
+    properties:
+      catalog_id:
+        type: string
+        description: ID in the legacy catalog
+      license_name:
+        type: string
+        description: license name in the Legacy Catalog
+      qtty:
+        type: number
+        description: Quantity of threashold
+      cat_price:
+        type: number
+        description: Catalog Price 
+      discount:
+        type: number
+        description: Discount
+        default: 0.00
+      currency:
+        type: string
+        description: Currency
+        enum:
+        - USD
+        - CAD
+        - EUR
+        - GBP
+        default: USD
+
+  NiCLicense:
+    description: NiCC Entitlement item
+    type: object
+    required:
+    - sku_id
+    - sku_name
+    - nic_qtty
+    - nic_price
+    properties:
+      sku_id:
+        type: string
+        description: ID in the NiC catalog
+      sku_name:
+        type: string
+        description: license name in the NiC catalog
+      nic_qtty:
+        type: number
+        description: Quantity of threashold
+      nic_price:
+        type: number
+        description: NiC Price 
+      currency:
+        type: string
+        description: Currency
+        enum:
+        - USD
+        - CAD
+        - EUR
+        - GBP
+        default: USD
