@@ -6,6 +6,7 @@ const {OUTPUTPATH} = require('../configuration')
 const getDir = pathArr => {
     const dir = path.resolve(OUTPUTPATH? OUTPUTPATH: process.cwd(), ...pathArr)
     fs1.ensureDirSync(dir)
+    fs1.emptyDirSync(dir)
     return dir
 }
 
@@ -40,18 +41,19 @@ exports.write2excel = (tabsArr, pathArr, fileName) => {
 
     for (tab of tabsArr) {
         const t = workbook.addWorksheet(tab["tab"])
-        generateExcelSheet(tab["data"], t, styleForHeaders, styleForData)
+        const array = tab["data"]
+        if (array.length > 0) {
+            const columns = tab.hasOwnProperty('columns')? tab.columns: Object.keys(array[0])
+            generateExcelSheet(array, columns, t, styleForHeaders, styleForData)
+        }
     }
 
     workbook.write(path.resolve(dir, `${fileName}.xlsx`))
 }
 
-const generateExcelSheet = (array, worksheet, style, styleForData) => {
-    if (array.length === 0) {
-        return
-    }
+const generateExcelSheet = (array, columns, worksheet, style, styleForData) => {
     let excl_col = 1
-    Object.keys(array[0]).forEach(element => {
+    columns.forEach(element => {
         const lengthArr = array.map(row => row[element]===null? 0: row[element].toString().length)
         const maxWidth = Math.max(...lengthArr)
         worksheet.column(excl_col).setWidth(maxWidth + 2)
@@ -61,15 +63,18 @@ const generateExcelSheet = (array, worksheet, style, styleForData) => {
 
     let excl_row = 2         //Row starts from 2 as 1st row is for headers.
     array.forEach(data_row => {
-    const row_values = Object.values(data_row)
     let excl_col = 1
-    row_values.forEach(element => {
+    columns.forEach(c => {
+        const element = data_row[c]
         switch (typeof(element)) {
             case 'string':
                 worksheet.cell(excl_row, excl_col++).string(element).style(styleForData)
                 break
-            case 'number':     
+                case 'number':     
                 worksheet.cell(excl_row, excl_col++).number(element).style(styleForData)
+                break
+            case 'boolean':     
+                worksheet.cell(excl_row, excl_col++).string(element?'true':'false').style(styleForData)
                 break
             default:
                 worksheet.cell(excl_row, excl_col++).string("").style(styleForData)

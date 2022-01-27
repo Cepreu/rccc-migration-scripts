@@ -1,7 +1,9 @@
 const sqlite3 = require('sqlite3').verbose()
 const {DATABASE} = require('../configuration')
-const {applyRules} = require('./rules')
+const {rules} = require('./rules')
 const {write2excel, write2json} = require('./write2file')
+const {NgbsEntitlements, NiCEntitlements, CaseEntitlements} = require('./entitlements')
+
 const allAccounts = []
 
 //////////////////////
@@ -30,53 +32,6 @@ exports.prepareBatchFile = (batchName) => {
         ORDER BY e.AccountName
         `.replace(/\s+/g, " ")
 
-    const sqlEntitlements = `
-        SELECT 
-            EXT_PRODUCT_ID,
-            Category,
-            ITEM_NAME,QNTY_THRESHOLD,
-            round(PRICE,2) PRICE,
-            round(Discount,2) DISCOUNT,
-            round(NiCPrice,2) NiCPrice,
-            Price CAT_PRICE,
-            ProductFamily,
-            ? AS batchID
-        FROM ngbs_ent
-        WHERE eid=?
-        ORDER BY AccountName, QNTY_THRESHOLD DESC, cast(EXT_PRODUCT_ID AS INTEGER), EXT_PRODUCT_ID, Category
-        `.replace(/\s+/g, " ")
-
-    const sqlMonthly = `
-        SELECT 
-            CatalogID || "-" || IFNULL(FeatureID,"000") || "-" || IFNULL(FeatureDetailID,"000") AS SKU,
-            Product,
-            Quantity,
-            Amount,
-            Amount/Quantity AS Price
-        FROM RCMRCSummary_20211001
-        WHERE Account=?
-            AND ProductType="MRC"
-        ORDER BY cast(CatalogID as INTEGER), CatalogID
-        `.replace(/\s+/g, " ")
-
-    const sqlCase2Case = `
-        SELECT 
-            SUBSTR(nic_cases.Subject, 1, 16) AS subject, 
-            nic_cases.ProvisionDate, 
-            sfdcCase,operation AS oper,
-            skuid,
-            sku,
-            qtty,
-            price
-        FROM nic_cases, nic_case_items
-        WHERE nic_cases.inContactBUID=?
-            AND nic_cases.CaseNumber=sfdcCase
-        ORDER BY 
-            ProvisionDate DESC,
-            cast(skuid as INTEGER)
-        `.replace(/\s+/g, " ")
-
-
     db.serialize( () => {
         db.each(
             sqlBatches,
@@ -86,17 +41,17 @@ exports.prepareBatchFile = (batchName) => {
                     console.error(err.message)
                     throw err
                 }
-                db.all(sqlEntitlements, [batchName, row.ENTERPRISE_ACCOUNT_ID], (err, ents) => {
+                db.all(NgbsEntitlements.SQL, [batchName, row.ENTERPRISE_ACCOUNT_ID], (err, ents) => {
                     if (err) {
                         console.error(err.message)
                         throw err
                     }
-                    db.all(sqlMonthly, [row.INCONTACT_BUID], (err, nics) => {
+                    db.all(NiCEntitlements.SQL, [row.INCONTACT_BUID], (err, nics) => {
                         if (err) {
                             console.error(err.message)
                             throw err
                         }    
-                        db.all(sqlCase2Case, [row.INCONTACT_BUID], (err, cases) => {
+                        db.all(CaseEntitlements.SQL, [row.INCONTACT_BUID], (err, cases) => {
                             if (err) {
                                 console.error(err.message)
                                 throw err
@@ -124,45 +79,58 @@ const validateAndExport = (account, ents, nics, cases, batchName) => {
     console.log(account.ENTERPRISE_ACCOUNT_ID,account.INCONTACT_BUID, account.AccountName)
     console.table(nics)
     console.table(cases)
-    const nicEnts = groupCases(cases)
 
-    const problems = applyRules(account, ents, nics, nicEnts)
+    const nicEntsC2C = new CaseEntitlements(cases)
+    const ngbsEnts = new NgbsEntitlements(ents)
+    const nicEntsMRS = new NiCEntitlements(nics)
+
+    const problems = applyRules(account, ngbsEnts, nicEntsMRS, nicEntsC2C)
 
     allAccounts.push(account)
     
     write2excel( 
         [
             {tab: "Account", data: [account]}, 
-            {tab: "RC Entitlements", data: ents},
-            {tab: "NiC Entitlements", data: nicEnts},
+            {tab: "RC Entitlements", data: ngbsEnts.wrkColl, columns: ['Category', 'ITEM_NAME', 'QNTY_THRESHOLD', 'PRICE', 'DISCOUNT']},
+            {tab: "NiC Entitlements", data: nicEntsC2C.wrkColl},
             {tab: "Changelog", data: problems},
-            {tab: "Raw DWH", data: ents},
-            {tab: "Raw Monthly", data: nics},
-            {tab: "Raw Cases", data: cases},
-            {tab: "GroupedCases", data: groupCases(cases)}
+            {tab: "Raw DWH", data: ngbsEnts.originalColl},
+            {tab: "Raw Monthly", data: nicEntsMRS.originalColl},
+            {tab: "Raw Cases", data: nicEntsC2C.originalColl},
+//            {tab: "GroupedCases", data: groupCases(cases)}
         ],
         [batchName], 
-        account.ENTERPRISE_ACCOUNT_ID.toString()
+        account.ENTERPRISE_ACCOUNT_ID.toString() + (account.VALID? "": "_FAILED")
     )
-}
-
-const groupCases = (cases) => {
-    return cases.reduce( (acc, obj) => {
-        const findObj = acc.find(alreadyIn => alreadyIn.skuid === obj.skuid)
-        if (findObj === undefined) {
-            acc.push({skuid: obj.skuid, sku: obj.sku, price: obj.price, qtty: obj.qtty})
-        } else {
-            findObj.qtty += obj.qtty
-        }
-        return acc
-    }, [])
 }
 
 /////////////////
 const packageStat = (batchName) => {
+    allAccounts.sort((a,b) => (a.VALID & !b.VALID)? -1: !a.VALID & b.VALID? 1: 0)
     write2excel(
         [{tab: "Accounts", data: allAccounts}],
         [batchName],
         'account_list'
         )
+}
+
+const applyRules = (account, ents, nics, cases) => {
+    const problems = []
+    account["VALID"] = true
+
+    let skipRules = false
+    rules.forEach( rule => {
+        if (!skipRules) {
+            rule.reset()
+            console.log(rule.description)
+            const res = rule.action(ents.wrkColl, nics.wrkColl, cases.wrkColl)
+            problems.unshift(...rule.logItems)
+            if (!res) {
+                account["VALID"] = false
+                skipRules = true
+            }
+        }
+    })
+
+    return problems
 }

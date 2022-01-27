@@ -18,7 +18,7 @@ exports.createBatchEntitlements = (batchName) => {
         `.replace(/\s+/g," ")
 
     const createSql = `
-        CREATE TABLE ngbs_ent AS
+    CREATE TABLE ngbs_ent AS
         SELECT DISTINCT
             b.EID,
             b.UID,
@@ -29,28 +29,35 @@ exports.createBatchEntitlements = (batchName) => {
             bi.MDURATION,
             (e.RETAIL_PRICE-e.DISCOUNT_VALUE) / bi.MDURATION AS OldPrice,
             e.QNTY_THRESHOLD,
-            lc.PriceUSD,
-            lc.PriceCAD AS Price,
-            lc.PriceUSD - (e.RETAIL_PRICE - e.DISCOUNT_VALUE) / bi.MDURATION AS DiscountUSD,
-            lc.PriceCAD - (e.RETAIL_PRICE - e.DISCOUNT_VALUE) / bi.MDURATION AS Discount,
-            lc.NiCPrice,
-            lc.Category,
-            lc.ProductFamily
-        FROM EntitlememntLOG e
-            INNER JOIN batch_items b ON EID=USERID AND batchID='Canada01'
-            INNER JOIN BillingItemsAndEvents bi ON e.BILLING_ITEM_ID=bi.BILLINGITEMID
-            LEFT JOIN legacy_catalog lc 
-            ON (e.ITEM_NAME=ProductName
-                OR e.EXT_PRODUCT_ID IN ('4100-701-000', '1503-693-000', '1503-694-000', '4109-673-000', '500-617-000', '308-8-167', '3465-1227-000')
+            lc.USD AS PriceUSD,
+            lc.CAD AS Price,
+            lc.USD - (e.RETAIL_PRICE - e.DISCOUNT_VALUE) / bi.MDURATION AS DiscountUSD,
+            lc.CAD - (e.RETAIL_PRICE - e.DISCOUNT_VALUE) / bi.MDURATION AS Discount,
+            lc.NiCPrice AS NiCPrice,
+            lc.element_id AS Category,
+            lc.billing_type AS ProductFamily
+        FROM 
+            EntitlememntLOG e
+        INNER JOIN 
+            batch_items b 
+            ON EID=USERID AND batchID=?
+        INNER JOIN 
+            BillingItemsAndEvents bi 
+            ON e.BILLING_ITEM_ID=bi.BILLINGITEMID
+        LEFT JOIN 
+            CLicense lc 
+            ON (
+                e.ITEM_NAME=lc.ngbs_name
+                    OR e.EXT_PRODUCT_ID IN ('4100-701-000', '1503-693-000', '1503-694-000', '4109-673-000', '500-617-000', '308-8-167', '3465-1227-000')
                 )
                 AND e.EXT_PRODUCT_ID=lc.SKU 
-                AND (e.TYPE_NAME='Recurring' AND lc.ProductFamily!='Overage'
-                    OR e.TYPE_NAME='Overage' AND lc.ProductFamily='Overage')
+                AND (e.TYPE_NAME='Recurring' AND lc.billing_type='Recurring'
+                    OR e.TYPE_NAME='Overage' AND lc.billing_type='Usage')
         WHERE
             (END_DATE > date('now') OR END_DATE IS NULL) 
             AND STATUS_NAME='Active'
-            ORDER BY b.EID, e.EXT_PRODUCT_ID 
-        `.replace(/\s+/g," ")
+        ORDER BY b.EID, e.EXT_PRODUCT_ID 
+    `.replace(/\s+/g," ")
 
     db.serialize( () => {
         db.run(dropTableSql, [], function(err) {
@@ -61,7 +68,7 @@ exports.createBatchEntitlements = (batchName) => {
             console.log(`Removed table: ${this.drop}`)
         })
 
-        db.run(createSql, (err) => {
+        db.run(createSql, [batchName], (err) => {
             if (err) {
                 console.log(err.message)
                 return
