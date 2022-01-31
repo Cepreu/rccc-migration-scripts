@@ -22,17 +22,19 @@ exports.createBatchEntitlements = (batchName) => {
         SELECT DISTINCT
             b.EID,
             b.UID,
+            b.BID,
             b.AccountName,
             e.EXT_PRODUCT_ID,
             e.ITEM_NAME,
             e.RETAIL_PRICE,
             bi.MDURATION,
+            bi.CURRENCY_CODE,
             (e.RETAIL_PRICE-e.DISCOUNT_VALUE) / bi.MDURATION AS OldPrice,
             e.QNTY_THRESHOLD,
             lc.USD AS PriceUSD,
             lc.CAD AS Price,
-            lc.USD - (e.RETAIL_PRICE - e.DISCOUNT_VALUE) / bi.MDURATION AS DiscountUSD,
-            lc.CAD - (e.RETAIL_PRICE - e.DISCOUNT_VALUE) / bi.MDURATION AS Discount,
+            lc.USD - (e.RETAIL_PRICE - e.DISCOUNT_VALUE) / CASE WHEN bi.DETAILTYPEID=5 THEN bi.MDURATION ELSE 1 END AS DiscountUSD,
+            lc.CAD - (e.RETAIL_PRICE - e.DISCOUNT_VALUE) / CASE WHEN bi.DETAILTYPEID=5 THEN bi.MDURATION ELSE 1 END AS Discount,
             lc.NiCPrice AS NiCPrice,
             lc.element_id AS Category,
             lc.billing_type AS ProductFamily
@@ -43,7 +45,7 @@ exports.createBatchEntitlements = (batchName) => {
             ON EID=USERID AND batchID=?
         INNER JOIN 
             BillingItemsAndEvents bi 
-            ON e.BILLING_ITEM_ID=bi.BILLINGITEMID
+            ON bi.ACCOUNTID=EID AND e.BILLING_ITEM_ID=bi.BILLINGITEMID
         LEFT JOIN 
             CLicense lc 
             ON (

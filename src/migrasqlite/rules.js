@@ -1,3 +1,7 @@
+const ERROR = 'ERROR'
+const WARNING = 'WARNING'
+const INFO = 'INFO'
+
 class Rule {
     static portMap = {
         CCL_LRCCCA2SEATO_67: ['CCL_LAPRTAAE2O_405','CCL_LAPRTAAPEO_404'],
@@ -37,12 +41,11 @@ class Rule {
 
     logger(severity, issue) {
         this.logItems.unshift({severity: severity, rule: this.name, issue: issue})
-        if(severity === 'ERROR') console.log(severity, issue)
+        if(severity === ERROR) console.log(severity, issue)
     }
 }
 
 const rules = []
-
 const facts = {}
 
 rules.push(new Rule ({
@@ -51,11 +54,11 @@ rules.push(new Rule ({
     action:  function (ents) {
         facts.seat = ents.find(row => /^307-/.test(row.EXT_PRODUCT_ID) && row.ITEM_NAME==='Seat Overage')
         if (facts.seat === undefined) {
-            this.logger( "ERROR", "Seat license was not found or doesn't match MRC" )
+            this.logger( ERROR, "Seat license was not found or doesn't match MRC" )
             return false
         }
         if (!Rule.portMap.hasOwnProperty(facts.seat.Category)) {
-            this.logger( `ERROR`, `Unknown seat license: ${facts.seat.Category}`)
+            this.logger(ERROR, `Unknown seat license: ${facts.seat.Category}`)
             return false
         }
         return true
@@ -71,7 +74,7 @@ rules.push(new Rule ({
         if (nicPort !== undefined) {
             const entPorts = ents.filter(e => e.EXT_PRODUCT_ID === nicPort.SKU)
             if (entPorts.length === 0) {
-                this.logger( "ERROR", "RC PortOverage license was not found or doesn't match MRC" )
+                this.logger( ERROR, "RC PortOverage license was not found or doesn't match MRC" )
                 return false
             } else {
                 facts.entPortLic = entPorts[0]
@@ -84,7 +87,7 @@ rules.push(new Rule ({
             // const casePort = cases.find(c => /^308-/.tect(c.skuid))
             const entPorts = ents.filter(row => /^308-/.test(row.EXT_PRODUCT_ID))
             if (entPorts.length === 0) {
-                this.logger( "ERROR", "RC PortOverage license was not found" )
+                this.logger( ERROR, "RC PortOverage license was not found" )
                 return false
             }
             facts.entPortLic = entPorts[0]
@@ -114,7 +117,7 @@ rules.push(new Rule ({
                 -1 === cases.findIndex(c => c.skuid === ents[i].EXT_PRODUCT_ID) && 
                 -1 === nics.findIndex( n => n.SKU === ents[i].EXT_PRODUCT_ID)
             ) {
-                this.logger( `INFO`, `Removed: ${ents[i].EXT_PRODUCT_ID} ${ents[i].ITEM_NAME}`)
+                this.logger(INFO, `Removed: ${ents[i].EXT_PRODUCT_ID} ${ents[i].ITEM_NAME}`)
                 ents.splice(i--, 1)
             }
         }
@@ -143,7 +146,7 @@ rules.push(new Rule ({
             const i = ents.findIndex(ent => e === ent.Category)
             if (i >= 0) {
                 ents[i].DISCOUNT = 0.00
-                this.logger(`Warning`, `Catalog Price applied: ${ents[i].Category} (${ents[i].EXT_PRODUCT_ID}) ${ents[i].ITEM_NAME}`)
+                this.logger(WARNING, `Catalog Price applied: ${ents[i].Category} (${ents[i].EXT_PRODUCT_ID}) ${ents[i].ITEM_NAME}`)
             }
         })
         return true
@@ -162,7 +165,7 @@ rules.push(new Rule ({
         toDeleteNames.forEach(tdn => {
             const i = ents.findIndex(e => e.EXT_PRODUCT_ID === tdn)
             if (i >= 0) {
-                this.logger(`INFO`, `Removed: ${ents[i].EXT_PRODUCT_ID} ${ents[i].ITEM_NAME}`)
+                this.logger(INFO, `Removed: ${ents[i].EXT_PRODUCT_ID} ${ents[i].ITEM_NAME}`)
                 ents.splice(i, 1)
             }
         })
@@ -183,7 +186,7 @@ rules.push(new Rule ({
         toDeleteNames.forEach(tdn => {
             const i = ents.findIndex(e => e.ITEM_NAME === tdn)
             if (i >= 0) {
-                this.logger(`INFO`, `Removed: ${ents[i].EXT_PRODUCT_ID} ${ents[i].ITEM_NAME}`)
+                this.logger(INFO, `Removed: ${ents[i].EXT_PRODUCT_ID} ${ents[i].ITEM_NAME}`)
                 ents.splice(i, 1)
             }
         })
@@ -210,7 +213,7 @@ rules.push(new Rule ({
                     ProductFamily: null,
                     batchID: ""
                 })
-                this.logger(`INFO`, `Added: ${tl.Category} ${tl.ITEM_NAME}`)
+                this.logger(INFO, `Added: ${tl.Category} ${tl.ITEM_NAME}`)
             }
         })
         return true
@@ -224,7 +227,7 @@ rules.push(new Rule ({
     action:  function (ents) {
         for( let i = 0; i < ents.length; i++) {
             if (/^1502-/.test(ents[i].EXT_PRODUCT_ID) && ents[i].ProductFamily === 'Usage') {
-                this.logger( `INFO`, `Removed: ${ents[i].EXT_PRODUCT_ID} ${ents[i].ITEM_NAME}`)
+                this.logger( INFO, `Removed: ${ents[i].EXT_PRODUCT_ID} ${ents[i].ITEM_NAME}`)
                 ents.splice(i--, 1)
             }
         }
@@ -240,7 +243,7 @@ rules.push(new Rule ({
         const targetSkus = ['4100-701-000', '1503-693-000', '1503-694-000', '4109-673-000', '500-617-000', '308-8-167', '3465-1227-000']
         ents.forEach(ent => {
             if (targetSkus.find(e => e === ent.EXT_PRODUCT_ID)) {
-                this.logger( `Warning`, `. : ${ent.EXT_PRODUCT_ID} ${ent.ITEM_NAME}`)
+                this.logger( WARNING, `. : ${ent.EXT_PRODUCT_ID} ${ent.ITEM_NAME}`)
             }
         })
         return true
@@ -256,7 +259,7 @@ rules.push(new Rule ({
         ents.forEach(ent => {
             if (targetSkus.find(e => e === ent.EXT_PRODUCT_ID) && ent.ProductFamily === 'Usage') {
                 ent.DISCOUNT = 0.00
-                this.logger( `Warning`, `Catalog Price applied: ${ent.EXT_PRODUCT_ID} ${ent.ITEM_NAME}`)
+                this.logger( WARNING, `Catalog Price applied: ${ent.EXT_PRODUCT_ID} ${ent.ITEM_NAME}`)
             }
         })
         return true
@@ -275,7 +278,7 @@ rules.push(new Rule ({
                 if (Rule.Exceptions.find(ex => nl.SKU === ex) !== undefined) {
                     this.logger( "INFO", `${nl.SKU} was found in NiC MRS file but not in RC entitlements. Ignored as an exception` )
                 } else {
-                    this.logger( "ERROR", `${nl.SKU} was found in NiC MRS file but not in RC entitlements.` )
+                    this.logger( ERROR, `${nl.SKU} was found in NiC MRS file but not in RC entitlements.` )
                     rule_res = false
                 } 
             }
@@ -295,7 +298,7 @@ rules.push(new Rule ({
             if (caseLic === undefined && Rule.Exceptions.find(ex => nl.SKU === ex) === undefined) {
                 const entLic = ents.find(el => nl.SKU === el.EXT_PRODUCT_ID)
                 if (entLic === undefined) {
-                    this.logger( "ERROR", `${nl.SKU} was not found in case2case but is presented in Monthly file. CANNOT BE RESTORED!` )
+                    this.logger( ERROR, `${nl.SKU} was not found in case2case but is presented in Monthly file. CANNOT BE RESTORED!` )
                     rule_res = false
                     return
                 }
@@ -306,7 +309,7 @@ rules.push(new Rule ({
                             qtty: entLic.QNTY_THRESHOLD,
                             price: nl.Amount / nl.Quantity
                         })
-                        this.logger( `Warning`, `${nl.SKU} was not found in case2case but is presented in Monthly file.`)
+                        this.logger( WARNING, `${nl.SKU} was not found in case2case but is presented in Monthly file.`)
                 } else {
                     cases.push({
                         skuid: nl.SKU, 
@@ -314,7 +317,7 @@ rules.push(new Rule ({
                         qtty: entLic.QNTY_THRESHOLD,
                         price: entLic.NiCPrice
                     })
-                    this.logger( `Warning`, `${nl.SKU} was not found in case2case but is presented in MRC. Price was added from the entitlement`)
+                    this.logger( WARNING, `${nl.SKU} was not found in case2case but is presented in MRC. Price was added from the entitlement`)
                 }
             }
         })
@@ -329,11 +332,11 @@ rules.push(new Rule ({
     action:  function (ents, nics, cases) {
     const casePortLic = cases.find(c => /^308-/.test(c.skuid))
     if (casePortLic === undefined) {
-            this.logger( "ERROR", "NiC PortOverage license was not found" )
+            this.logger( ERROR, "NiC PortOverage license was not found" )
             return false
         }
         if (casePortLic.skuid !== facts.entPortLic.EXT_PRODUCT_ID) {
-            this.logger(`Warning`, `inContact port ${casePortLic.skuid} replaced by ${facts.entPortLic.EXT_PRODUCT_ID} to match Entitlements`)
+            this.logger(WARNING, `inContact port ${casePortLic.skuid} replaced by ${facts.entPortLic.EXT_PRODUCT_ID} to match Entitlements`)
             casePortLic.skuid = facts.entPortLic.EXT_PRODUCT_ID
         }
         return true
@@ -341,4 +344,4 @@ rules.push(new Rule ({
 })
 )
 
-module.exports = {rules}
+module.exports = {rules: rules, ERROR: ERROR, WARNING: WARNING, INFO: INFO}

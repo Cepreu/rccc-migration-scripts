@@ -1,9 +1,11 @@
+/////////////
 class Entitlements {
     constructor(coll) {
         this.originalColl = coll
     }
 }
 
+////////////////////
 class NgbsEntitlements extends Entitlements {
     static SQL = `
     SELECT 
@@ -28,6 +30,7 @@ class NgbsEntitlements extends Entitlements {
     get wrkColl() {return this.ents}
 }
 
+//////////////////
 class NiCEntitlements extends Entitlements {
     static SQL = `
     SELECT 
@@ -49,6 +52,7 @@ class NiCEntitlements extends Entitlements {
     get wrkColl() {return this.nics}
 }
 
+////////////////////
 class CaseEntitlements extends Entitlements {
     static SQL = `
     SELECT 
@@ -69,7 +73,13 @@ class CaseEntitlements extends Entitlements {
 
     constructor(coll) {
         super(coll)   
-        this.c2c = this.originalColl.reduce( (acc, obj) => {
+        this.c2c = this.consColl
+    }
+
+    get wrkColl() {return this.c2c}
+
+    get consColl() {
+        return this.originalColl.reduce( (acc, obj) => {
             const findObj = acc.find(alreadyIn => alreadyIn.skuid === obj.skuid)
             if (findObj === undefined) {
                 acc.push({skuid: obj.skuid, sku: obj.sku, price: obj.price, qtty: obj.qtty})
@@ -79,8 +89,8 @@ class CaseEntitlements extends Entitlements {
             return acc
         }, [])
     }
-    get wrkColl() {return this.c2c}
 }
+
 
 module.exports = {
     NgbsEntitlements: NgbsEntitlements,
