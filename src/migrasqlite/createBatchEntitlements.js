@@ -37,7 +37,7 @@ exports.createBatchEntitlements = (batchName) => {
             lc.CAD - (e.RETAIL_PRICE - e.DISCOUNT_VALUE) / CASE WHEN bi.DETAILTYPEID=5 THEN bi.MDURATION ELSE 1 END AS Discount,
             lc.NiCPrice AS NiCPrice,
             lc.element_id AS Category,
-            lc.billing_type AS ProductFamily
+            e.TYPE_NAME AS ProductFamily
         FROM 
             EntitlememntLOG e
         INNER JOIN 

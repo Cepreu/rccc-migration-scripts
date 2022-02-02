@@ -8,9 +8,18 @@ test1()
 //////////////////////
 // caseItems
 //////////////////////
-exports.caseItems = (outfile) => {
-    const sql = `SELECT CaseNumber AS case_id, UID AS acc_id, inContactBUID AS bu_id, Description AS descr FROM nic_cases WHERE descr IS NOT NULL`
-    let db = new sqlite3.Database(DATABASE, sqlite3.OPEN_READONLY, (err) => {
+exports.caseItems = (outfile, timestamp) => {
+    const sql = `
+        SELECT 
+            CaseNumber AS case_id,
+            UID AS acc_id, 
+            inContactBUID AS bu_id, 
+            Description AS descr 
+        FROM nic_cases 
+        WHERE descr IS NOT NULL
+        ${timestamp !== undefined? 'AND DBInserted="' + timestamp + '"': ""}
+        `.replace(/\s+/g, " ")
+        let db = new sqlite3.Database(DATABASE, sqlite3.OPEN_READONLY, (err) => {
         if (err) return console.error(err.message)
         console.log('Connected to DWH db.')
     })

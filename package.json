@@ -25,6 +25,7 @@
     "clui": "^0.3.6",
     "configstore": "^6.0.0",
     "csv-parse": "^4.16.0",
+    "csv-parser": "^3.0.0",
     "csv-writer": "^1.6.0",
     "date-and-time": "^2.0.0",
     "excel4node": "^1.7.2",

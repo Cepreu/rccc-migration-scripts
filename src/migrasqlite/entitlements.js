@@ -12,10 +12,10 @@ class NgbsEntitlements extends Entitlements {
         EXT_PRODUCT_ID,
         Category,
         ITEM_NAME,QNTY_THRESHOLD,
-        round(PRICE,2) PRICE,
-        round(Discount,2) DISCOUNT,
+        CASE CURRENCY_CODE WHEN 'USD' THEN round(PRICEUSD,2) WHEN 'CAD' THEN round(PRICE,2) END PRICE,
+        CASE CURRENCY_CODE WHEN 'USD' THEN round(DiscountUSD,2) WHEN 'CAD' THEN round(Discount,2) END DISCOUNT,
+        CURRENCY_CODE AS CURRENCY,
         round(NiCPrice,2) NiCPrice,
-        Price CAT_PRICE,
         ProductFamily,
         ? AS batchID
     FROM ngbs_ent

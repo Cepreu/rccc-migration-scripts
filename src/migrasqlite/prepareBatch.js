@@ -24,12 +24,13 @@ exports.prepareBatchFile = (batchName) => {
             e.BID AS BILLING_ID,
             e.AccountName,
             batchID,
-            'RingCentral Canada' AS BRANDNAME,
-            'CAD' AS CURRENCY,
+            b.brand AS BRANDNAME,
+            b.currency AS CURRENCY,
             'MONTHLY' AS BILLING_TERM,
             'LEGACY' AS CATALOG
         FROM ngbs_ent e
-        INNER JOIN batch_items b ON b.EID=e.EID AND batchID=?
+        INNER JOIN batch_items b 
+            ON b.EID=e.EID AND batchID=?
         ORDER BY e.AccountName
         `.replace(/\s+/g, " ")
 

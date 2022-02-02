@@ -32,7 +32,7 @@ class Account {
             if (!skipRules) {
                 rule.reset()
                 console.log(rule.description)
-                const res = rule.action(this.ngbsEnts.wrkColl, this.nicEntsMRS.wrkColl, this.nicEntsC2C.wrkColl)
+                const res = rule.action({acct: this.info, ents: this.ngbsEnts.wrkColl, nics: this.nicEntsMRS.wrkColl, cases: this.nicEntsC2C.wrkColl})
                 this.problems.unshift(...rule.logItems)
                 if (!res) {
                     this.info.VALID = false
@@ -46,7 +46,7 @@ class Account {
         write2excel( 
             [
                 {tab: "Account", data: [this.info]}, 
-                {tab: "RC Entitlements", data: this.ngbsEnts.wrkColl, columns: ['Category', 'ITEM_NAME', 'QNTY_THRESHOLD', 'PRICE', 'DISCOUNT']},
+                {tab: "RC Entitlements", data: this.ngbsEnts.wrkColl, columns: ['Category', 'ITEM_NAME', 'QNTY_THRESHOLD', 'PRICE', 'DISCOUNT', 'CURRENCY']},
                 {tab: "NiC Entitlements", data: this.nicEntsC2C.wrkColl},
                 {tab: "Changelog", data: this.problems},
                 {tab: "Raw DWH", data: this.ngbsEnts.originalColl},

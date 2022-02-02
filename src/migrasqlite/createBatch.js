@@ -14,7 +14,7 @@ exports.createBatch = (batchName) => {
     })
 
     const createSql = `
-        CREATE TABLE IF NOT EXISTS batch_items_(
+        CREATE TABLE IF NOT EXISTS batch_items(
             batchID TEXT,
             EID INT UNIQUE,
             BID INT UNIQUE,
@@ -27,29 +27,36 @@ exports.createBatch = (batchName) => {
         )
         `.replace(/\s+/g," ")
 
-    const deleteSql = `DELETE FROM batch_items_ WHERE batchID=?`
+    const deleteSql = `DELETE FROM batch_items WHERE batchID=?`
 
     const sql1 = `
         INSERT OR REPLACE 
-        INTO batch_items_ 
-	        SELECT 
-                ?, 
-                EnterpriseAccountID, 
-                null, 
-                null, 
-                BUID,
-                null,
-                null
-		    FROM nic_cases 
-            INNER JOIN RAW_USA 
-                ON BUID=InContactBUID 
-		    GROUP BY BUID 
-		    HAVING count(*) = 1 AND Subject LIKE 'NBU%' AND "No.ofInContactSeats" < 50
+        INTO batch_items
+            (batchID, EID, BID, UID, AccountName, brand, currency)
+        SELECT 
+            ?, 
+            sf.EnterpriseAccountID, 
+            sf.BillingID, 
+            c2c.inContactBUID,
+            sf.AccountName,
+            sf.brand,
+            sf.PriceperseatCurrency
+        FROM 
+            nic_cases c2c
+        INNER JOIN 
+            accounts_sfdc sf
+            ON c2c.UID=sf.EnterpriseAccountID 
+        WHERE
+            sf.brand="RingCentral"
+            AND sf.OutboundTransport LIKE 'RC Ad-Hoc%'
+            AND UID not in (select  a.accountID from nic_case_items a where skuid LIKE '1265_-%') 
+        GROUP BY UID 
+        HAVING count(*) = 1 AND Subject LIKE 'NBU%' AND "No.ofInContactSeats" < 26
         `.replace(/\s+/g," ")
 
     const sql2 = `
         INSERT OR REPLACE
-        INTO batch_items_
+        INTO batch_items
             (batchID, EID, BID, UID, AccountName, brand, currency)
             SELECT 
                 ?, 
@@ -68,7 +75,7 @@ exports.createBatch = (batchName) => {
     db.serialize( () => {
         db.run(createSql, function(err) {
             if (err) return console.log(err.message)
-            console.log(`batch_items_ table was created (or existed): ${this.changes} rows changed`)
+            console.log(`batch_items table was created (or existed): ${this.changes} rows changed`)
         })
 
         db.run(deleteSql, [batchName], function(err) {
@@ -76,7 +83,7 @@ exports.createBatch = (batchName) => {
             console.log(`Number of rows deleted: ${this.changes} rows changed`)
         })
 
-        db.run(sql2, [batchName], function(err) {
+        db.run(sql1, [batchName], function(err) {
             if (err) return console.log(err.message)
             console.log(`Number of rows inserted: ${this.changes} rows changed`)
         })
