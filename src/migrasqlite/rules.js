@@ -2,32 +2,42 @@ const ERROR = 'ERROR'
 const WARNING = 'WARNING'
 const INFO = 'INFO'
 
+
 const OVERAGE = 'Overage'
 
 class Rule {
     static portMap = {
-        CCL_LRCCCA2SEATO_67: ['CCL_LAPRTAAE2O_405','CCL_LAPRTAAPEO_404'],
-        CCL_LRCCCAPSEATO_26: ['CCL_LAPRTAAPEO_404'],
         CCL_LRCCCU2SEATO_73: ['CCL_LAPRTUESO_412','CCL_LAPRTUPESO_413'],
+        CCL_LRCCCA2SEATO_67: ['CCL_LAPRTAAE2O_405','CCL_LAPRTAAPEO_404'],
         CCL_LRCCCUCSEATO_61: ['CCL_LAPRTUPESO_413', 'CCL_LAPRTAUECO_406'],
-        CCL_LRCCCUPSEATO_32: ['CCL_LAPRTUPESO_413']
+        CCL_LRCCCACSEATO_56: ['CCL_LAPRTAAECO_403'],
+        CCL_LRCCCBASEATO_44: ['CCL_LAPRTBESWAO_411'],
+        CCL_LRCCCUPSEATO_32: ['CCL_LAPRTUPESO_413'],
+        CCL_LRCCCAPSEATO_26: ['CCL_LAPRTAAPEO_404'],
+        CCL_LRCCCUSEATO_20:  ['CCL_LAPRTAUEO_402'],
+        CCL_LRCCCA1SEATO_14: ['CCL_LAPRTBESO_409']
     }
-    
+
     static RCOTelecomLicenses = [
-        { Category: "CCL_LASR_263",  ITEM_NAME: "Contact Center: Automated Speech Recognition (per minute)", USD: 0.08, CAD: 0.08 },
         { Category: "CCL_LICIBL_78", ITEM_NAME: "Inbound Local, per 10 min", USD: 0.00, CAD: 0 },
-        { Category: "CCL_LICIBTF_79", ITEM_NAME: "Inbound Toll Free, per 10 min", USD: 0.18, CAD: 0.18 },
+        { Category: "CCL_LICIBTF_79", ITEM_NAME: "Inbound Toll Free, per 10 min", USD: 0.14, CAD: 0.14 },
         { Category: "CCL_LICIBINT_81", ITEM_NAME: "Inbound International", USD: 0.01, CAD: 0.01 },
         { Category: "CCL_LICOBLC_83", ITEM_NAME: "Outbound Local Conversational, per 10 min", USD: 0.00, CAD: 0.00 },
         { Category: "CCL_LICOBIC_84", ITEM_NAME: "Outbound International Conversational", USD: 0.01, CAD: 0.01 },
-        { Category: "CCL_LICOBDL_85", ITEM_NAME: "Outbound Dialer Local, per 10 min", USD: 0.21, CAD: 0.21 },
+        { Category: "CCL_LICOBDL_85", ITEM_NAME: "Outbound Dialer Local, per 10 min", USD: 0.16, CAD: 0.16 },
         { Category: "CCL_LICOBDINT_87", ITEM_NAME: "Outbound Dialer International", USD: 0.01, CAD: 0.01 },
         { Category: "CCL_LICOBLTF_88", ITEM_NAME: "Outbound local Toll Free", USD: 0.00, CAD: 0.00 }
     ]
+    static ASR_OVERAGE = 
+        { Category: "CCL_LASRO_620",  ITEM_NAME: "Contact Center: Automated Speech Recognition (per minute)", USD: 0.06, CAD: 0.08, NiCPrice: 0.05 }
 
+    static BUNDLE25K = 
+        { Category: 'CCL_LICIBTF25KB_80', ITEM_NAME: 'Inbound Toll Free 25K Bundle', USD: 350.00, CAD: 450.00 }
+    
     static Exceptions = [
-        '1561-49-000',       // Service Package - CXsuccess Care Package
-        '3157-18-204'        // Chat  and Email Channel - CXone Chat & Email (per Configured User)
+        '1561-49-000',        // Service Package - CXsuccess Care Package
+        '3157-18-204',        // Chat  and Email Channel - CXone Chat & Email (per Configured User)
+        '1028-171-000'        // SIP Trunking Service - CXone SIP Connectivity over Internet
     ]
 
     constructor({ name='', description='', action=null } = {}) {
@@ -52,7 +62,7 @@ const facts = {}
 
 rules.push(new Rule ({
     name:  "RCCheckSeats",
-    description: "Check seats",
+    description: "Checks seats",
     action:  function ({ents}) {
         facts.seat = ents.find(row => /^307-/.test(row.EXT_PRODUCT_ID) && row.ITEM_NAME==='Seat Overage')
         if (facts.seat === undefined) {
@@ -60,7 +70,7 @@ rules.push(new Rule ({
             return false
         }
         if (!Rule.portMap.hasOwnProperty(facts.seat.Category)) {
-            this.logger(ERROR, `Unknown seat license: ${facts.seat.Category}`)
+            this.logger(ERROR, `Unknown port2seat mapping: ${facts.seat.Category}`)
             return false
         }
         return true
@@ -116,6 +126,7 @@ rules.push(new Rule ({
         for( let i = 0; i < ents.length; i++) {
             if (
                 ents[i].ProductFamily === OVERAGE &&
+                ents[i].Category !== 'CCL_LASRO_620' &&
                 -1 === cases.findIndex(c => c.skuid === ents[i].EXT_PRODUCT_ID) && 
                 -1 === nics.findIndex( n => n.SKU === ents[i].EXT_PRODUCT_ID)
             ) {
@@ -124,6 +135,20 @@ rules.push(new Rule ({
             }
         }
         return true
+    }
+})
+)
+
+rules.push(new Rule ({
+    name:  "RCNegDiscounts",
+    description: "Sanity check: Reject the migration if negative discount was found",
+    action:  function ({ents}) {
+        const neg = ents.find(e => e.DISCOUNT < 0)
+        if (neg === undefined) {
+            return true
+        }
+        this.logger(ERROR, `Negative discount ${neg.DISCOUNT} for: ${neg.EXT_PRODUCT_ID} ${neg.ITEM_NAME}`)
+        return false
     }
 })
 )
@@ -199,7 +224,7 @@ rules.push(new Rule ({
 
 rules.push(new Rule ({
     name:  "RCNewTelco",
-    description: "Add Telephony Licenses",
+    description: "Add Free Domestic Telephony Licenses",
     action:  function ({acct, ents}) {
         Rule.RCOTelecomLicenses.forEach(tl => {
             if (ents.find(e => e.Category === tl.Category) === undefined) {
@@ -218,6 +243,62 @@ rules.push(new Rule ({
                 this.logger(INFO, `Added: ${tl.Category} ${tl.ITEM_NAME}`)
             }
         })
+        return true
+    }
+})
+)
+
+rules.push(new Rule ({
+    name:  "RCASROverage",
+    description: "Add ASR Overage License - if it was originally omitted",
+    action:  function ({acct, ents}) {
+
+            if (ents.find(e => e.Category === Rule.ASR_OVERAGE.Category) === undefined) {
+                ents.push({
+                    EXT_PRODUCT_ID: null,
+                    Category: Rule.ASR_OVERAGE.Category,
+                    ITEM_NAME: Rule.ASR_OVERAGE.ITEM_NAME,
+                    QNTY_THRESHOLD: 0,
+                    PRICE: acct.CURRENCY==='USD'? Rule.ASR_OVERAGE.USD: Rule.ASR_OVERAGE.CAD,
+                    DISCOUNT: 0,
+                    NiCPrice: Rule.ASR_OVERAGE.NiCPrice,
+                    CURRENCY: acct.CURRENCY,
+                    ProductFamily: OVERAGE,
+                    batchID: ""
+                })
+                this.logger(INFO, `Added: ${Rule.ASR_OVERAGE.Category} ${Rule.ASR_OVERAGE.ITEM_NAME}`)
+            }
+
+        return true
+    }
+})
+)
+
+rules.push(new Rule ({
+    name:  "RC25kBundles",
+    description: "Convert different-size toll-free bundles to 25K",
+    action:  function ({ents}) {
+        for( let i = 0; i < ents.length; i++) {
+            const bndl = ents[i].ITEM_NAME.match(/Contact Center: (?<Mega>\d+M )?(?<Kilo>\d+K )?Domestic Minutes Bundle/)
+            if (bndl) {
+                this.logger(INFO, `Replaced: "${ents[i].ITEM_NAME}" with 25K bundles`)
+            
+                const {Mega, Kilo} = bndl.groups
+                const qtty = (
+                    (Mega? 40 * Mega.slice(0, -2): 0) +
+                    (Kilo? 0.04 * Kilo.slice(0, -2): 0) 
+                ) * ents[i].QNTY_THRESHOLD
+
+                ents[i].Category = Rule.BUNDLE25K.Category
+                ents[i].ITEM_NAME = Rule.BUNDLE25K.ITEM_NAME
+                ents[i].QNTY_THRESHOLD = qtty
+                ents[i].PRICE = ents[i].CURRENCY==='USD'? Rule.BUNDLE25K.USD: Rule.BUNDLE25K.CAD
+                ents[i].DISCOUNT = ents[i].PRICE - (ents[i].OldPrice) / qtty
+                ents[i].ProductFamily = OVERAGE
+
+                break
+            }
+        }
         return true
     }
 })
@@ -277,10 +358,10 @@ rules.push(new Rule ({
         nics.forEach(nl => {
             const entLic = ents.find(el => nl.SKU === el.EXT_PRODUCT_ID)
             if (entLic === undefined) {
-                if (Rule.Exceptions.find(ex => nl.SKU === ex) !== undefined) {
-                    this.logger( "INFO", `${nl.SKU} was found in NiC MRS file but not in RC entitlements. Ignored as an exception` )
+                if (nl.Amount === 0.00 && Rule.Exceptions.find(ex => nl.SKU === ex) !== undefined) {
+                    this.logger( WARNING, `${nl.SKU}  was found in NiC MRS file but not in RC entitlements. Ignored as a known exception` )
                 } else {
-                    this.logger( ERROR, `${nl.SKU} was found in NiC MRS file but not in RC entitlements.` )
+                    this.logger( ERROR, `${nl.SKU} ($${nl.Amount}) was found in NiC MRS file but not in RC entitlements.` )
                     rule_res = false
                 } 
             }
@@ -324,6 +405,19 @@ rules.push(new Rule ({
             }
         })
         return rule_res
+    }
+})
+)
+
+
+rules.push(new Rule ({
+    name:  "RCCMapping",
+    description: "Checks if there are no problems with mapping ITBS licenses to NGBS catalog",
+    action:  function({ents}) {
+        const badEnts = ents.filter(row => row.Category === null)
+        badEnts.forEach(ent => this.logger( ERROR, 
+            `${ent.EXT_PRODUCT_ID !== null? ent.EXT_PRODUCT_ID: ''} "${ent.ITEM_NAME}" - is not mapped to NGBS catalog` ))
+        return !badEnts.length
     }
 })
 )

@@ -29,7 +29,7 @@ exports.createBatchEntitlements = (batchName) => {
             e.RETAIL_PRICE,
             bi.MDURATION,
             bi.CURRENCY_CODE,
-            (e.RETAIL_PRICE-e.DISCOUNT_VALUE) / bi.MDURATION AS OldPrice,
+            (e.RETAIL_PRICE-e.DISCOUNT_VALUE) / CASE WHEN bi.DETAILTYPEID=5 THEN bi.MDURATION ELSE 1 END AS OldPrice,
             e.QNTY_THRESHOLD,
             lc.USD AS PriceUSD,
             lc.CAD AS Price,

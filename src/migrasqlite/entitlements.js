@@ -11,7 +11,9 @@ class NgbsEntitlements extends Entitlements {
     SELECT 
         EXT_PRODUCT_ID,
         Category,
-        ITEM_NAME,QNTY_THRESHOLD,
+        ITEM_NAME,
+        QNTY_THRESHOLD,
+        OldPrice,
         CASE CURRENCY_CODE WHEN 'USD' THEN round(PRICEUSD,2) WHEN 'CAD' THEN round(PRICE,2) END PRICE,
         CASE CURRENCY_CODE WHEN 'USD' THEN round(DiscountUSD,2) WHEN 'CAD' THEN round(Discount,2) END DISCOUNT,
         CURRENCY_CODE AS CURRENCY,
