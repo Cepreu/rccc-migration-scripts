@@ -1,5 +1,4 @@
 const {NgbsEntitlements, NiCEntitlements, CaseEntitlements} = require('./entitlements')
-const {rules, ERROR, WARNING} = require('./rules')
 const {write2excel} = require('./write2file')
 
 class Account {
@@ -16,30 +15,24 @@ class Account {
     }
 
     get errorsAndWarnings() {
-        const ew = this.problems.filter(p => p.severity === ERROR || p.severity === WARNING)
+        const ew = this.problems.filter(p => p.severity === 'ERROR' || p.severity === 'WARNING')
         ew.forEach((pe, i, arr) => arr[i].account = this.info.ENTERPRISE_ACCOUNT_ID)
         return ew
     }
 
-    validateAndExport() {
-        this.#applyRules()
+    validateAndExport(ruleEngine) {
+        this.#applyRules(ruleEngine)
         this.#finalize()
     }
 
-    #applyRules () {  
-        let skipRules = false
-        rules.forEach( rule => {
-            if (!skipRules) {
-                rule.reset()
-                console.log(rule.description)
-                const res = rule.action({acct: this.info, ents: this.ngbsEnts.wrkColl, nics: this.nicEntsMRS.wrkColl, cases: this.nicEntsC2C.wrkColl})
-                this.problems.unshift(...rule.logItems)
-                if (!res) {
-                    this.info.VALID = false
-                    skipRules = true
-                }
-            }
-        })
+    #applyRules(ruleEngine) {    
+        this.info.VALID = ruleEngine.run(
+            this.info, 
+            this.ngbsEnts.wrkColl,
+            this.nicEntsMRS.wrkColl, 
+            this.nicEntsC2C.wrkColl,
+            this.problems 
+        )                    
     }
 
     #finalize() {

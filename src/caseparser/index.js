@@ -6,8 +6,19 @@ const {DATABASE} = require('../configuration')
 //const {importCaseReport} = require('./importCaseReport')
 
 let db = new sqlite3.Database(DATABASE);
-db.run('CREATE TABLE IF NOT EXISTS nic_case_items (accountID TEXT, BUID TEXT, sfdcCase TEXT, operation TEXT, skuid TEXT, sku TEXT, qtty REAL, price REAL)')
-db.close();
+db.run(`
+    CREATE TABLE IF NOT EXISTS nic_case_items (
+        accountID TEXT, 
+        BUID TEXT, 
+        sfdcCase TEXT, 
+        operation TEXT, 
+        skuid TEXT, 
+        sku TEXT, 
+        qtty REAL, 
+        price REAL
+    )
+`.replace(/\s+/g, " "))
+db.close()
 
 //importCaseReport("C2C2021080120220131.csv")
 

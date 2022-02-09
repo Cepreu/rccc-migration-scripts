@@ -3,8 +3,10 @@ const {DATABASE} = require('../configuration')
 const {write2excel} = require('./write2file')
 const {Account} = require('./account')
 const {NgbsEntitlements, NiCEntitlements, CaseEntitlements} = require('./entitlements')
+const RuleEngine = require('./rules')
 
 const allAccounts = []
+const ruleEngine = new RuleEngine()
 
 //////////////////////
 // prepareBatchFile
@@ -63,7 +65,7 @@ exports.prepareBatchFile = (batchName) => {
                             console.table(cases)
                         
                             const currAccount = new Account(account, ents, nics, cases, batchName)
-                            currAccount.validateAndExport()                       
+                            currAccount.validateAndExport(ruleEngine)                       
                             allAccounts.push(currAccount)
                         })
                     })
