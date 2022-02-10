@@ -1,5 +1,6 @@
 const {NgbsEntitlements, NiCEntitlements, CaseEntitlements} = require('./entitlements')
 const {write2excel} = require('./write2file')
+const {Problems} = require('./Problems')
 
 class Account {
     constructor (account, ents, nics, cases, batchName) {
@@ -11,28 +12,23 @@ class Account {
 
         this.batchName = batchName
         this.info.VALID = true
-        this.problems = []
+        this.logger = new Problems(this.info.ENTERPRISE_ACCOUNT_ID)
+        this.facts = {}
     }
+    get CURRENCY() {
+        return this.info.CURRENCY
+    }
+    get ents() {return this.ngbsEnts.wrkColl}
+    get nics() {return this.nicEntsMRS.wrkColl}
+    get cases() {return this.nicEntsC2C.wrkColl}
 
     get errorsAndWarnings() {
-        const ew = this.problems.filter(p => p.severity === 'ERROR' || p.severity === 'WARNING')
-        ew.forEach((pe, i, arr) => arr[i].account = this.info.ENTERPRISE_ACCOUNT_ID)
-        return ew
+        return this.logger.errsAndWars()
     }
 
     validateAndExport(ruleEngine) {
-        this.#applyRules(ruleEngine)
+        this.info.VALID = ruleEngine.run(this)
         this.#finalize()
-    }
-
-    #applyRules(ruleEngine) {    
-        this.info.VALID = ruleEngine.run(
-            this.info, 
-            this.ngbsEnts.wrkColl,
-            this.nicEntsMRS.wrkColl, 
-            this.nicEntsC2C.wrkColl,
-            this.problems 
-        )                    
     }
 
     #finalize() {
@@ -41,7 +37,7 @@ class Account {
                 {tab: "Account", data: [this.info]}, 
                 {tab: "RC Entitlements", data: this.ngbsEnts.wrkColl, columns: ['Category', 'ITEM_NAME', 'QNTY_THRESHOLD', 'PRICE', 'DISCOUNT', 'CURRENCY']},
                 {tab: "NiC Entitlements", data: this.nicEntsC2C.wrkColl},
-                {tab: "Changelog", data: this.problems},
+                {tab: "Changelog", data: this.logger.log},
                 {tab: "Raw DWH", data: this.ngbsEnts.originalColl},
                 {tab: "Raw Monthly", data: this.nicEntsMRS.originalColl},
                 {tab: "Raw Cases", data: this.nicEntsC2C.originalColl},
@@ -54,6 +50,16 @@ class Account {
         this.ngbsEnts = null
         this.nicEntsMRS = null
     }
+    
+    logInfo(ruleName, description) {
+        this.logger.logInfo(ruleName, description)
+    }
+    logWarning(ruleName, description) {
+        this.logger.logWarning(ruleName, description)
+    }
+    logError(ruleName, description) {
+        this.logger.logError(ruleName, description)
+    }
 }
 
-module.exports = {Account: Account}
+module.exports = {Account}

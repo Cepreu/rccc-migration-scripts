@@ -1,9 +1,9 @@
 const sqlite3 = require('sqlite3').verbose()
 const {DATABASE} = require('../configuration')
 const {write2excel} = require('./write2file')
-const {Account} = require('./account')
+const {Account} = require('./Account')
 const {NgbsEntitlements, NiCEntitlements, CaseEntitlements} = require('./entitlements')
-const RuleEngine = require('./rules')
+const RuleEngine = require('./RuleEngine')
 
 const allAccounts = []
 const ruleEngine = new RuleEngine()

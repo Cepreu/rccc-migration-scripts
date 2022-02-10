@@ -35,31 +35,29 @@ class Rule {
         '1028-171-000'        // SIP Trunking Service - CXone SIP Connectivity over Internet
     ]
     
-    constructor({ name='', description=''} = {}) {
-        this.name = name
+    constructor({description=''} = {}) {
         this.description = description
     }
+    get name() {return this.constructor.name}
 } 
 
 /////////////
 class RCCheckSeats extends Rule {
-    constructor(facts) {
+    constructor() {
         super({
-            name:  "RCCheckSeats",
             description: "Checks seats"
         })
-        this.facts = facts
     }
-    action({ents, problems}) {
-        this.facts.seat = ents.find(row => /^307-/.test(row.EXT_PRODUCT_ID) && row.ITEM_NAME==='Seat Overage')
-        if (this.facts.seat === undefined) {
+    action(acct) {
+        acct.facts.seat = acct.ents.find(row => /^307-/.test(row.EXT_PRODUCT_ID) && row.ITEM_NAME==='Seat Overage')
+        if (acct.facts.seat === undefined) {
             const theIssue = "Seat license was not found or doesn't match MRC"
-            problems.push( {rule: this.name, severity: RuleEngine.ERROR, issue: theIssue })
+            acct.logError( this.name, theIssue )
             return false
         }
-        if (!Rule.portMap.hasOwnProperty(this.facts.seat.Category)) {
-            const theIssue = `Unknown port2seat mapping: ${this.facts.seat.Category}`
-            problems.push( {rule: this.name, severity: RuleEngine.ERROR, issue: theIssue})
+        if (!Rule.portMap.hasOwnProperty(acct.facts.seat.Category)) {
+            const theIssue = `Unknown port2seat mapping: ${acct.facts.seat.Category}`
+            acct.logError( this.name, theIssue)
             return false
         }
         return true
@@ -68,45 +66,43 @@ class RCCheckSeats extends Rule {
 
 /////////////
 class RCFixPorts extends Rule {
-    constructor(facts) {
+    constructor() {
         super({
-            name: "RCFixPorts", 
             description: "Check/Fix Ports"
         })
-        this.facts = facts
     }
-    action({ents, nics, problems}) {   
-        const nicPort = nics.find(nic => /^308-/.test(nic.SKU))  //Sub-rule #1
+    action(acct) {
+        const nicPort = acct.nics.find(nic => /^308-/.test(nic.SKU))  //Sub-rule #1
         if (nicPort !== undefined) {
-            const entPorts = ents.filter(e => e.EXT_PRODUCT_ID === nicPort.SKU)
+            const entPorts = acct.ents.filter(e => e.EXT_PRODUCT_ID === nicPort.SKU)
             if (entPorts.length === 0) {
                 const theIssue = "RC PortOverage license was not found or doesn't match MRC"
-                problems.push( {rule: this.name, severity: RuleEngine.ERROR, issue: theIssue} )
+                acct.logError( this.name, theIssue)
                 return false
             } else {
-                this.facts.entPortLic = entPorts[0]
+                acct.facts.entPortLic = entPorts[0]
                 if (entPorts.length > 1) {
-                    const p = entPorts.find(e => -1 < Rule.portMap[this.facts.seat.Category].findIndex(p => p === e.Category)) // Expected port by seat type
-                    if (p!==undefined) this.facts.entPortLic = p; 
+                    const p = entPorts.find(e => -1 < Rule.portMap[acct.facts.seat.Category].findIndex(p => p === e.Category)) // Expected port by seat type
+                    if (p!==undefined) acct.facts.entPortLic = p; 
                 }
             }
         } else { //Sub-rule #2
-            // const casePort = cases.find(c => /^308-/.tect(c.skuid))
-            const entPorts = ents.filter(row => /^308-/.test(row.EXT_PRODUCT_ID))
+            // const casePort = acct.cases.find(c => /^308-/.tect(c.skuid))
+            const entPorts = acct.ents.filter(row => /^308-/.test(row.EXT_PRODUCT_ID))
             if (entPorts.length === 0) {
-                problems.push( {rule: this.name, severity: RuleEngine.ERROR, issue: "RC PortOverage license was not found"} )
+                acct.logError( this.name, "RC PortOverage license was not found")
                 return false
             }
-            this.facts.entPortLic = entPorts[0]
+            acct.facts.entPortLic = entPorts[0]
             if (entPorts.length > 1) {
-                const p = entPorts.find(e => -1 < Rule.portMap[this.facts.seat.Category].findIndex(p => p === e.Category)) // Expected port by seat type
-                if (p!==undefined) this.facts.entPortLic = p; 
+                const p = entPorts.find(e => -1 < Rule.portMap[acct.facts.seat.Category].findIndex(p => p === e.Category)) // Expected port by seat type
+                if (p!==undefined) acct.facts.entPortLic = p; 
             }
         }
 
-        for( let i = 0; i < ents.length; i++) { // Cleanup of extra ports
-            if (/^308-/.test(ents[i].EXT_PRODUCT_ID) && ents[i].Category !== this.facts.entPortLic.Category) {
-                ents.splice(i--, 1)
+        for( let i = 0; i < acct.ents.length; i++) { // Cleanup of extra ports
+            if (/^308-/.test(acct.ents[i].EXT_PRODUCT_ID) && acct.ents[i].Category !== acct.facts.entPortLic.Category) {
+                acct.ents.splice(i--, 1)
             }
         }
         return true
@@ -117,21 +113,20 @@ class RCFixPorts extends Rule {
 class RCExtraOverages extends Rule {
     constructor() {
         super({
-            name:  "RCExtraOverages", 
             description: "Remove overage licenses without direct order"
         })
     }
-    action({ents, nics, cases, problems}) {
-        for( let i = 0; i < ents.length; i++) {
+    action(acct) {
+        for( let i = 0; i < acct.ents.length; i++) {
             if (
-                ents[i].ProductFamily === OVERAGE &&
-                ents[i].Category !== 'CCL_LASRO_620' &&
-                -1 === cases.findIndex(c => c.skuid === ents[i].EXT_PRODUCT_ID) && 
-                -1 === nics.findIndex( n => n.SKU === ents[i].EXT_PRODUCT_ID)
+                acct.ents[i].ProductFamily === OVERAGE &&
+                acct.ents[i].Category !== 'CCL_LASRO_620' &&
+                -1 === acct.cases.findIndex(c => c.skuid === acct.ents[i].EXT_PRODUCT_ID) && 
+                -1 === acct.nics.findIndex( n => n.SKU === acct.ents[i].EXT_PRODUCT_ID)
             ) {
-                const theIssue = `Removed: ${ents[i].EXT_PRODUCT_ID} ${ents[i].ITEM_NAME}`
-                problems.push( {rule: this.name, severity: RuleEngine.INFO,  issue: theIssue} )
-                ents.splice(i--, 1)
+                const theIssue = `Removed: ${acct.ents[i].EXT_PRODUCT_ID} ${acct.ents[i].ITEM_NAME}`
+                acct.logInfo(this.name, theIssue)
+                acct.ents.splice(i--, 1)
             }
         }
         return true
@@ -142,17 +137,16 @@ class RCExtraOverages extends Rule {
 class RCNegDiscounts extends Rule {
     constructor() {
         super({
-            name:  "RCNegDiscounts",
             description: "Sanity check: Reject the migration if negative discount was found"
         })
     }
-    action({ents, problems}) {
-        const neg = ents.find(e => e.DISCOUNT < 0)
+    action(acct) {
+        const neg = acct.ents.find(e => e.DISCOUNT < 0)
         if (neg === undefined) {
             return true
         }
         const theIssue = `Negative discount ${neg.DISCOUNT} for: ${neg.EXT_PRODUCT_ID} ${neg.ITEM_NAME}`
-        problems.push( {rule: this.name, severity: RuleEngine.ERROR, issue: theIssue} )
+        acct.logError( this.name, theIssue)
         return false
     }
 }
@@ -161,11 +155,10 @@ class RCNegDiscounts extends Rule {
 class RCFixPrices2 extends Rule {
     constructor() {
         super({
-            name: "RCFixPrices2",
             description: "RC: fix Usage Licenses"
         })
     }
-    action({ents, problems}) {
+    action(acct) {
         const targetCats = [
             'CCL_LAOCRECNUO_436',
             'CCL_LSM1KIABO_470',
@@ -179,11 +172,11 @@ class RCFixPrices2 extends Rule {
             'CCL_LINTADIAPIO_658',
         ]
         targetCats.forEach(e => {
-            const i = ents.findIndex(ent => e === ent.Category)
+            const i = acct.ents.findIndex(ent => e === ent.Category)
             if (i >= 0) {
-                ents[i].DISCOUNT = 0.00
-                const theIssue = `Catalog Price applied: ${ents[i].Category} (${ents[i].EXT_PRODUCT_ID}) ${ents[i].ITEM_NAME}`
-                problems.push( {rule: this.name, severity: RuleEngine.WARNING, issue: theIssue} )
+                acct.ents[i].DISCOUNT = 0.00
+                const theIssue = `Catalog Price applied: ${acct.ents[i].Category} (${acct.ents[i].EXT_PRODUCT_ID}) ${acct.ents[i].ITEM_NAME}`
+                acct.logWarning(this.name, theIssue)
             }
         })
         return true
@@ -194,21 +187,20 @@ class RCFixPrices2 extends Rule {
 class RCProfServOnDemand extends Rule {
     constructor() {
         super({
-            name:  "RCProfServOnDemand",
             description: "Delete Professional Service Licenses"
         })
     }
-    action({ents, problems}) {            
+    action(acct) {       
         const toDeleteNames = [
             '610064-000-000',
             '610064-302-000',
         ]
         toDeleteNames.forEach(tdn => {
-            const i = ents.findIndex(e => e.EXT_PRODUCT_ID === tdn)
+            const i = acct.ents.findIndex(e => e.EXT_PRODUCT_ID === tdn)
             if (i >= 0) {
-                const theIssue = `Removed: ${ents[i].EXT_PRODUCT_ID} ${ents[i].ITEM_NAME}`
-                problems.push( {rule: this.name, severity: RuleEngine.INFO, issue: theIssue})
-                ents.splice(i, 1)
+                const theIssue = `Removed: ${acct.ents[i].EXT_PRODUCT_ID} ${acct.ents[i].ITEM_NAME}`
+                acct.logInfo(this.name,  theIssue)
+                acct.ents.splice(i, 1)
             }
         })
         return true
@@ -219,22 +211,21 @@ class RCProfServOnDemand extends Rule {
 class RCOldTelco extends Rule {
     constructor() {
         super({
-            name:  "RCOldTelco",
             description: "Delete old Telecom Licenses"
         })
     }
-    action({ents, problems}) {              
+    action(acct) {         
         const toDeleteNames = [
             'International Minutes Overage',
             'IVN Minutes Overage',
             'Domestic Minutes Overage'
         ]
         toDeleteNames.forEach(tdn => {
-            const i = ents.findIndex(e => e.ITEM_NAME === tdn)
+            const i = acct.ents.findIndex(e => e.ITEM_NAME === tdn)
             if (i >= 0) {
-                const theIssue = `Removed: ${ents[i].EXT_PRODUCT_ID} ${ents[i].ITEM_NAME}`
-                problems.push( {rule: this.name, severity: RuleEngine.INFO,  issue: theIssue} )
-                ents.splice(i, 1)
+                const theIssue = `Removed: ${acct.ents[i].EXT_PRODUCT_ID} ${acct.ents[i].ITEM_NAME}`
+                acct.logInfo(this.name, theIssue)
+                acct.ents.splice(i, 1)
             }
         })
         return true
@@ -245,14 +236,13 @@ class RCOldTelco extends Rule {
 class RCNewTelco extends Rule {
     constructor() {
         super({
-            name:  "RCNewTelco",
             description: "Add Free Domestic Telephony Licenses"
         })
     }
-    action({acct, ents, problems}) {
+    action(acct) {
         Rule.RCOTelecomLicenses.forEach(tl => {
-            if (ents.find(e => e.Category === tl.Category) === undefined) {
-                ents.push({
+            if (acct.ents.find(e => e.Category === tl.Category) === undefined) {
+                acct.ents.push({
                     EXT_PRODUCT_ID: null,
                     Category: tl.Category,
                     ITEM_NAME: tl.ITEM_NAME,
@@ -265,7 +255,7 @@ class RCNewTelco extends Rule {
                     batchID: ""
                 })
                 const theIssue = `Added: ${tl.Category} ${tl.ITEM_NAME}`
-                problems.push( {rule: this.name, severity: RuleEngine.INFO, issue: theIssue} )
+                acct.logInfo(this.name,  theIssue)
             }
         })
         return true
@@ -276,13 +266,12 @@ class RCNewTelco extends Rule {
 class RCASROverage extends Rule {
     constructor() {
         super({
-            name:  "RCASROverage",
             description: "Add ASR Overage License - if it was originally omitted"
         })
     }
-    action({acct, ents, problems}) {
-        if (ents.find(e => e.Category === Rule.ASR_OVERAGE.Category) === undefined) {
-            ents.push({
+    action(acct) {
+        if (acct.ents.find(e => e.Category === Rule.ASR_OVERAGE.Category) === undefined) {
+            acct.ents.push({
                 EXT_PRODUCT_ID: null,
                 Category: Rule.ASR_OVERAGE.Category,
                 ITEM_NAME: Rule.ASR_OVERAGE.ITEM_NAME,
@@ -295,7 +284,7 @@ class RCASROverage extends Rule {
                 batchID: ""
             })
             const theIssue = `Added: ${Rule.ASR_OVERAGE.Category} ${Rule.ASR_OVERAGE.ITEM_NAME}`
-            problems.push( {rule: this.name, severity: RuleEngine.INFO, issue: theIssue} )
+            acct.logInfo(this.name,  theIssue)
         }
         return true
     }
@@ -305,28 +294,27 @@ class RCASROverage extends Rule {
 class RC25kBundles extends Rule {
     constructor() {
         super({
-            name:  "RC25kBundles",
             description: "Convert different-size toll-free bundles to 25K"
         })
     }
-    action ({ents, problems}) {
-        for( let i = 0; i < ents.length; i++) {
-            const bndl = ents[i].ITEM_NAME.match(/Contact Center: (?<Mega>\d+M )?(?<Kilo>\d+K )?Domestic Minutes Bundle/)
+    action(acct) {
+        for( let i = 0; i < acct.ents.length; i++) {
+            const bndl = acct.ents[i].ITEM_NAME.match(/Contact Center: (?<Mega>\d+M )?(?<Kilo>\d+K )?Domestic Minutes Bundle/)
             if (bndl) {
-                problems.push( {rule: this.name, severity: RuleEngine.INFO, issue: `Replaced: "${ents[i].ITEM_NAME}" with 25K bundles`} )
+                acct.logInfo(this.name, `Replaced: "${acct.ents[i].ITEM_NAME}" with 25K bundles`)
             
                 const {Mega, Kilo} = bndl.groups
                 const qtty = (
                     (Mega? 40 * Mega.slice(0, -2): 0) +
                     (Kilo? 0.04 * Kilo.slice(0, -2): 0) 
-                ) * ents[i].QNTY_THRESHOLD
+                ) * acct.ents[i].QNTY_THRESHOLD
 
-                ents[i].Category = Rule.BUNDLE25K.Category
-                ents[i].ITEM_NAME = Rule.BUNDLE25K.ITEM_NAME
-                ents[i].QNTY_THRESHOLD = qtty
-                ents[i].PRICE = ents[i].CURRENCY==='USD'? Rule.BUNDLE25K.USD: Rule.BUNDLE25K.CAD
-                ents[i].DISCOUNT = ents[i].PRICE - (ents[i].OldPrice) / qtty
-                ents[i].ProductFamily = OVERAGE
+                acct.ents[i].Category = Rule.BUNDLE25K.Category
+                acct.ents[i].ITEM_NAME = Rule.BUNDLE25K.ITEM_NAME
+                acct.ents[i].QNTY_THRESHOLD = qtty
+                acct.ents[i].PRICE = acct.ents[i].CURRENCY==='USD'? Rule.BUNDLE25K.USD: Rule.BUNDLE25K.CAD
+                acct.ents[i].DISCOUNT = acct.ents[i].PRICE - (acct.ents[i].OldPrice) / qtty
+                acct.ents[i].ProductFamily = OVERAGE
 
                 break
             }
@@ -339,15 +327,14 @@ class RC25kBundles extends Rule {
 class RCFixSocMedia extends Rule {
     constructor() {
         super({
-            name:  "RCFixSocMedia",
             description: "Fix Social Media Overages"
         })
     }
-    action ({ents, problems}) {
-        for( let i = 0; i < ents.length; i++) {
-            if (/^1502-/.test(ents[i].EXT_PRODUCT_ID) && ents[i].ProductFamily === OVERAGE) {
-                problems.push( {rule: this.name, severity: RuleEngine.INFO, issue: `Removed: ${ents[i].EXT_PRODUCT_ID} ${ents[i].ITEM_NAME}`} )
-                ents.splice(i--, 1)
+    action(acct) {
+        for( let i = 0; i < acct.ents.length; i++) {
+            if (/^1502-/.test(acct.ents[i].EXT_PRODUCT_ID) && acct.ents[i].ProductFamily === OVERAGE) {
+                acct.logInfo(this.name, `Removed: ${acct.ents[i].EXT_PRODUCT_ID} ${acct.ents[i].ITEM_NAME}`)
+                acct.ents.splice(i--, 1)
             }
         }
         return true
@@ -358,16 +345,15 @@ class RCFixSocMedia extends Rule {
 class RCFixNames extends Rule {
     constructor() {
         super({
-            name:  "RCFixNames",
             description: "RC: fix Names"
         })
     }
-    action ({ents, problems}) {
+    action(acct) {
         const targetSkus = ['4100-701-000', '1503-693-000', '1503-694-000', '4109-673-000', '500-617-000', '308-8-167', '3465-1227-000']
-        ents.forEach(ent => {
+        acct.ents.forEach(ent => {
             if (targetSkus.find(e => e === ent.EXT_PRODUCT_ID)) {
                 const theIssue = `. : ${ent.EXT_PRODUCT_ID} ${ent.ITEM_NAME}`
-                problems.push( {rule: this.name, severity: RuleEngine.WARNING, issue: theIssue} )
+                acct.logWarning(this.name, theIssue)
             }
         })
         return true
@@ -378,17 +364,16 @@ class RCFixNames extends Rule {
 class RCFixPrices extends Rule {
     constructor() {
         super({
-            name:  "RCFixPrices",
             description: "RC: fix Usage Licenses",
         })
     }
-    action ({ents, problems}) {
+    action(acct) {
         const targetSkus = ['4109-673-000', '3399-769-000']
-        ents.forEach(ent => {
+        acct.ents.forEach(ent => {
             if (targetSkus.find(e => e === ent.EXT_PRODUCT_ID) && ent.ProductFamily === OVERAGE) {
                 ent.DISCOUNT = 0.00
                 const theIssue = `Catalog Price applied: ${ent.EXT_PRODUCT_ID} ${ent.ITEM_NAME}`
-                problems.push( {rule: this.name, severity: RuleEngine.WARNING, issue: theIssue} )
+                acct.logWarning(this.name, theIssue)
             }
         })
         return true
@@ -399,21 +384,22 @@ class RCFixPrices extends Rule {
 class NiC_MRCvsDWH extends Rule {
     constructor() {
         super({
-            name:  "NiC_MRCvsDWH",
-            description: "Check if there are licenses in Monthly which are absent in RC entitlements."
+            description: "Check if there are licenses in Monthly which are absent in RC entitlemacct.ents."
         })
     }
-    action ({ents, nics, problems}) {
+    action(acct) {
         let rule_res = true 
-        nics.forEach(nl => {
-            const entLic = ents.find(el => nl.SKU === el.EXT_PRODUCT_ID)
+        acct.nics.forEach(nl => {
+            const entLic = acct.ents.find(el => nl.SKU === el.EXT_PRODUCT_ID)
             if (entLic === undefined) {
                 if (nl.Amount === 0.00 && Rule.Exceptions.find(ex => nl.SKU === ex) !== undefined) {
-                    const theIssue = `${nl.SKU}  was found in NiC MRS file but not in RC entitlements. Ignored as a known exception`
-                    problems.push( {rule: this.name, severity: RuleEngine.WARNING, issue: theIssue} )
+                    const theIssue = `${nl.SKU}  was found in NiC MRS file but not in RC entitlemacct.ents. Ignored as a known exception`
+                    acct.logWarning(this.name, theIssue)
                 } else {
-                    const theIssue = `${nl.SKU} ($${nl.Amount}) was found in NiC MRS file but not in RC entitlements.`
-                    problems.push( {rule: this.name, severity: RuleEngine.ERROR, issue: theIssue} )
+                    acct.logError(
+                        this.name, 
+                        `${nl.SKU} ($${nl.Amount}) was found in NiC MRS file but not in RC entitlemacct.ents.`
+                    )
                     rule_res = false
                 } 
             }
@@ -426,40 +412,39 @@ class NiC_MRCvsDWH extends Rule {
 class NiC_MRCvsC2C extends Rule {
     constructor() {
         super({
-            name:  "NiC_MRCvsC2C",
-            description: "Check if there are licenses in Monthly which are absent in Cases - and add them",
+            description: "Check if there are licenses in Monthly which are absent in acct.cases - and add them",
         })
     }
-    action ({ents, nics, cases, problems}) {
+    action(acct) {
         let rule_res = true 
-        nics.forEach(nl => {
-            const caseLic = cases.find(cl => nl.SKU === cl.skuid)
+        acct.nics.forEach(nl => {
+            const caseLic = acct.cases.find(cl => nl.SKU === cl.skuid)
             if (caseLic === undefined && Rule.Exceptions.find(ex => nl.SKU === ex) === undefined) {
-                const entLic = ents.find(el => nl.SKU === el.EXT_PRODUCT_ID)
+                const entLic = acct.ents.find(el => nl.SKU === el.EXT_PRODUCT_ID)
                 if (entLic === undefined) {
                     const theIssue = `${nl.SKU} was not found in case2case but is presented in Monthly file. CANNOT BE RESTORED!`
-                    problems.push( {rule: this.name, severity: RuleEngine.ERROR, issue: theIssue} )
+                    acct.logError( this.name, theIssue)
                     rule_res = false
                     return
                 }
                 if (nl.Quantity > 0) {
-                    cases.push({
+                    acct.cases.push({
                             skuid: nl.SKU, 
                             sku: nl.Product,
                             qtty: entLic.QNTY_THRESHOLD,
                             price: nl.Amount / nl.Quantity
                         })
                         const theIssue = `${nl.SKU} was not found in case2case but is presented in Monthly file`
-                        problems.push( {rule: this.name, severity: RuleEngine.WARNING, issue:theIssue} )
+                        acct.logWarning(this.name, theIssue)
                 } else {
-                    cases.push({
+                    acct.cases.push({
                         skuid: nl.SKU, 
                         sku: nl.Product,
                         qtty: entLic.QNTY_THRESHOLD,
                         price: entLic.NiCPrice
                     })
                     const theIssue = `${nl.SKU} was not found in case2case but is presented in MRC. Price was added from the entitlement`
-                    problems.push( {rule: this.name, severity: RuleEngine.WARNING, issue: theIssue} )
+                    acct.logWarning(this.name, theIssue)
                 }
             }
         })
@@ -472,55 +457,50 @@ class NiC_MRCvsC2C extends Rule {
 class RCCMapping extends Rule {
     constructor() {
         super({
-            name:  "RCCMapping",
-            description: "Checks if there are no problems with mapping ITBS licenses to NGBS catalog"
+            description: "Checks if there are no acct.problems with mapping ITBS licenses to NGBS catalog"
         })
     }
-    action ({ents, problems}) {
-        const badEnts = ents.filter(row => row.Category === null)
-        badEnts.forEach(ent => {
-            const theIssue = `${ent.EXT_PRODUCT_ID !== null? ent.EXT_PRODUCT_ID: ''} "${ent.ITEM_NAME}" - is not mapped to NGBS catalog`
-            problems.push( {rule: this.name, severity: RuleEngine.ERROR, issue: theIssue} )
+    action(acct) {
+        const bad = acct.ents.filter(row => row.Category === null)
+        bad.forEach(ent => {
+            acct.logError( 
+                this.name,
+                `${ent.EXT_PRODUCT_ID !== null? ent.EXT_PRODUCT_ID: ''} "${ent.ITEM_NAME}" - is not mapped to NGBS catalog`
+            )
         })
-        return !badEnts.length
+        return !bad.length
     }
 }
 
 //////////////////
 class NiCPorts extends Rule {
-    constructor(facts) {
+    constructor() {
         super({
-            name:  "NiCPorts",
             description: "Check/Fix NiC pors",
         })
-        this.facts = facts
     }
-    action ({cases, problems}) {
-        const casePortLic = cases.find(c => /^308-/.test(c.skuid))
+    action(acct) {
+        const casePortLic = acct.cases.find(c => /^308-/.test(c.skuid))
         if (casePortLic === undefined) {
-                problems.push( {rule: this.name, severity: RuleEngine.ERROR, issue: "NiC PortOverage license was not found"} )
-                return false
-            }
-            if (casePortLic.skuid !== this.facts.entPortLic.EXT_PRODUCT_ID) {
-                const theIssue = `inContact port ${casePortLic.skuid} replaced by ${this.facts.entPortLic.EXT_PRODUCT_ID} to match Entitlements`
-                problems.push( {rule: this.name, severity: RuleEngine.WARNING, issue: theIssue} )
-                casePortLic.skuid = this.facts.entPortLic.EXT_PRODUCT_ID
-            }
-            return true
+            acct.logError( this.name, "NiC PortOverage license was not found")
+            return false
         }
+        if (casePortLic.skuid !== acct.facts.entPortLic.EXT_PRODUCT_ID) {
+            const theIssue = `inContact port ${casePortLic.skuid} replaced by ${acct.facts.entPortLic.EXT_PRODUCT_ID} to match Entitlemacct.ents`
+            acct.logWarning(this.name, theIssue)
+            casePortLic.skuid = acct.facts.entPortLic.EXT_PRODUCT_ID
+        }
+        return true
     }
+}
 
 //////////////////////////////////
 class RuleEngine {
-    static ERROR = 'ERROR'
-    static WARNING = 'WARNING'
-    static INFO = 'INFO'
-    
+  
     constructor() {
-        this.facts = {}
         this.rules = [
-            new RCCheckSeats(this.facts),
-            new RCFixPorts(this.facts),
+            new RCCheckSeats(),
+            new RCFixPorts(),
             new RCExtraOverages(),
             new RCNegDiscounts(),
             new RCFixPrices2(),
@@ -535,15 +515,16 @@ class RuleEngine {
             new NiC_MRCvsDWH(),
             new NiC_MRCvsC2C(),
             new RCCMapping(),
-            new NiCPorts(this.facts)
+            new NiCPorts()
         ]
     }
-    run( acct, ents, nics, cases, problems ) {
+    run(acct) {
+        acct.facts = {}
         let skipRules = false
         this.rules.forEach( rule => {
             if (!skipRules) {
                 console.log(rule.description)
-                const res = rule.action({acct, ents, nics, cases, problems})
+                const res = rule.action(acct)
                 if (!res) {
                     skipRules = true
                 }
