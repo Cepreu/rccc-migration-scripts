@@ -408,6 +408,42 @@ class NiC_MRCvsDWH extends Rule {
     }
 }
 
+
+//////////////////
+class NiC_NotFound extends Rule {
+    constructor() {
+        super({
+            description: "Check if the account is represented in Monthly",
+        })
+    }
+    action(acct) {
+        if (acct.nics.length === 0) {
+            acct.logError(this.name, `No records were found for the account in Monthly file`)
+            return false
+        }
+        return true
+    }
+}
+
+//////////////////
+class NiC_C2CvsMRC extends Rule {
+    constructor() {
+        super({
+            description: "Check if there are licenses in Monthly which are absent in Cases",
+        })
+    }
+    action(acct) {
+        let rule_res = true
+        acct.cases.forEach(c2c => {
+            const nicLic = acct.nics.find(nl => nl.SKU === c2c.skuid)
+            if (nicLic === undefined) {
+                acct.logWarning(this.name, `${c2c.skuid} was not found in Monthly file but is presented in case2case`)
+            }
+        })
+        return rule_res
+    }
+}
+
 //////////////////
 class NiC_MRCvsC2C extends Rule {
     constructor() {
@@ -422,8 +458,7 @@ class NiC_MRCvsC2C extends Rule {
             if (caseLic === undefined && Rule.Exceptions.find(ex => nl.SKU === ex) === undefined) {
                 const entLic = acct.ents.find(el => nl.SKU === el.EXT_PRODUCT_ID)
                 if (entLic === undefined) {
-                    const theIssue = `${nl.SKU} was not found in case2case but is presented in Monthly file. CANNOT BE RESTORED!`
-                    acct.logError( this.name, theIssue)
+                    acct.logError( this.name, `${nl.SKU} was not found in case2case but is presented in Monthly file. CANNOT BE RESTORED!`)
                     rule_res = false
                     return
                 }
@@ -512,6 +547,8 @@ class RuleEngine {
             new RCFixSocMedia(),
             new RCFixNames(),
             new RCFixPrices(),
+            new NiC_NotFound(),
+            new NiC_C2CvsMRC,
             new NiC_MRCvsDWH(),
             new NiC_MRCvsC2C(),
             new RCCMapping(),

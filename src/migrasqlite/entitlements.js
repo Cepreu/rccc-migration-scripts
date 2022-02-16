@@ -1,12 +1,100 @@
+class Entitlement {
+    extProductID
+    itemName
+    qttyThreshold = 0
+    extPrice = 0.00
+    constructor(extProductID, itemName, qttyThreshold, extPrice) {
+        this.extProductID = extProductID
+        this.itemName = itemName
+        this.qttyThreshold = qttyThreshold
+        this.extPrice = extPrice
+    }
+}
+
+class EntITBS extends Entitlement {
+    category
+    oldPrice
+    price
+    discount
+    currency
+    productFamily
+    batchID
+    constructor(pars) {
+        super(pars.extProductID, pars.itemName, pars.qttyThreshold, pars.extPrice)
+        this.category = pars.category
+        this.oldPrice = pars.oldPrice
+        this.price = pars.price
+        this.discount = pars.discount
+        this.currency = pars.currency
+        this.productFamily = pars.productFamily
+        this.batchID =  pars.batchID
+    }
+    static newFromDBRecord(dbrec) {
+        return new EntITBS({
+            extProductID: dbrec.EXT_PRODUCT_ID,
+            itemName: dbrec.ITEM_NAME,
+            qttyThreshold: dbrec.QNTY_THRESHOLD,
+            extPrice: dbrec.NiCPrice,
+            category: dbrec.Category,
+            oldPrice: dbrec.OldPrice,
+            price: dbrec.PRICE,
+            discount: dbrec.DISCOUNT,
+            currency: dbrec.CURRENCY,
+            productFamily: dbrec.ProductFamily,
+            batchID: dbrec.batchID
+        })
+    }
+}
+
+class EntMRC extends Entitlement {
+    amount = 0
+    constructor(pars) {
+        super(pars.extProductID, pars.itemName, pars.qttyThreshold, pars.extPrice)
+        this.amount = pars.amount
+    }
+    static newFromDBRecord(dbrec) {
+        return new EntMRC({
+            extProductID: dbrec.SKU,
+            itemName: dbrec.Product,
+            qttyThreshold: dbrec.Quantity,
+            extPrice: dbrec.Price,
+            amount: dbrec.amount
+        })
+    }
+}
+
+class EntC2C extends Entitlement {
+    subject = ''
+    provisionDate
+    operation
+    constructor(pars) {
+        super(pars.extProductID, pars.itemName, pars.qttyThreshold, pars.extPrice)
+        this.subject = pars.subject
+        this.provisionDate = pars.provisionDate
+        this.operation = pars.operation
+    }    
+    static newFromDBRecord(dbrec) {
+        return new EntC2C({
+            extProductID: dbrec.skuid,
+            itemName: dbrec.sku,
+            qttyThreshold: dbrec.qtty,
+            extPrice: dbrec.price,
+            subject: dbrec.Subject,
+            provisionDate: dbrec.ProvisionDate,
+            operation:dbrec.operation
+        })
+    }
+}
+
 /////////////
-class Entitlements {
+class EntCollection {
     constructor(coll) {
         this.originalColl = coll
     }
 }
 
 ////////////////////
-class NgbsEntitlements extends Entitlements {
+class NgbsEntitlements extends EntCollection {
     static SQL = `
     SELECT 
         EXT_PRODUCT_ID,
@@ -33,7 +121,7 @@ class NgbsEntitlements extends Entitlements {
 }
 
 //////////////////
-class NiCEntitlements extends Entitlements {
+class NiCEntitlements extends EntCollection {
     static SQL = `
     SELECT 
         CatalogID || "-" || IFNULL(FeatureID,"000") || "-" || IFNULL(FeatureDetailID,"000") AS SKU,
@@ -55,7 +143,7 @@ class NiCEntitlements extends Entitlements {
 }
 
 ////////////////////
-class CaseEntitlements extends Entitlements {
+class CaseEntitlements extends EntCollection {
     static SQL = `
     SELECT 
         SUBSTR(nic_cases.Subject, 1, 16) AS subject, 
@@ -95,7 +183,7 @@ class CaseEntitlements extends Entitlements {
 
 
 module.exports = {
-    NgbsEntitlements: NgbsEntitlements,
-    NiCEntitlements: NiCEntitlements,
-    CaseEntitlements: CaseEntitlements
+    NgbsEntitlements,
+    NiCEntitlements,
+    CaseEntitlements
 }

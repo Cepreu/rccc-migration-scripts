@@ -54,7 +54,7 @@ exports.write2excel = (tabsArr, pathArr, fileName) => {
 const generateExcelSheet = (array, columns, worksheet, style, styleForData) => {
     let excl_col = 1
     columns.forEach(element => {
-        const lengthArr = array.map(row => row[element]? row[element].toString().length: 0)
+        const lengthArr = array.map(row => row[element]!=null? (row[element]+'').length: 0)
         const maxWidth = Math.max(...lengthArr)
         worksheet.column(excl_col).setWidth(maxWidth + 2)
 
@@ -70,11 +70,11 @@ const generateExcelSheet = (array, columns, worksheet, style, styleForData) => {
             case 'string':
                 worksheet.cell(excl_row, excl_col++).string(element).style(styleForData)
                 break
-                case 'number':     
+            case 'number':     
                 worksheet.cell(excl_row, excl_col++).number(element).style(styleForData)
                 break
             case 'boolean':     
-                worksheet.cell(excl_row, excl_col++).string(element?'true':'false').style(styleForData)
+                worksheet.cell(excl_row, excl_col++).string(element.toString()).style(styleForData)
                 break
             default:
                 worksheet.cell(excl_row, excl_col++).string("").style(styleForData)

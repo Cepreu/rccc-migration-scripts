@@ -37,7 +37,7 @@ exports.createBatch = (batchName) => {
             ?, 
             sf.EnterpriseAccountID, 
             sf.BillingID, 
-            c2c.inContactBUID,
+            sf.inContactBUID,
             sf.AccountName,
             sf.brand,
             sf.PriceperseatCurrency
@@ -51,7 +51,7 @@ exports.createBatch = (batchName) => {
             AND sf.OutboundTransport LIKE 'RC Ad-Hoc%'
             AND UID not in (select  a.accountID from nic_case_items a where skuid LIKE '1265_-%') 
         GROUP BY UID 
-        HAVING count(*) = 1 AND Subject LIKE 'NBU%' AND "No.ofInContactSeats" < 26
+        HAVING count(*) = 1 AND Subject LIKE 'NBU%' AND sf."No.ofInContactSeats" < 26
         `.replace(/\s+/g," ")
 
     const sql2 = `

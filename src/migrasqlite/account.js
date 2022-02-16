@@ -1,6 +1,6 @@
 const {NgbsEntitlements, NiCEntitlements, CaseEntitlements} = require('./entitlements')
 const {write2excel} = require('./write2file')
-const {Problems} = require('./Problems')
+const {Logger} = require('./Logger')
 
 class Account {
     constructor (account, ents, nics, cases, batchName) {
@@ -12,7 +12,7 @@ class Account {
 
         this.batchName = batchName
         this.info.VALID = true
-        this.logger = new Problems(this.info.ENTERPRISE_ACCOUNT_ID)
+        this.logger = new Logger(this.info.ENTERPRISE_ACCOUNT_ID)
         this.facts = {}
     }
     get CURRENCY() {
