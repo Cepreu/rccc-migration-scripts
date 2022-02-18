@@ -49,12 +49,38 @@ class RCCheckSeats extends Rule {
         })
     }
     action(acct) {
-        acct.facts.seat = acct.ents.find(row => /^307-/.test(row.EXT_PRODUCT_ID) && row.ITEM_NAME==='Seat Overage')
-        if (acct.facts.seat === undefined) {
-            const theIssue = "Seat license was not found or doesn't match MRC"
-            acct.logError( this.name, theIssue )
+        const seats = acct.ents.filter(row => /^307-/.test(row.EXT_PRODUCT_ID) && row.ITEM_NAME !== 'Seat Overage')
+        if (seats.length !== 1) {
+            acct.logError( this.name, "Incorrect number of Seat licenses (was not found more tham one)" )
             return false
         }
+        acct.facts.seat = acct.ents.find(row => row.EXT_PRODUCT_ID === seats[0].EXT_PRODUCT_ID 
+            && row.ITEM_NAME === 'Seat Overage'
+            && seats[0].ITEM_NAME.startsWith(row.Parent))
+        if (acct.facts.seat === undefined) {
+            acct.logError( this.name, "Seat overage license was not found or doesn't match the seat license" )
+            return false
+        }
+
+        for( let i = 0; i < acct.ents.length; i++) { // Cleanup of extra seat overages if any
+            if (/^307-/.test(acct.ents[i].EXT_PRODUCT_ID) 
+                && acct.ents[i].Category !== seats[0].Category
+                && acct.ents[i].Category !== acct.facts.seat.Category) {
+                    acct.logInfo(this.name, `Removed: ${acct.ents[i].EXT_PRODUCT_ID} ${acct.ents[i].ITEM_NAME}`)
+                    acct.ents.splice(i--, 1)
+            }
+        }
+        return true
+    }
+}
+
+class RCPorts4Seats extends Rule {
+    constructor() {
+        super({
+            description: "Checks if ports match seats"
+        })
+    }
+    action(acct) {
         if (!Rule.portMap.hasOwnProperty(acct.facts.seat.Category)) {
             const theIssue = `Unknown port2seat mapping: ${acct.facts.seat.Category}`
             acct.logError( this.name, theIssue)
@@ -124,8 +150,7 @@ class RCExtraOverages extends Rule {
                 -1 === acct.cases.findIndex(c => c.skuid === acct.ents[i].EXT_PRODUCT_ID) && 
                 -1 === acct.nics.findIndex( n => n.SKU === acct.ents[i].EXT_PRODUCT_ID)
             ) {
-                const theIssue = `Removed: ${acct.ents[i].EXT_PRODUCT_ID} ${acct.ents[i].ITEM_NAME}`
-                acct.logInfo(this.name, theIssue)
+                acct.logInfo(this.name, `Removed: ${acct.ents[i].EXT_PRODUCT_ID} ${acct.ents[i].ITEM_NAME}`)
                 acct.ents.splice(i--, 1)
             }
         }
@@ -535,6 +560,7 @@ class RuleEngine {
     constructor() {
         this.rules = [
             new RCCheckSeats(),
+            new RCPorts4Seats(),
             new RCFixPorts(),
             new RCExtraOverages(),
             new RCNegDiscounts(),

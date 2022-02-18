@@ -18,6 +18,7 @@ class EntITBS extends Entitlement {
     discount
     currency
     productFamily
+    parent
     batchID
     constructor(pars) {
         super(pars.extProductID, pars.itemName, pars.qttyThreshold, pars.extPrice)
@@ -27,6 +28,7 @@ class EntITBS extends Entitlement {
         this.discount = pars.discount
         this.currency = pars.currency
         this.productFamily = pars.productFamily
+        this.parent = pars.Parent
         this.batchID =  pars.batchID
     }
     static newFromDBRecord(dbrec) {
@@ -41,6 +43,7 @@ class EntITBS extends Entitlement {
             discount: dbrec.DISCOUNT,
             currency: dbrec.CURRENCY,
             productFamily: dbrec.ProductFamily,
+            parent: dbrec.Parent,
             batchID: dbrec.batchID
         })
     }
@@ -107,6 +110,7 @@ class NgbsEntitlements extends EntCollection {
         CURRENCY_CODE AS CURRENCY,
         round(NiCPrice,2) NiCPrice,
         ProductFamily,
+        Parent,
         ? AS batchID
     FROM ngbs_ent
     WHERE eid=?
