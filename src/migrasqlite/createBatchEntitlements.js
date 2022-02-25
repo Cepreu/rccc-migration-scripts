@@ -1,24 +1,18 @@
-const sqlite3 = require('sqlite3').verbose()
 const {DATABASE} = require('../configuration')
+const db = require('better-sqlite3')(DATABASE, { verbose: console.log, fileMustExist: true, readonly: false})
 
 /** 
-* createBatch - Creates and populate a batch table.
-* @batchName - Name of the batch to create.
-**/
+ * createBatch - Creates and populate a batch table.
+ * @batchName - Name of the batch to create.
+ **/
 exports.createBatchEntitlements = (batchName) => {
-    let db = new sqlite3.Database(DATABASE, sqlite3.OPEN_READWRITE, (err) => {
-        if (err) {
-            return console.error(err.message)
-        }
-        console.log('Connected to DWH db.')
-    })
+    const tableName = `BATCH_${batchName}_ents`
 
-    const dropTableSql = `
-        DROP TABLE IF EXISTS ngbs_ent
-        `.replace(/\s+/g," ")
+    let info =  db.prepare(`DROP TABLE IF EXISTS ${tableName}`).run()
+    console.log(`Removed table: ${tableName}.`)
 
     const createSql = `
-    CREATE TABLE ngbs_ent AS
+    CREATE TABLE ${tableName} AS
         SELECT DISTINCT
             b.EID,
             b.UID,
@@ -61,32 +55,6 @@ exports.createBatchEntitlements = (batchName) => {
             AND STATUS_NAME='Active'
         ORDER BY b.EID, e.EXT_PRODUCT_ID 
     `.replace(/\s+/g," ")
-
-    db.serialize( () => {
-        db.run(dropTableSql, [], function(err) {
-            if (err) {
-                console.log(err.message)
-                return
-            }
-            console.log(`Removed table: ${this.drop}`)
-        })
-
-        db.run(createSql, [batchName], (err) => {
-            if (err) {
-                console.log(err.message)
-                return
-            }
-            console.log(`ngbs_ent table was created (or existed)`)
-        })
-
-        db.close( 
-            (err) => {
-                if (err) {
-                    console.log(err.message)
-                    return
-                }
-                console.log('Close the database connection.')
-            }
-        )
-    })
+    info = db.prepare(createSql).run(batchName)
+    console.log(`${tableName} table was created.`)
 }

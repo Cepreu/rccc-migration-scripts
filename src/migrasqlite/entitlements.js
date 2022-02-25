@@ -28,7 +28,7 @@ class EntITBS extends Entitlement {
         this.discount = pars.discount
         this.currency = pars.currency
         this.productFamily = pars.productFamily
-        this.parent = pars.Parent
+        this.parent = pars.parent
         this.batchID =  pars.batchID
     }
     static newFromDBRecord(dbrec) {
@@ -112,7 +112,7 @@ class NgbsEntitlements extends EntCollection {
         ProductFamily,
         Parent,
         ? AS batchID
-    FROM ngbs_ent
+    FROM ?
     WHERE eid=?
     ORDER BY AccountName, QNTY_THRESHOLD DESC, cast(EXT_PRODUCT_ID AS INTEGER), EXT_PRODUCT_ID, Category
     `.replace(/\s+/g, " ")
@@ -128,16 +128,16 @@ class NgbsEntitlements extends EntCollection {
 class NiCEntitlements extends EntCollection {
     static SQL = `
     SELECT 
-        CatalogID || "-" || IFNULL(FeatureID,"000") || "-" || IFNULL(FeatureDetailID,"000") AS SKU,
+        CatalogID || '-' || IFNULL(FeatureID,'000') || '-' || IFNULL(FeatureDetailID,'000') AS SKU,
         Product,
         Quantity,
         Amount,
         Amount/Quantity AS Price
     FROM RCMRCSummary_20211001
     WHERE Account=?
-        AND ProductType="MRC"
+        AND ProductType='MRC'
     ORDER BY cast(CatalogID as INTEGER), CatalogID
-    `.replace(/\s+/g, " ")
+    `.replace(/\s+/g, ' ')
 
     constructor(coll) {
         super(coll)

@@ -1,12 +1,8 @@
-const fs = require('fs')
-const path = require('path')
-const sqlite3 = require('sqlite3').verbose()
 const {caseItems} = require('./CaseParserDB')
 const {DATABASE} = require('../configuration')
-//const {importCaseReport} = require('./importCaseReport')
+const db = require('better-sqlite3')(DATABASE, { verbose: console.log, fileMustExist: true, readonly: false})
 
-let db = new sqlite3.Database(DATABASE);
-db.run(`
+db.prepare(`
     CREATE TABLE IF NOT EXISTS nic_case_items (
         accountID TEXT, 
         BUID TEXT, 
@@ -17,10 +13,10 @@ db.run(`
         qtty REAL, 
         price REAL
     )
-`.replace(/\s+/g, " "))
-db.close()
+    `.replace(/\s+/g, " "))
+    .run()
 
 //importCaseReport("C2C2021080120220131.csv")
 
-const outfile = '/Users/sergiy.krupnov/Work/cases.sql'
+const outfile = '~/Work/cases.sql'
 caseItems(outfile, '2022-01-31 15:16:25')

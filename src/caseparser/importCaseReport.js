@@ -1,13 +1,14 @@
-const sqlite3 = require('sqlite3').verbose()
 const csv = require('csv-parser')
 const fs = require('fs')
 const path = require('path')
 const date = require('date-and-time')
+
 const {DATABASE, C2CPATH} = require('../configuration')
+const db = require('better-sqlite3')(DATABASE, { verbose: console.log, fileMustExist: true, readonly: false})
 
 exports.importCaseReport = reportName => {
-    const db = new sqlite3.Database(DATABASE);
-    db.exec(`
+    db
+    .prepare(`
         CREATE TABLE IF NOT EXISTS nic_cases (
             CreatedDate	TEXT,
             ICCaseNumber	INTEGER,
@@ -28,8 +29,9 @@ exports.importCaseReport = reportName => {
             Brand	TEXT,
             DBInserted TEXT,
         PRIMARY KEY("ICCaseNumber")
-        )`.replace(/\s+/g, " ")
-    )
+        )`.replace(/\s+/g, " "))
+    .run()
+
     const insrow = db.prepare(`
         INSERT OR IGNORE INTO nic_cases (
             CreatedDate, 
@@ -50,9 +52,8 @@ exports.importCaseReport = reportName => {
             SalesAgreementName,
             Brand,
             DBInserted)
-        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
-        `.replace(/\s+/g, " ")
-    )
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
+        .replace(/\s+/g, " "))
 
     const now = date.format(new Date(), 'YYYY-MM-DD HH:mm:ss')
 
@@ -85,7 +86,6 @@ exports.importCaseReport = reportName => {
             })
             .on('end', () => {
                 console.log('C2C successfully processed')
-                insrow.finalize()
                 db.close()
             })
 }

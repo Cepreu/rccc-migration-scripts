@@ -4,9 +4,10 @@ const figlet = require('figlet')
 //const Configstore = require('configstore')
 const readLineSync = require('readline-sync')
 //const { build_feeds } = require('./migrafeeder')
-const { createBatch } = require('./migrasqlite/createBatch')
+//const { BatchItems } = require('./migrasqlite/BatchItems')
 const { createBatchEntitlements } = require('./migrasqlite/createBatchEntitlements')
 const { prepareBatchFile } = require('./migrasqlite/prepareBatch')
+const { BatchParametersMenu } = require('./migrasqlite/Batch')
 
 clear()
 console.log(
@@ -22,10 +23,14 @@ console.log(
     const batchName = readLineSync.question("Batch name: ")
     const userRes = readLineSync.question("Pick an option: ")
     if (userRes === '1') {
-        createBatch(batchName)
+ //       BatchItems(batchName)
     } else if (userRes === '2') {
         createBatchEntitlements(batchName)
     } else if (userRes === '3') {
         prepareBatchFile(batchName)
+    } else if (userRes === '4') {
+        console.log( BatchParametersMenu() )
+    } else if (userRes === '5') {
+        console.log( BatchParametersMenu(batchName) )
     }
     console.log("G'buy")
