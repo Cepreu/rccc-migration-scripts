@@ -68,14 +68,13 @@ class BatchDescription {
         const stmt = db.prepare(
             `INSERT OR REPLACE INTO BatchDescription 
             (name, description, accSizeMin, accSizeMax, brand, telcoProvider, seatEdition, accountList, casesMin, casesMax, casesNBU, timestamp)
-            VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?, strftime('%Y-%m-%d %H:%M:%S','now'))`)
 
         const info = stmt.run( 
             this.name, this.description, this.accSizeMin, this.accSizeMax, 
             this.brand, this.telcoProvider, this.seatEdition,
             JSON.stringify(this.accountList),
-            this.casesMin, this.casesMax, this.casesNBU.toString(),
-            strftime('%Y-%m-%d %H:%M:%S','now')  
+            this.casesMin, this.casesMax, this.casesNBU.toString()  
         )
         console.log(`Number of rows inserted: ${info.changes}`)
     }

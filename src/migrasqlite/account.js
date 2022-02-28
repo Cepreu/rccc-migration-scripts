@@ -1,5 +1,5 @@
 const {NgbsEntitlements, NiCEntitlements, CaseEntitlements} = require('./entitlements')
-const {write2excel} = require('./write2file')
+const {write2excel} = require('../utils/write2file')
 const {Logger} = require('./Logger')
 
 class Account {

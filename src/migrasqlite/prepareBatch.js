@@ -1,7 +1,7 @@
 const {DATABASE} = require('../configuration')
 const db = require('better-sqlite3')(DATABASE, { verbose: console.log, fileMustExist: true, readonly: false})
 
-const {write2excel} = require('./write2file')
+const {write2excel} = require('../utils/write2file')
 const {Account} = require('./Account')
 const {NgbsEntitlements, NiCEntitlements, CaseEntitlements} = require('./entitlements')
 const RuleEngine = require('./RuleEngine')

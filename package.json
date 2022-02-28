@@ -35,6 +35,6 @@
     "inquirer": "^8.1.2",
     "minimist": "^1.2.5",
     "readline-sync": "^1.4.10",
-    "sqlite3": "^4.2.0"
+    "strip-bom-stream": "^5.0.0"
   }
 }
