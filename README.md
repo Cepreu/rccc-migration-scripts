@@ -1,3 +1,3 @@
 # NODE
 
-A small project to manage account migration
+This is a small project to manage account migration
