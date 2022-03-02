@@ -1,8 +1,8 @@
-const {NgbsEntitlements, NiCEntitlements, CaseEntitlements} = require('./entitlements')
-const {write2excel} = require('../utils/write2file')
-const {Logger} = require('./Logger')
+import {NgbsEntitlements, NiCEntitlements, CaseEntitlements} from './entitlements.mjs'
+import {write2excel} from '../utils/write2file.mjs'
+import {Logger} from './Logger.mjs'
 
-class Account {
+export class Account {
     constructor (account, ents, nics, cases, batchName) {
         this.info = account
         this.nicEntsC2C = new CaseEntitlements(cases)
@@ -61,5 +61,3 @@ class Account {
         this.logger.logError(ruleName, description)
     }
 }
-
-module.exports = {Account}

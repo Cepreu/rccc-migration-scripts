@@ -1,13 +1,11 @@
-const chalk = require('chalk')
-const clear = require('clear')
-const figlet = require('figlet')
+import chalk from 'chalk'
+import clear from 'clear'
+import figlet from 'figlet'
 //const Configstore = require('configstore')
-const readLineSync = require('readline-sync')
-//const { build_feeds } = require('./migrafeeder')
-//const { BatchItems } = require('./migrasqlite/BatchItems')
-const { createBatchEntitlements } = require('./migrasqlite/createBatchEntitlements')
-const { prepareBatchFile } = require('./migrasqlite/prepareBatch')
-const { BatchParametersMenu } = require('./migrasqlite/Batch')
+import readLineSync from 'readline-sync'
+import { createBatchEntitlements } from './migrasqlite/createBatchEntitlements.mjs'
+import { prepareBatchFile } from './migrasqlite/prepareBatch.mjs'
+import { BatchParametersMenu } from './migrasqlite/Batch.mjs'
 
 clear()
 console.log(

@@ -1,7 +1,5 @@
-const readLineSync = require('readline-sync')
-
-const {DATABASE} = require('../configuration')
-const db = require('better-sqlite3')(DATABASE, { verbose: console.log, fileMustExist: true, readonly: false})
+import readLineSync from 'readline-sync'
+import {db} from '../utils/DBSingleton.mjs'
 
 class BatchDescription {
     static createTable() {
@@ -162,7 +160,7 @@ class BatchDescription {
 }
 
 
-function BatchParametersMenu(batchName) {
+export function BatchParametersMenu(batchName) {
     let batchDB
     if (batchName) {
         batchDB = BatchDescription.restoreFromDB(batchName)
@@ -190,5 +188,3 @@ function BatchParametersMenu(batchName) {
         true,
         casesMin, casesMax, casesNBU==='Y')
 }
-
-module.exports = {BatchDescription, BatchParametersMenu}

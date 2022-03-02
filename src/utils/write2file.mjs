@@ -1,23 +1,23 @@
-const path = require('path')
-const fs1 = require('fs-extra')
-const excel = require('excel4node')
-const {OUTPUTPATH} = require('../configuration')
+import path from 'path'
+import fs1 from 'fs-extra'
+import excel from 'excel4node'
+import configuration from '../configuration.mjs'
 
 const getDir = pathArr => {
-    const dir = path.resolve(OUTPUTPATH? OUTPUTPATH: process.cwd(), ...pathArr)
+    const dir = path.resolve(configuration.OUTPUTPATH? configuration.OUTPUTPATH: process.cwd(), ...pathArr)
     fs1.ensureDirSync(dir)
     fs1.emptyDirSync(dir)
     return dir
 }
 
-exports.write2json = (account, entitlements, nics, pathArr) => {
+export function write2json(account, entitlements, nics, pathArr) {
     const dir = getDir(pathArr)
     fs1.writeFile(path.resolve(dir, "account.json"), JSON.stringify(account, null, '\t'))
     fs1.writeFile(path.resolve(dir, "entitlements.json"), JSON.stringify(entitlements, null, '\t'))
     fs1.writeFile(path.resolve(dir, "nic_entitlements.json"), JSON.stringify(nics, null, '\t'))
 }
 
-exports.write2excel = (tabsArr, pathArr, fileName) => {
+export function write2excel(tabsArr, pathArr, fileName) {
     const dir = getDir(pathArr)
     const workbook = new excel.Workbook();
 

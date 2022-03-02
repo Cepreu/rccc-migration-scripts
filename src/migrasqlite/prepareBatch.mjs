@@ -1,10 +1,8 @@
-const {DATABASE} = require('../configuration')
-const db = require('better-sqlite3')(DATABASE, { verbose: console.log, fileMustExist: true, readonly: false})
-
-const {write2excel} = require('../utils/write2file')
-const {Account} = require('./Account')
-const {NgbsEntitlements, NiCEntitlements, CaseEntitlements} = require('./entitlements')
-const RuleEngine = require('./RuleEngine')
+import {db} from '../utils/DBSingleton.mjs'
+import {write2excel} from '../utils/write2file.mjs'
+import {Account} from './Account.mjs'
+import {NgbsEntitlements, NiCEntitlements, CaseEntitlements} from './entitlements.mjs'
+import {RuleEngine} from './RuleEngine.mjs'
 
 const allAccounts = []
 const ruleEngine = new RuleEngine()
@@ -12,7 +10,7 @@ const ruleEngine = new RuleEngine()
 //////////////////////
 // prepareBatchFile
 //////////////////////
-exports.prepareBatchFile = (batchName) => {
+export function prepareBatchFile (batchName) {
     const tableName = `BATCH_${batchName}_ents`
     const stmt = db.prepare(
         `SELECT DISTINCT 

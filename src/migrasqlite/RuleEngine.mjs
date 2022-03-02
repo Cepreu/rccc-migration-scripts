@@ -555,7 +555,7 @@ class NiCPorts extends Rule {
 }
 
 //////////////////////////////////
-class RuleEngine {
+export class RuleEngine {
   
     constructor() {
         this.rules = [
@@ -596,5 +596,3 @@ class RuleEngine {
         return !skipRules
     }
 }
-
-module.exports = RuleEngine

@@ -97,7 +97,7 @@ class EntCollection {
 }
 
 ////////////////////
-class NgbsEntitlements extends EntCollection {
+export class NgbsEntitlements extends EntCollection {
     static SQL = `
     SELECT 
         EXT_PRODUCT_ID,
@@ -125,7 +125,7 @@ class NgbsEntitlements extends EntCollection {
 }
 
 //////////////////
-class NiCEntitlements extends EntCollection {
+export class NiCEntitlements extends EntCollection {
     static SQL = `
     SELECT 
         CatalogID || '-' || IFNULL(FeatureID,'000') || '-' || IFNULL(FeatureDetailID,'000') AS SKU,
@@ -147,7 +147,7 @@ class NiCEntitlements extends EntCollection {
 }
 
 ////////////////////
-class CaseEntitlements extends EntCollection {
+export class CaseEntitlements extends EntCollection {
     static SQL = `
     SELECT 
         SUBSTR(nic_cases.Subject, 1, 16) AS subject, 
@@ -183,11 +183,4 @@ class CaseEntitlements extends EntCollection {
             return acc
         }, [])
     }
-}
-
-
-module.exports = {
-    NgbsEntitlements,
-    NiCEntitlements,
-    CaseEntitlements
 }

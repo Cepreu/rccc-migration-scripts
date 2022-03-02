@@ -1,11 +1,10 @@
-const {DATABASE} = require('../configuration')
-const db = require('better-sqlite3')(DATABASE, { verbose: console.log, fileMustExist: true, readonly: false})
+import {db} from '../utils/DBSingleton.mjs'
 
 /** 
  * createBatch - Creates and populate a batch table.
  * @batchName - Name of the batch to create.
  **/
-exports.createBatchEntitlements = (batchName) => {
+export function createBatchEntitlements( batchName ) {
     const tableName = `BATCH_${batchName}_ents`
 
     let info =  db.prepare(`DROP TABLE IF EXISTS ${tableName}`).run()

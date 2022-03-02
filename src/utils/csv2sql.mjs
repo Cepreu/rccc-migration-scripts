@@ -2,17 +2,19 @@ import csv from 'csv-parser'
 import stripBom from 'strip-bom-stream'
 import fs from 'fs'
 
-import configuration from '../configuration.js'
-import Database from 'better-sqlite3'
-const db = new Database(configuration.DATABASE, {fileMustExist: true, readonly: false, verbose: console.log})
+import {db} from './DBSingleton.mjs'
 
 export const csv2sql = (table, fields, csv_file) => {
-    db.prepare(
-        `CREATE TABLE IF NOT EXISTS ${table} (
-        ${fields.map( x => x.name + ' ' + x.type + (x.pkey? ' PRIMARY KEY': '')).join(',')})`
-    ).run()
+    const crtTblFlds = fields.map( x => x.dbcolumn + ' ' + x.type)
+    const crtTblPKeys = fields.filter( x => x.pkey ).map( y => y.dbcolumn ).join(',')
+    if (crtTblPKeys) crtTblFlds.push(`PRIMARY KEY(${crtTblPKeys})`)
+    const crtTblRec = `CREATE TABLE IF NOT EXISTS ${table} (${crtTblFlds.join(',')})`
 
-    const fldNames = fields.map( x => x.name).join(',')
+    db
+        .prepare(crtTblRec)
+        .run()
+
+    const fldNames = fields.map( x => x.dbcolumn).join(',')
     const qtnMarks = fields.map( x => '?').join(',')
     const stmt = db.prepare(`INSERT OR IGNORE INTO ${table} (${fldNames}) VALUES (${qtnMarks})`)
 
@@ -20,10 +22,9 @@ export const csv2sql = (table, fields, csv_file) => {
         .pipe(stripBom())
         .pipe(csv({"separator": ","}))
         .on('data', row => {
-            stmt.run(...fields.map(x => x.func(row[x.name])))
+            stmt.run(...fields.map(x => x.func(row[x.field])))
         })
         .on('end', () => {
-            console.log('EntitlememntLOG successfully processed')
-            db.close()
+            console.log(`${table} successfully processed`)
         })
 }

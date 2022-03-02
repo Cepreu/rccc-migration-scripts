@@ -1,4 +1,4 @@
-class Logger {
+export class Logger {
     static ERROR = 'ERROR'
     static WARNING = 'WARNING'
     static INFO = 'INFO'
@@ -31,4 +31,3 @@ class Logger {
         return this.log.filter(p => p.severity === Logger.ERROR || p.severity === Logger.WARNING)
     }
 }
-module.exports = {Logger}
