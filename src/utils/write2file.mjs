@@ -39,7 +39,7 @@ export function write2excel(tabsArr, pathArr, fileName) {
         }
     })
 
-    for (tab of tabsArr) {
+    for (const tab of tabsArr) {
         const t = workbook.addWorksheet(tab["tab"])
         const array = tab["data"]
         if (array.length > 0) {

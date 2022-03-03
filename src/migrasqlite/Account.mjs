@@ -1,6 +1,7 @@
 import {NgbsEntitlements, NiCEntitlements, CaseEntitlements} from './entitlements.mjs'
 import {write2excel} from '../utils/write2file.mjs'
 import {Logger} from './Logger.mjs'
+import {db} from '../utils/DBSingleton.mjs'
 
 export class Account {
     constructor (account, ents, nics, cases, batchName) {
@@ -14,6 +15,8 @@ export class Account {
         this.info.VALID = true
         this.logger = new Logger(this.info.ENTERPRISE_ACCOUNT_ID)
         this.facts = {}
+
+        this.invoiceLines = db.prepare('SELECT * FROM invoiceLines WHERE USERID=?').all(this.info.ENTERPRISE_ACCOUNT_ID)
     }
     get CURRENCY() {
         return this.info.CURRENCY
@@ -41,7 +44,8 @@ export class Account {
                 {tab: "Raw DWH", data: this.ngbsEnts.originalColl},
                 {tab: "Raw Monthly", data: this.nicEntsMRS.originalColl},
                 {tab: "Raw Cases", data: this.nicEntsC2C.originalColl},
-                {tab: "GroupedCases", data: this.nicEntsC2C.consColl}
+                {tab: "GroupedCases", data: this.nicEntsC2C.consColl},
+                {tab: "Invoice", data: this.invoiceLines}
             ],
             [this.batchName], 
             this.info.ENTERPRISE_ACCOUNT_ID.toString() + (this.info.VALID? "": "_FAILED")

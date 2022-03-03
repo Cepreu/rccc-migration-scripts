@@ -1,4 +1,4 @@
-import {EntitlementsLOG} from './EntitlementLOG.mjs'
+import {EntitlementsLOG} from './entitlementLOG.mjs'
 import {Invoices, InvoiceLines} from './invoices.mjs'
 
 EntitlementsLOG()

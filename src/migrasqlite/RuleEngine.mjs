@@ -54,9 +54,14 @@ class RCCheckSeats extends Rule {
             acct.logError( this.name, "Incorrect number of Seat licenses (was not found more tham one)" )
             return false
         }
+
+        let strippedName = seats[0].ITEM_NAME
+        const x = seats[0].ITEM_NAME.match(/ \d+ \- \d+/)
+        if (x) strippedName = strippedName.replace(x[0], '')
+
         acct.facts.seat = acct.ents.find(row => row.EXT_PRODUCT_ID === seats[0].EXT_PRODUCT_ID 
             && row.ITEM_NAME === 'Seat Overage'
-            && seats[0].ITEM_NAME.startsWith(row.Parent))
+            && row.Parent === strippedName)
         if (acct.facts.seat === undefined) {
             acct.logError( this.name, "Seat overage license was not found or doesn't match the seat license" )
             return false
