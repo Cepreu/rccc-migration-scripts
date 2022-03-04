@@ -3,9 +3,9 @@ import clear from 'clear'
 import figlet from 'figlet'
 //const Configstore = require('configstore')
 import readLineSync from 'readline-sync'
-import { createBatchEntitlements } from './migrasqlite/createBatchEntitlements.mjs'
-import { prepareBatchFile } from './migrasqlite/prepareBatch.mjs'
-import { BatchParametersMenu } from './migrasqlite/Batch.mjs'
+import { createBatchEntitlements } from './accounts/createBatchEntitlements.mjs'
+import { prepareBatchFile } from './accounts/prepareBatch.mjs'
+import { BatchParametersMenu } from './batch/Batch.mjs'
 
 clear()
 console.log(
