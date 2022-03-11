@@ -410,11 +410,28 @@ class RCFixPrices extends Rule {
     }
 }
 
+//////////////////
+class NiC_StripXX extends Rule {
+    constructor() {
+        super({
+            description: "RC: Removing the _XX suffix in C2C (to enable further matching)",
+        })
+    }
+    action(acct) {
+        const listXX = acct.cases.filter(c=>c.skuid.slice(-3) === '-XX').map(x=>x.skuid)
+        if (listXX.length) {
+            acct.cases.forEach(c2c => c2c.skuid = c2c.skuid.replace(/\-XX$/,''))
+            acct.logWarning(this.name, `Removed "-XX" suffix in the following c2c sku(s): ${listXX.join(', ')}`)
+        }
+        return true
+    }
+}
+
  //////////////////
 class NiC_MRCvsDWH extends Rule {
     constructor() {
         super({
-            description: "Check if there are licenses in Monthly which are absent in RC entitlemacct.ents."
+            description: "Check if there are licenses in Monthly which are absent in RC entitlements."
         })
     }
     action(acct) {
@@ -422,13 +439,13 @@ class NiC_MRCvsDWH extends Rule {
         acct.nics.forEach(nl => {
             const entLic = acct.ents.find(el => nl.SKU === el.EXT_PRODUCT_ID)
             if (entLic === undefined) {
-                if (nl.Amount === 0.00 && Rule.Exceptions.find(ex => nl.SKU === ex) !== undefined) {
-                    const theIssue = `${nl.SKU}  was found in NiC MRS file but not in RC entitlemacct.ents. Ignored as a known exception`
+                if (nl.Amount == 0.00 && Rule.Exceptions.find(ex => nl.SKU === ex) !== undefined) {
+                    const theIssue = `${nl.SKU}  was found in NiC MRS file but not in RC entitlements. Ignored as a known exception`
                     acct.logWarning(this.name, theIssue)
                 } else {
                     acct.logError(
                         this.name, 
-                        `${nl.SKU} ($${nl.Amount}) was found in NiC MRS file but not in RC entitlemacct.ents.`
+                        `${nl.SKU} ($${nl.Amount}) was found in NiC MRS file but not in RC entitlements.`
                     )
                     rule_res = false
                 } 
@@ -459,7 +476,7 @@ class NiC_NotFound extends Rule {
 class NiC_C2CvsMRC extends Rule {
     constructor() {
         super({
-            description: "Check if there are licenses in Monthly which are absent in Cases",
+            description: "(1) Checks if there are licenses in Cases which are absent in Monthly, (2) Checks if the prices are the same",
         })
     }
     action(acct) {
@@ -468,6 +485,11 @@ class NiC_C2CvsMRC extends Rule {
             const nicLic = acct.nics.find(nl => nl.SKU === c2c.skuid)
             if (nicLic === undefined) {
                 acct.logWarning(this.name, `${c2c.skuid} was not found in Monthly file but is presented in case2case`)
+            }  else if (nicLic.Quantity > 0) {
+                const p = Math.round(nicLic.Amount / nicLic.Quantity * 100) / 100
+                if (c2c.price != p) {
+                    acct.logWarning(this.name, `Different prices ${c2c.skuid}: $${c2c.price} in cases vs $${p} in Monthly`)
+                }
             }
         })
         return rule_res
@@ -478,7 +500,7 @@ class NiC_C2CvsMRC extends Rule {
 class NiC_MRCvsC2C extends Rule {
     constructor() {
         super({
-            description: "Check if there are licenses in Monthly which are absent in acct.cases - and add them",
+            description: "Check if there are licenses in Monthly which are absent in cases - and add them",
         })
     }
     action(acct) {
@@ -551,7 +573,7 @@ class NiCPorts extends Rule {
             return false
         }
         if (casePortLic.skuid !== acct.facts.entPortLic.EXT_PRODUCT_ID) {
-            const theIssue = `inContact port ${casePortLic.skuid} replaced by ${acct.facts.entPortLic.EXT_PRODUCT_ID} to match Entitlemacct.ents`
+            const theIssue = `inContact port ${casePortLic.skuid} replaced by ${acct.facts.entPortLic.EXT_PRODUCT_ID} to match Entitlements`
             acct.logWarning(this.name, theIssue)
             casePortLic.skuid = acct.facts.entPortLic.EXT_PRODUCT_ID
         }
@@ -579,6 +601,7 @@ export class RuleEngine {
             new RCFixNames(),
             new RCFixPrices(),
             new NiC_NotFound(),
+            new NiC_StripXX(),
             new NiC_C2CvsMRC,
             new NiC_MRCvsDWH(),
             new NiC_MRCvsC2C(),

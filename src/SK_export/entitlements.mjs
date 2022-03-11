@@ -133,8 +133,9 @@ export class NiCEntitlements extends EntCollection {
         Quantity,
         Amount,
         Amount/Quantity AS Price
-    FROM RCMRCSummary_20211001
+    FROM RCMRCSummary
     WHERE Account=?
+        AND InvoiceDate=?
         AND ProductType='MRC'
     ORDER BY cast(CatalogID as INTEGER), CatalogID
     `.replace(/\s+/g, ' ')
@@ -158,7 +159,7 @@ export class CaseEntitlements extends EntCollection {
         qtty,
         price
     FROM nic_cases, nic_case_items
-    WHERE nic_cases.inContactBUID=?
+    WHERE nic_cases.UID=?
         AND nic_cases.CaseNumber=sfdcCase
     ORDER BY 
         ProvisionDate DESC,

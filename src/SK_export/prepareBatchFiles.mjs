@@ -10,7 +10,7 @@ const ruleEngine = new RuleEngine()
 //////////////////////
 // prepareBatchFile
 //////////////////////
-export function prepareBatchFile (batchName) {
+export function prepareBatchFiles (batchName) {
     const tableName = `BATCH_${batchName}_ents`
     const stmt = db.prepare(
         `SELECT DISTINCT 
@@ -23,8 +23,8 @@ export function prepareBatchFile (batchName) {
             b.currency AS CURRENCY,
             'MONTHLY' AS BILLING_TERM,
             'LEGACY' AS CATALOG
-        FROM ${tableName} e
-        INNER JOIN batch_items b 
+        FROM batch_items b
+        INNER JOIN ${tableName} e
             ON b.EID=e.EID AND batchID=?
         ORDER BY e.AccountName`
         .replace(/\s+/g, " "))
@@ -50,8 +50,8 @@ export function prepareBatchFile (batchName) {
         `.replace(/\s+/g, " "))
                
         const ents = stmt.all(batchName, account.ENTERPRISE_ACCOUNT_ID)
-        const nics = db.prepare(NiCEntitlements.SQL).all(account.INCONTACT_BUID)
-        const cases = db.prepare(CaseEntitlements.SQL).all(account.INCONTACT_BUID)
+        const nics = db.prepare(NiCEntitlements.SQL).all(account.INCONTACT_BUID, '2021-12-01')
+        const cases = db.prepare(CaseEntitlements.SQL).all(account.ENTERPRISE_ACCOUNT_ID)
 
         console.log(account.ENTERPRISE_ACCOUNT_ID,account.INCONTACT_BUID, account.AccountName)
         console.table(nics)

@@ -48,7 +48,7 @@ export class Account {
                 {tab: "Invoice", data: this.invoiceLines}
             ],
             [this.batchName], 
-            this.info.ENTERPRISE_ACCOUNT_ID.toString() + (this.info.VALID? "": "_FAILED")
+            `${this.info.ENTERPRISE_ACCOUNT_ID}(${this.info.INCONTACT_BUID})${this.info.VALID? '': '_FAILED'}`
         )
         this.nicEntsC2C = null
         this.ngbsEnts = null

@@ -3,7 +3,8 @@ import {db} from '../utils/DBSingleton.mjs'
 
 class BatchDescription {
     static createTable() {
-        db.prepare(`CREATE TABLE IF NOT EXISTS BatchDescription (
+        db.prepare(`
+        CREATE TABLE IF NOT EXISTS BatchDescription (
             name TEXT PRIMARY KEY,
             description TEXT,
             accSizeMin INTEGER,
@@ -140,9 +141,9 @@ class BatchDescription {
         let stmt = db.prepare(`
         CREATE TABLE IF NOT EXISTS batch_items(
             batchID TEXT,
-            EID INT PRIMARY KEY,
-            BID INT UNIQUE,
-            UID INT UNIQUE,
+            EID TEXT PRIMARY KEY,
+            BID TEXT UNIQUE,
+            UID TEXT UNIQUE,
             AccountName TEXT,
             brand TEXT,
             currency TEXT

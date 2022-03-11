@@ -1,4 +1,5 @@
 import {db} from '../utils/DBSingleton.mjs'
+import { prepareBatchFiles } from './prepareBatchFiles.mjs'
 
 /** 
  * createBatch - Creates and populate a batch table.
@@ -56,4 +57,6 @@ export function createBatchEntitlements( batchName ) {
     `.replace(/\s+/g," ")
     info = db.prepare(createSql).run(batchName)
     console.log(`${tableName} table was created.`)
+
+    prepareBatchFiles(batchName)
 }
