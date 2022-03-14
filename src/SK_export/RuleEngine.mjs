@@ -118,10 +118,9 @@ class RCFixPorts extends Rule {
                 }
             }
         } else { //Sub-rule #2
-            // const casePort = acct.cases.find(c => /^308-/.tect(c.skuid))
-            const entPorts = acct.ents.filter(row => /^308-/.test(row.EXT_PRODUCT_ID))
+            const entPorts = acct.ents.filter(row => /^308-/.test(row.EXT_PRODUCT_ID) && acct.ents[i].ProductFamily === 'Overage')
             if (entPorts.length === 0) {
-                acct.logError( this.name, "RC PortOverage license was not found")
+                acct.logError( this.name, "RC Port Overage license was not found")
                 return false
             }
             acct.facts.entPortLic = entPorts[0]
@@ -131,8 +130,8 @@ class RCFixPorts extends Rule {
             }
         }
 
-        for( let i = 0; i < acct.ents.length; i++) { // Cleanup of extra ports
-            if (/^308-/.test(acct.ents[i].EXT_PRODUCT_ID) && acct.ents[i].Category !== acct.facts.entPortLic.Category) {
+        for( let i = 0; i < acct.ents.length; i++) { // Cleanup of extra overage ports
+            if (/^308-/.test(acct.ents[i].EXT_PRODUCT_ID) && acct.ents[i].ProductFamily === 'Overage' && acct.ents[i].Category !== acct.facts.entPortLic.Category) {
                 acct.ents.splice(i--, 1)
             }
         }
