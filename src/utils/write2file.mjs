@@ -1,7 +1,7 @@
 import path from 'path'
 import fs1 from 'fs-extra'
 import excel from 'excel4node'
-import configuration from '../configuration.mjs'
+import configuration from '../../configuration.mjs'
 
 const getDir = pathArr => {
     const dir = path.resolve(configuration.OUTPUTPATH? configuration.OUTPUTPATH: process.cwd(), ...pathArr)

@@ -4,7 +4,7 @@ import fs from 'fs'
 
 import {db} from './DBSingleton.mjs'
 
-export const csv2sql = (table, fields, csv_file, separator = ',') => {
+export const csv2sql = (table, fields, csv_file, separator = ',', guardFunc) => {
     const crtTblFlds = fields.map( x => x.dbcolumn + ' ' + x.type)
     const crtTblPKeys = fields.filter( x => x.pkey ).map( y => y.dbcolumn ).join(',')
     if (crtTblPKeys) crtTblFlds.push(`PRIMARY KEY(${crtTblPKeys})`)
@@ -22,7 +22,16 @@ export const csv2sql = (table, fields, csv_file, separator = ',') => {
         .pipe(stripBom())
         .pipe(csv({'separator': separator}))
         .on('data', row => {
-            stmt.run(...fields.map(x => x.func(row[x.field])))
+            if (guardFunc === undefined || guardFunc(row)) {
+                stmt.run(...fields.map(x => {
+                    return 'field' in x?
+                        'func' in x? 
+                            x.func(row[x.field])
+                        :   row[x.field]
+                    :   x.func()
+                    }
+                ))
+            }
         })
         .on('end', () => {
             console.log(`${table} successfully processed`)

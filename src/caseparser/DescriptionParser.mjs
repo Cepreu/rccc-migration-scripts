@@ -9,7 +9,7 @@ const parseTelecom = (line, lineParseParam, theCase,  theAccount, theBUID) => {
 	if (/\S/.test(line)) { 
 		const sku = extract( line, /[^ ]* ([^\$]*?)/ )
 		const skuId = extract( line, /([^ ]*?)/ )
-		const price = extract(line, /.*\$(.*)$/, true )
+		const price = extract(line, /.*\$(.*)$/, true).replace(",", "")
 		insertVals = `( "${theAccount}", "${theBUID}",  "${theCase}", "${lineParseParam}", ${skuId}, ${sku}, NULL, ${price} )`
 	}
 	return insertVals
@@ -21,7 +21,7 @@ const parseMRC = (line, lineParseParam, theCase, theAccount, theBUID) => {
 		if (/\[.+\]/.test(line)) {
 			const sku = extract( line, /\][- ]+([^\$]*)/ )
 			const skuId = extract( line, /\[(.+?)\]/ )
-			const price = extract( line, /.*\$(.*)$/, true )
+			const price = extract( line, /.*\$(.*)$/, true ).replace(",", "")
 			const qtty = extract( line, /(.*?)\[/, true )
 			insertVals = `( "${theAccount}", "${theBUID}", "${theCase}", "${lineParseParam}", ${skuId}, ${sku}, ${qtty}, ${price} )`
 		} else {
@@ -30,7 +30,7 @@ const parseMRC = (line, lineParseParam, theCase, theAccount, theBUID) => {
 		    ! /^Application Fee/.test(line)) {
 					console.error(`( "${theAccount}", "${theBUID}",  "${theCase}", "${lineParseParam}", "${line}")`)
 				}
-			insertVals = `( "${theAccount}", "${theBUID}"  "${theCase}", "${lineParseParam}", null, "${line}", null, null )`
+			insertVals = `( "${theAccount}", "${theBUID}", "${theCase}", "${lineParseParam}", null, "${line}", null, null )`
 		}
 	}
 	return insertVals
@@ -44,7 +44,7 @@ const parseNotes = (line, lineParseParam, theCase, theAccount, theBUID) => {
 	return noteStr
 }
 
-exports.parseDescription = (descrTxt, theCase, theAccount, theBUID, results) => {
+export function parseDescription(descrTxt, theCase, theAccount, theBUID, results) {
 	const inputArr = descrTxt.split('\n')
 
 	let lineParser = parseNotes
@@ -98,7 +98,7 @@ exports.parseDescription = (descrTxt, theCase, theAccount, theBUID, results) => 
 }
 
 
-exports.test1 = () => {
+export const test1 = () => {
     const testDescr = 
 `ADD PRODUCTS: 
 202.00[312-913-000] - NICE inContact CXone Custom Storage (per Seat) $0.45
@@ -147,7 +147,7 @@ DOM_TERM_FLAT_48INTRA_MIN Domestic Termination - Flat Standard Per-minute (Intra
 `
 	const res = {}
 	const theCase = '123456'
-	exports.parseDescription (testDescr, theCase, '987654', '22222', res)
+	parseDescription (testDescr, theCase, '987654', '22222', res)
 	console.log(res.cases)       
 	if (res.hasOwnProperty("notes")) console.log(res.notes)       
 }

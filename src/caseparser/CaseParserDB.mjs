@@ -1,16 +1,15 @@
-const fs = require('fs')
+import fs from 'fs'
 
-const {DATABASE} = require('../configuration')
-const db = require('better-sqlite3')(DATABASE, { verbose: console.log, fileMustExist: true, readonly: false})
+import {db} from '../utils/DBSingleton.mjs'
 
-const {parseDescription,test1} = require('./DescriptionParser')
+import {parseDescription, test1} from './DescriptionParser.mjs'
 
 test1()
 
 //////////////////////
 // caseItems
 //////////////////////
-exports.caseItems = (outfile, timestamp) => {
+export function caseItems(outfile, timestamp) {
     const sqler = fs.createWriteStream(outfile, {
         flags: 'w' //overwrite old content, if any
     })
@@ -21,8 +20,8 @@ exports.caseItems = (outfile, timestamp) => {
             UID AS acc_id, 
             inContactBUID AS bu_id, 
             Description AS descr 
-            FROM nic_cases 
-            WHERE descr IS NOT NULL
+        FROM nic_cases 
+        WHERE descr IS NOT NULL
 ${timestamp !== undefined? "AND DBInserted='" + timestamp + "'": ''}`
     .replace(/\s+/g, " "))
     

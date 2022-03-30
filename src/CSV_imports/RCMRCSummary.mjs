@@ -1,5 +1,5 @@
 import {csv2sql} from '../utils/csv2sql.mjs'
-import configuration from '../configuration.mjs'
+import configuration from '../../configuration.mjs'
 
 export const RCMRCSummary = () => {
     const fields = [
