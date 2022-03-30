@@ -51,7 +51,7 @@ class RCCheckSeats extends Rule {
     action(acct) {
         const seats = acct.ents.filter(row => /^307-/.test(row.EXT_PRODUCT_ID) && row.ITEM_NAME !== 'Seat Overage')
         if (seats.length !== 1) {
-            acct.logError( this.name, "Incorrect number of Seat licenses (was not found more tham one)" )
+            acct.logError( this.name, "Incorrect number of Seat licenses (was not found more than one)" )
             return false
         }
 
@@ -475,7 +475,7 @@ class NiC_NotFound extends Rule {
 class NiC_C2CvsMRC extends Rule {
     constructor() {
         super({
-            description: "(1) Checks if there are licenses in Cases which are absent in Monthly, (2) Checks if the prices are the same",
+            description: "(1) Checks if there are licenses in Cases which are absent in Monthly, (2) Checks if their prices are the same",
         })
     }
     action(acct) {
