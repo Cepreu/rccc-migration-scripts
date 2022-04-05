@@ -51,7 +51,7 @@ class RCCheckSeats extends Rule {
     action(acct) {
         const seats = acct.ents.filter(row => /^307-/.test(row.EXT_PRODUCT_ID) && row.ITEM_NAME !== 'Seat Overage')
         if (seats.length !== 1) {
-            acct.logError( this.name, "Incorrect number of Seat licenses (was not found more than one)" )
+            acct.logError( this.name, "Incorrect number of Seat licenses (was not found or more than one)" )
             return false
         }
 
@@ -444,7 +444,7 @@ class NiC_MRCvsDWH extends Rule {
                 } else {
                     acct.logError(
                         this.name, 
-                        `${nl.SKU} ($${nl.Amount}) was found in NiC MRS file but not in RC entitlements.`
+                        `${nl.SKU} ($${nl.Amount}) was found in NiC MRS file but not in RC entitlements`
                     )
                     rule_res = false
                 } 
@@ -464,7 +464,7 @@ class NiC_NotFound extends Rule {
     }
     action(acct) {
         if (acct.nics.length === 0) {
-            acct.logError(this.name, `No records were found for the account in Monthly file`)
+            acct.logError(this.name, `No records were found for the account in the Monthly file`)
             return false
         }
         return true

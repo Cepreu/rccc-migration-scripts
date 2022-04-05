@@ -25,10 +25,10 @@ export const csv2sql = (table, fields, csv_file, separator = ',', guardFunc) => 
             if (guardFunc === undefined || guardFunc(row)) {
                 stmt.run(...fields.map(x => {
                     return 'field' in x?
-                        'func' in x? 
+                        'func' in x && row[x.field] ? 
                             x.func(row[x.field])
                         :   row[x.field]
-                    :   x.func()
+                    :   x.rowfunc(row)
                     }
                 ))
             }

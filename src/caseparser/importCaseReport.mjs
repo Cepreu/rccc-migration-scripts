@@ -79,7 +79,7 @@ export const importCaseReport = () => {
         },{
             dbcolumn: 'DBInserted',    
             type: 'TEXT', 
-            func: () => date.format(new Date(), 'YYYY-MM-DD HH:mm:ss')
+            rowfunc: () => date.format(new Date(), 'YYYY-MM-DD HH:mm:ss')
         }
     ]
     const guardFunc = row => row["IC Case Number"] !== ''
