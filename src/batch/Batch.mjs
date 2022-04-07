@@ -16,6 +16,7 @@ class BatchDescription {
             casesMin INTEGER,
             casesMax INTEGER,
             casesNBU TEXT,
+            maxSize INTEGER,
             timestamp TEXT
         )
         `.replace(/\s+/g," "))
@@ -27,7 +28,8 @@ class BatchDescription {
                 brand, telcoProvider, seatEdition, 
                 accountList=[], 
                 saveFlag=true, 
-                casesMin=0, casesMax=0, casesNBU=false) {
+                casesMin=0, casesMax=0, casesNBU=false, 
+                maxSize=2000) {
         this.name = name
         this.description = description        
         this.accSizeMin = accSizeMin
@@ -38,7 +40,8 @@ class BatchDescription {
         this.accountList = accountList
         this.casesMin = casesMin,
         this.casesMax = casesMax,
-        this.casesNBU = casesNBU
+        this.casesNBU = casesNBU,
+        this.maxSize = maxSize
 
         if (saveFlag) {
             this.#saveToDB()
@@ -56,7 +59,8 @@ class BatchDescription {
                 row.brand, row.telcoProvider, row.seatEdition, 
                 row.accountList? JSON.parse(row.accountList): [],
                 false,
-                row.casesMin, row.casesMax, row.casesNBU === 'true')
+                row.casesMin, row.casesMax, row.casesNBU === 'true',
+                row.maxSize)
         }
         return undefined
     }
@@ -66,14 +70,18 @@ class BatchDescription {
 
         const stmt = db.prepare(
             `INSERT OR REPLACE INTO BatchDescription 
-            (name, description, accSizeMin, accSizeMax, brand, telcoProvider, seatEdition, accountList, casesMin, casesMax, casesNBU, timestamp)
-            VALUES (?,?,?,?,?,?,?,?,?,?,?, strftime('%Y-%m-%d %H:%M:%S','now'))`)
+            (name, description, accSizeMin, accSizeMax, brand, telcoProvider, seatEdition, accountList, 
+                casesMin, casesMax, casesNBU, 
+                maxSize,
+                timestamp)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?, strftime('%Y-%m-%d %H:%M:%S','now'))`)
 
         const info = stmt.run( 
             this.name, this.description, this.accSizeMin, this.accSizeMax, 
             this.brand, this.telcoProvider, this.seatEdition,
             JSON.stringify(this.accountList),
-            this.casesMin, this.casesMax, this.casesNBU.toString()  
+            this.casesMin, this.casesMax, this.casesNBU.toString(),
+            this.maxSize  
         )
         console.log(`Number of rows inserted: ${info.changes}`)
     }
@@ -132,6 +140,7 @@ class BatchDescription {
             WHERE
                 ${wheres.join(' AND ')}
                 ${group_by_having}
+            LIMIT ${this.maxSize}
             `.replace(/\s+/g, " ").trim()
 
         return sql
@@ -167,7 +176,7 @@ export function BatchParametersMenu(batchName) {
         batchDB = BatchDescription.restoreFromDB(batchName)
     } else {
         batchName = readLineSync.question("Batch name: ")
-        batchDB = new BatchDescription(batchName,'',0,10,'RingCentral','RC','Legacy',[],false,0,0,false)
+        batchDB = new BatchDescription(batchName,'',0,10,'RingCentral','RC','Legacy',[],false,0,0,false,2000)
     }
 
     let description = readLineSync.question(`Description [${batchDB.description}]: `) || batchDB.description
@@ -180,6 +189,7 @@ export function BatchParametersMenu(batchName) {
     let casesMin = readLineSync.question(`Min Number of cases [${batchDB.casesMin}]: `) || batchDB.casesMin
     let casesMax = readLineSync.question(`Max Number of cases [${batchDB.casesMax}]: `) ||  batchDB.casesMax
     let casesNBU = readLineSync.question(`Having NBU case [${batchDB.casesNBU?'Y':'N'}]: `) ||  batchDB.casesNBU? 'Y': 'N'
+    let maxSize = readLineSync.question(`Max number of accounts [${batchDB.maxSize}]: `) ||  batchDB.maxSize
    
     return new BatchDescription(batchName, description, accSizeMin, accSizeMax, 
         brand==='1'? 'RingCentral': brand==='2'? 'RingCentral Canada': brand==='3'? undefined: batchDB.brand,
@@ -187,5 +197,6 @@ export function BatchParametersMenu(batchName) {
         seatEdition==='1'? 'Legacy': seatEdition==='2'? 'NewGeneration': seatEdition==='3'? undefined: batchDB.seatEdition, 
         accountList==='x'? []: accountList.length > 0? accountList.split(','): batchDB.accountList,
         true,
-        casesMin, casesMax, casesNBU==='Y')
+        casesMin, casesMax, casesNBU==='Y',
+        maxSize)
 }

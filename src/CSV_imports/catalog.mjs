@@ -12,5 +12,5 @@ export const Catalog = () => {
         {field: 'Parent',          dbcolumn: 'PARENT_FEATURE_ID', type: 'TEXT'}
     ]
     const guardFunc = row => row["L Category"] !== ''
-    csv2sql('Catalog', fields, configuration.NGBS_CATALOG, ',', guardFunc)
+    csv2sql( 'Catalog', fields, configuration.NGBS_CATALOG, ',', guardFunc )
 }
