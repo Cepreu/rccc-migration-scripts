@@ -3,11 +3,13 @@ import {EntitlementsLOG} from './entitlementLOG.mjs'
 import {Invoices, InvoiceLines} from './invoices.mjs'
 import {RCMRCSummary} from './RCMRCSummary.mjs'
 import {Catalog} from './Catalog.mjs'
+import {Entitlements_SFDC} from './Entitlements_SFDC.mjs'
 
 console.log("1) Entitlements")
 console.log("2) Invoices")
 console.log("3) RCMRCSummary")
 console.log("4) Catalog")
+console.log("5) Entitlements SFDC")
 
 const userRes = readLineSync.question("Pick an option: ")
 if (userRes === '1') {
@@ -19,5 +21,7 @@ if (userRes === '1') {
     RCMRCSummary()
 } else if (userRes === '4') {
     Catalog()
+} else if (userRes === '5') {
+    Entitlements_SFDC()
 } 
 console.log("G'buy")
