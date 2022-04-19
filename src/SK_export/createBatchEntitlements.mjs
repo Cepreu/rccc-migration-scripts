@@ -1,119 +1,175 @@
-import {db} from '../utils/DBSingleton.mjs'
-import { prepareBatchFiles } from './prepareBatchFiles.mjs'
+import { db } from "../utils/DBSingleton.mjs";
+import { prepareBatchFiles } from "./prepareBatchFiles.mjs";
 
-/** 
- * createBatch - Creates and populate a batch table.
- * @batchName - Name of the batch to create.
- **/
-export function createBatchEntitlements( batchName ) {
-    const tableName = `BATCH_${batchName}_ents`
+const Exc = [
+  "308-8-167",
+  "309-11-171",
+  "309-565-000",
+  "500-617-000",
+  "1032-173-000",
+  "1032-174-000",
+  "1032-175-000",
+  "1032-487-000",
+  "1032-493-000",
+  "1032-494-000",
+  "1032-572-000",
+  "1503-693-000",
+  "1503-694-000",
+  "3465-1227-000",
+  "4100-701-000",
+  "4109-673-000",
+];
 
-    let info =  db.prepare(`DROP TABLE IF EXISTS ${tableName}`).run()
-    console.log(`Removed table: ${tableName}.`)
+const flds = [
+  { name: "EID", type: "TEXT" },
+  { name: "UID", type: "TEXT" },
+  { name: "BID", type: "TEXT" },
+  { name: "AccountName", type: "TEXT" },
+  { name: "EXT_PRODUCT_ID", type: "TEXT" },
+  { name: "ITEM_NAME", type: "TEXT" },
+  { name: "ITBS_NAME", type: "TEXT" },
+  { name: "RETAIL_PRICE", type: "NUMBER" },
+  { name: "MDURATION", type: "INTEGER" },
+  { name: "CURRENCY_CODE", type: "TEXT" },
+  { name: "OldPrice", type: "NUMBER" },
+  { name: "QNTY_THRESHOLD", type: "INTEGER" },
+  { name: "PriceUSD", type: "NUMBER" },
+  { name: "Price", type: "NUMBER" },
+  { name: "DiscountUSD", type: "NUMBER" },
+  { name: "Discount", type: "NUMBER" },
+  { name: "NiCPrice", type: "NUMBER" },
+  { name: "Category", type: "TEXT" },
+  { name: "PARENT", type: "TEXT" },
+  { name: "ProductFamily", type: "TEXT" },
+  { name: "batchID", type: "TEXT" },
+];
 
-    const createSql = `
-    CREATE TABLE ${tableName} AS
-        SELECT DISTINCT
-            b.EID,
-            b.UID,
-            b.BID,
-            b.AccountName,
-            e.EXT_PRODUCT_ID,
-            e.ITEM_NAME,
-            e.RETAIL_PRICE,
-            bi.MDURATION,
-            bi.CURRENCY_CODE,
-            (e.RETAIL_PRICE-e.DISCOUNT_VALUE) / CASE WHEN bi.DETAILTYPEID=5 THEN bi.MDURATION ELSE 1 END AS OldPrice,
-            e.QNTY_THRESHOLD,
-            lc.USD AS PriceUSD,
-            lc.CAD AS Price,
-            lc.USD - (e.RETAIL_PRICE - e.DISCOUNT_VALUE) / CASE WHEN bi.DETAILTYPEID=5 THEN bi.MDURATION ELSE 1 END AS DiscountUSD,
-            lc.CAD - (e.RETAIL_PRICE - e.DISCOUNT_VALUE) / CASE WHEN bi.DETAILTYPEID=5 THEN bi.MDURATION ELSE 1 END AS Discount,
-            lc.NiCPrice AS NiCPrice,
-            lc.element_id AS Category,
-            lc.Parent,
-            e.TYPE_NAME AS ProductFamily
-        FROM 
-            EntitlememntLOG e
-        INNER JOIN 
-            batch_items b 
-            ON EID=USERID AND batchID=?
-        INNER JOIN 
-            BillingItemsAndEvents bi 
-            ON bi.ACCOUNTID=EID AND e.BILLING_ITEM_ID=bi.BILLINGITEMID
-        LEFT JOIN 
-            CLicense lc 
-            ON (
-                e.ITEM_NAME=lc.ngbs_name
-                    OR e.EXT_PRODUCT_ID IN ('4100-701-000', '1503-693-000', '1503-694-000', '4109-673-000', '500-617-000', '308-8-167', '3465-1227-000')
-                )
-                AND e.EXT_PRODUCT_ID=lc.SKU 
-                AND (e.TYPE_NAME='Recurring' AND lc.billing_type='Recurring'
-                    OR e.TYPE_NAME='Overage' AND lc.billing_type='Usage')
-        WHERE
-            (END_DATE > date('now') OR END_DATE IS NULL) 
-            AND STATUS_NAME='Active'
-        ORDER BY b.EID, e.EXT_PRODUCT_ID 
-    `.replace(/\s+/g," ")
-    info = db.prepare(createSql).run(batchName)
-    console.log(`${tableName} table was created.`)
+function prepareTable(batchName) {
+  let info = db
+    .prepare(
+      `CREATE TABLE IF NOT EXISTS BatchEntitlements (${flds
+        .map((f) => f.name + " " + f.type)
+        .join(", ")})`
+    )
+    .run();
 
-    prepareBatchFiles(batchName)
+  info = db
+    .prepare(`DELETE FROM BatchEntitlements WHERE batchID='${batchName}'`)
+    .run();
+
+  console.log(`Deleted from BatchEntitlements.`);
 }
 
-/** 
+function selectEntitlements(batchName) {
+  const insertSql = `
+    INSERT INTO BatchEntitlements
+      (${flds.map((f) => f.name).join(", ")})
+    SELECT DISTINCT
+        b.EID,
+        b.UID,
+        b.BID,
+        b.AccountName,
+        e.EXT_PRODUCT_ID,
+        lc.ngbs_name,
+        CASE WHEN e.ITEM_NAME!=lc.ngbs_name THEN e.ITEM_NAME ELSE '' END,
+        e.RETAIL_PRICE,
+        bi.MDURATION,
+        bi.CURRENCY_CODE,
+        (e.RETAIL_PRICE-e.DISCOUNT_VALUE) / CASE WHEN bi.DETAILTYPEID=5 THEN bi.MDURATION ELSE 1 END,
+        e.QNTY_THRESHOLD,
+        lc.USD,
+        lc.CAD,
+        lc.USD - (e.RETAIL_PRICE - e.DISCOUNT_VALUE) / CASE WHEN bi.DETAILTYPEID=5 THEN bi.MDURATION ELSE 1 END,
+        lc.CAD - (e.RETAIL_PRICE - e.DISCOUNT_VALUE) / CASE WHEN bi.DETAILTYPEID=5 THEN bi.MDURATION ELSE 1 END,
+        lc.NiCPrice,
+        lc.element_id,
+        lc.Parent,
+        e.TYPE_NAME,
+        b.batchID
+    FROM 
+        EntitlememntLOG e
+    INNER JOIN 
+        batch_items b 
+        ON EID=USERID AND b.batchID='${batchName}'
+    INNER JOIN 
+        BillingItemsAndEvents bi 
+        ON bi.ACCOUNTID=EID AND e.BILLING_ITEM_ID=bi.BILLINGITEMID
+    LEFT JOIN 
+        CLicense lc 
+        ON (
+            e.ITEM_NAME=lc.ngbs_name
+                OR e.EXT_PRODUCT_ID IN (${"'" + Exc.join("', '") + "'"})
+            )
+            AND e.EXT_PRODUCT_ID=lc.SKU 
+            AND (e.TYPE_NAME='Recurring' AND lc.billing_type='Recurring'
+                OR e.TYPE_NAME='Overage' AND lc.billing_type='Usage')
+    WHERE
+        (END_DATE > date('now') OR END_DATE IS NULL) 
+        AND STATUS_NAME='Active'
+    ORDER BY b.EID, e.EXT_PRODUCT_ID 
+    `.replace(/\s+/g, " ");
+  info = db.prepare(insertSql).run();
+  console.log(`Entitlements inserted.`);
+}
+
+function selectEntitlementsSFDC(batchName) {
+  const insertSql = `
+  INSERT INTO BatchEntitlements
+    (${flds.map((f) => f.name).join(", ")})
+  SELECT
+      b.EID,
+      b.UID,
+      b.BID,
+      b.AccountName,
+      e.CatID,
+      lc.PRODUCT_NAME,
+      e.EntitlementName,
+      e.Price,
+      CASE WHEN e.ChargeTerm='Annual' THEN 12 ELSE 1 END,
+      e.Currency AS CURRENCY_CODE,
+      (e.Price-e.Discount) / CASE WHEN e.ProductFamily!='Overage' AND e.ChargeTerm='Annual' THEN 12 ELSE 1 END,
+      e.QuantityOrThreshold,
+      lc.PRICE_USD,
+      lc.PRICE_CAD,
+      lc.PRICE_USD - (e.Price - e.Discount) / CASE WHEN e.ProductFamily!='Overage' AND e.ChargeTerm='Annual'  THEN 12 ELSE 1 END,
+      lc.PRICE_CAD - (e.Price - e.Discount)  / CASE WHEN e.ProductFamily!='Overage' AND e.ChargeTerm='Annual'  THEN 12 ELSE 1 END,
+      lc.NIC_PRICE,
+      lc.L_CATEGORY,
+      lc.PARENT,
+      e.ProductFamily,
+      '${batchName}'
+  FROM 
+      Entitlements_SFDC e
+  INNER JOIN 
+      batch_items b 
+      ON b.EID=e.EnterpriseAccountID AND b.batchID='${batchName}'
+  LEFT JOIN 
+      CatalogSFDC lc
+      ON (
+          e.EntitlementName=lc.PRODUCT_NAME
+              OR e.CatID IN (${"'" + Exc.join("', '") + "'"})
+          )
+          AND e.CatID=lc.SKU 
+          AND (e.ProductFamily!='Overage' AND lc.PRODUCT_FAMILY!='Overage'
+              OR e.ProductFamily='Overage' AND lc.PRODUCT_FAMILY='Overage')
+     ORDER BY b.EID, e.CatID
+      `.replace(/\s+/g, " ");
+  const info = db.prepare(insertSql).run();
+  console.log(`${info} Inserted into BatchEntitlements table.`);
+}
+
+/**
  * createBatch - Creates and populate a batch table.
  * @batchName - Name of the batch to create.
  **/
- export function createBatchEntitlementsSFDC( batchName ) {
-    const tableName = `BATCH_${batchName}_ents`
+export function createBatchEntitlementsSFDC(batchName) {
+  prepareTable(batchName);
+  selectEntitlementsSFDC(batchName);
+  prepareBatchFiles(batchName);
+}
 
-    let info =  db.prepare(`DROP TABLE IF EXISTS ${tableName}`).run()
-    console.log(`Removed table: ${tableName}.`)
-
-    const createSql = `
-    CREATE TABLE ${tableName} AS
-        SELECT DISTINCT
-            b.EID,
-            b.UID,
-            b.BID,
-            b.AccountName,
-            e."Product:CatID" AS EXT_PRODUCT_ID,
-            e.EntitlementName AS ITEM_NAME,
-            e.Price AS RETAIL_PRICE,
-            e.InvoiceTerm AS MDURATION,
-            e.Currency AS CURRENCY_CODE,
-            (e.Price-e.Discount) / CASE WHEN bi.DETAILTYPEID=5 THEN e.InvoiceTerm ELSE 1 END AS OldPrice,
-            e.QNTY_THRESHOLD,
-            lc.USD AS PriceUSD,
-            lc.CAD AS Price,
-            lc.USD - (e.RETAIL_PRICE - e.DISCOUNT_VALUE) / CASE WHEN bi.DETAILTYPEID=5 THEN bi.MDURATION ELSE 1 END AS DiscountUSD,
-            lc.CAD - (e.RETAIL_PRICE - e.DISCOUNT_VALUE) / CASE WHEN bi.DETAILTYPEID=5 THEN bi.MDURATION ELSE 1 END AS Discount,
-            lc.NiCPrice AS NiCPrice,
-            lc.element_id AS Category,
-            lc.Parent,
-            e.TYPE_NAME AS ProductFamily
-        FROM 
-            Entitlememnt_SFDC e
-        INNER JOIN 
-            batch_items b 
-            ON EID=USERID AND batchID=?
-*        LEFT JOIN 
-*            CLicense lc 
-*            ON (
-                e.ITEM_NAME=lc.ngbs_name
-                    OR e.EXT_PRODUCT_ID IN ('4100-701-000', '1503-693-000', '1503-694-000', '4109-673-000', '500-617-000', '308-8-167', '3465-1227-000')
-                )
-                AND e.EXT_PRODUCT_ID=lc.SKU 
-                AND (e.TYPE_NAME='Recurring' AND lc.billing_type='Recurring'
-                    OR e.TYPE_NAME='Overage' AND lc.billing_type='Usage')
-        WHERE
-            (END_DATE > date('now') OR END_DATE IS NULL) 
-            AND STATUS_NAME='Active'
-        ORDER BY b.EID, e.EXT_PRODUCT_ID 
-    `.replace(/\s+/g," ")
-    info = db.prepare(createSql).run(batchName)
-    console.log(`${tableName} table was created.`)
-
-    prepareBatchFiles(batchName)
+export function createBatchEntitlements(batchName) {
+  prepareTable(batchName);
+  selectEntitlements(batchName);
+  prepareBatchFiles(batchName);
 }

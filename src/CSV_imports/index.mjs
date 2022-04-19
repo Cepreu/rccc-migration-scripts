@@ -2,7 +2,7 @@ import readLineSync from 'readline-sync'
 import {EntitlementsLOG} from './entitlementLOG.mjs'
 import {Invoices, InvoiceLines} from './invoices.mjs'
 import {RCMRCSummary} from './RCMRCSummary.mjs'
-import {Catalog} from './Catalog.mjs'
+import {CatalogNGBS, CatalogSFDC} from './Catalog.mjs'
 import {Entitlements_SFDC} from './Entitlements_SFDC.mjs'
 
 console.log("1) Entitlements")
@@ -20,7 +20,8 @@ if (userRes === '1') {
 } else if (userRes === '3') {
     RCMRCSummary()
 } else if (userRes === '4') {
-    Catalog()
+    CatalogNGBS()
+    CatalogSFDC()
 } else if (userRes === '5') {
     Entitlements_SFDC()
 } 
