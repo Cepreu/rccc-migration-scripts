@@ -125,6 +125,9 @@ export class NgbsEntitlements extends EntCollection {
   get wrkColl() {
     return this.ents;
   }
+  set wrkColl(newColl) {
+    this.ents = newColl;
+  }
 }
 
 //////////////////

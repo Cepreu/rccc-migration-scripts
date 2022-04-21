@@ -1,17 +1,6 @@
 const OVERAGE = "Overage";
 
 class Rule {
-  //   static portMap = {
-  //     CCL_LRCCCU2SEATO_73: ["CCL_LAPRTUESO_412", "CCL_LAPRTUPESO_413"],
-  //     CCL_LRCCCA2SEATO_67: ["CCL_LAPRTAAE2O_405", "CCL_LAPRTAAPEO_404"],
-  //     CCL_LRCCCUCSEATO_61: ["CCL_LAPRTUPESO_413", "CCL_LAPRTAUECO_406"],
-  //     CCL_LRCCCACSEATO_56: ["CCL_LAPRTAAECO_403"],
-  //     CCL_LRCCCBASEATO_44: ["CCL_LAPRTBESWAO_411"],
-  //     CCL_LRCCCUPSEATO_32: ["CCL_LAPRTUPESO_413"],
-  //     CCL_LRCCCAPSEATO_26: ["CCL_LAPRTAAPEO_404"],
-  //     CCL_LRCCCUSEATO_20: ["CCL_LAPRTAUEO_402"],
-  //     CCL_LRCCCA1SEATO_14: ["CCL_LAPRTBESO_409"],
-  //   };
   static portMap = {
     LRCCCU2SEATO: ["LAPRTUESO", "LAPRTUPESO"],
     LRCCCA2SEATO: ["LAPRTAAE2O", "LAPRTAAPEO"],
@@ -26,56 +15,48 @@ class Rule {
 
   static RCOTelecomLicenses = [
     {
-      //       Category: "CCL_LICIBL_78",
       Category: "LICIBL",
       ITEM_NAME: "Inbound Local, per 10 min",
       USD: 0.0,
       CAD: 0,
     },
     {
-      //        Category: "CCL_LICIBTF_79",
       Category: "LICIBTF",
       ITEM_NAME: "Inbound Toll Free, per 10 min",
       USD: 0.14,
       CAD: 0.14,
     },
     {
-      // Category: "CCL_LICIBINT_81",
       Category: "LICIBINT",
       ITEM_NAME: "Inbound International",
       USD: 0.01,
       CAD: 0.01,
     },
     {
-      // Category: "CCL_LICOBLC_83",
       Category: "LICOBLC",
       ITEM_NAME: "Outbound Local Conversational, per 10 min",
       USD: 0.0,
       CAD: 0.0,
     },
     {
-      // Category: "CCL_LICOBIC_84",
       Category: "LICOBIC",
       ITEM_NAME: "Outbound International Conversational",
       USD: 0.01,
       CAD: 0.01,
     },
     {
-      // Category: "CCL_LICOBDL_85",
       Category: "LICOBDL",
       ITEM_NAME: "Outbound Dialer Local, per 10 min",
       USD: 0.16,
       CAD: 0.16,
     },
     {
-      // Category: "CCL_LICOBDINT_87",
       Category: "LICOBDINT",
       ITEM_NAME: "Outbound Dialer International",
       USD: 0.01,
       CAD: 0.01,
     },
     {
-      //    Category: "CCL_LICOBLTF_88",
       Category: "LICOBLTF",
       ITEM_NAME: "Outbound local Toll Free",
       USD: 0.0,
@@ -83,7 +64,6 @@ class Rule {
     },
   ];
   static ASR_OVERAGE = {
-    // Category: "CCL_LASRO_620",
     Category: "LASRO",
     ITEM_NAME: "Contact Center: Automated Speech Recognition (per minute)",
     USD: 0.06,
@@ -92,7 +72,6 @@ class Rule {
   };
 
   static BUNDLE25K = {
-    // Category: "CCL_LICIBTF25KB_80",
     Category: "LICIBTF25KB",
     ITEM_NAME: "Inbound Toll Free 25K Bundle",
     USD: 350.0,
@@ -151,20 +130,16 @@ class RCCheckSeats extends Rule {
       return false;
     }
 
-    for (let i = 0; i < acct.ents.length; i++) {
-      // Cleanup of extra seat overages if any
-      if (
-        /^307-/.test(acct.ents[i].EXT_PRODUCT_ID) &&
-        acct.ents[i].Category !== seats[0].Category &&
-        acct.ents[i].Category !== acct.facts.seat.Category
-      ) {
-        acct.logInfo(
-          this.name,
-          `Removed: ${acct.ents[i].EXT_PRODUCT_ID} ${acct.ents[i].ITEM_NAME}`
-        );
-        acct.ents.splice(i--, 1);
-      }
-    }
+    // Cleanup of extra seat overages if any
+    acct.ents = acct.ents.filter(
+      (e) =>
+        !(
+          /^307-/.test(e.EXT_PRODUCT_ID) &&
+          e.Category !== seats[0].Category &&
+          e.Category !== acct.facts.seat.Category &&
+          acct.logInfo(this.name, `Removed: ${e.EXT_PRODUCT_ID} ${e.ITEM_NAME}`)
+        )
+    );
     return true;
   }
 }
@@ -225,16 +200,15 @@ class RCFixPorts extends Rule {
       if (p !== undefined) acct.facts.entPortLic = p;
     }
 
-    for (let i = 0; i < acct.ents.length; i++) {
-      // Cleanup of extra overage ports
-      if (
-        /^308-/.test(acct.ents[i].EXT_PRODUCT_ID) &&
-        acct.ents[i].ProductFamily === "Overage" &&
-        acct.ents[i].Category !== acct.facts.entPortLic.Category
-      ) {
-        acct.ents.splice(i--, 1);
-      }
-    }
+    // Cleanup of extra overage ports
+    acct.ents = acct.ents.filter(
+      (e) =>
+        !(
+          /^308-/.test(e.EXT_PRODUCT_ID) &&
+          e.ProductFamily === OVERAGE &&
+          e.Category !== acct.facts.entPortLic.Category
+        )
+    );
     return true;
   }
 }
@@ -247,24 +221,16 @@ class RCExtraOverages extends Rule {
     });
   }
   action(acct) {
-    for (let i = 0; i < acct.ents.length; i++) {
-      if (
-        acct.ents[i].ProductFamily === OVERAGE &&
-        //        acct.ents[i].Category !== "CCL_LASRO_620" &&
-        acct.ents[i].Category !== "LASRO" &&
-        -1 ===
-          acct.cases.findIndex(
-            (c) => c.skuid === acct.ents[i].EXT_PRODUCT_ID
-          ) &&
-        -1 === acct.nics.findIndex((n) => n.SKU === acct.ents[i].EXT_PRODUCT_ID)
-      ) {
-        acct.logInfo(
-          this.name,
-          `Removed: ${acct.ents[i].EXT_PRODUCT_ID} ${acct.ents[i].ITEM_NAME}`
-        );
-        acct.ents.splice(i--, 1);
-      }
-    }
+    acct.ents = acct.ents.filter(
+      (e) =>
+        !(
+          e.ProductFamily === OVERAGE &&
+          e.Category !== "LASRO" &&
+          acct.cases.findIndex((c) => c.skuid === e.EXT_PRODUCT_ID) === -1 &&
+          acct.nics.findIndex((n) => n.SKU === e.EXT_PRODUCT_ID) === -1 &&
+          acct.logInfo(this.name, `Removed: ${e.EXT_PRODUCT_ID} ${e.ITBS_NAME}`)
+        )
+    );
     return true;
   }
 }
@@ -506,18 +472,14 @@ class RCFixSocMedia extends Rule {
     });
   }
   action(acct) {
-    for (let i = 0; i < acct.ents.length; i++) {
-      if (
-        /^1502-/.test(acct.ents[i].EXT_PRODUCT_ID) &&
-        acct.ents[i].ProductFamily === OVERAGE
-      ) {
-        acct.logInfo(
-          this.name,
-          `Removed: ${acct.ents[i].EXT_PRODUCT_ID} ${acct.ents[i].ITBS_NAME}`
-        );
-        acct.ents.splice(i--, 1);
-      }
-    }
+    acct.ents = acct.ents.filter(
+      (e) =>
+        !(
+          /^1502-/.test(e.EXT_PRODUCT_ID) &&
+          e.ProductFamily === OVERAGE &&
+          acct.logInfo(this.name, `Removed: ${e.EXT_PRODUCT_ID} ${e.ITBS_NAME}`)
+        )
+    );
     return true;
   }
 }
