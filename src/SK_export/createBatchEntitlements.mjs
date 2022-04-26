@@ -4,7 +4,9 @@ import { prepareBatchFiles } from "./prepareBatchFiles.mjs";
 const Exc = [
   "308-8-167",
   "309-11-171",
+  "309-11-172", // Contact Center: [(-)Additional ]Active Storage (per GB for concurrent user)  Overage
   "309-565-000",
+  "310-557-000", // Contact Center: PCI Level 1 Seat License - Add On (per Named-User Seat Edition) [+ Overage]
   "500-617-000",
   "1032-173-000",
   "1032-174-000",
@@ -15,9 +17,15 @@ const Exc = [
   "1032-572-000",
   "1503-693-000",
   "1503-694-000",
+  "3465-22-000", // Contact Center: [(-)inView ]Performance Management (per Named-User)
+  "3465-521-000", // Contact Center: [(+)Performance Management -][(-)InView] Gamification (per Named-User)
   "3465-1227-000",
   "4100-701-000",
+  "4102-829-000", // Contact Center: Quality Management Analytics[(+) Pro] (per Named-User)
+  "4107-645-000", // Contact Center: Audio Recording [(-)Advanced][(+) Pro] (per Named-User)
+  "4108-561-000", // Contact Center: [(-)Omnichannel Analytics][(+)Interaction Analytics (per Named-User)]
   "4109-673-000",
+  "610064-302-000", // Professional Services On[(+)-]Demand (per 15-minute block)
 ];
 
 const flds = [
@@ -89,7 +97,7 @@ function selectEntitlements(batchName) {
     FROM 
         EntitlememntLOG e
     INNER JOIN 
-        batch_items b 
+        BatchAccounts b 
         ON EID=USERID AND b.batchID='${batchName}'
     INNER JOIN 
         BillingItemsAndEvents bi 
@@ -141,7 +149,7 @@ function selectEntitlementsSFDC(batchName) {
   FROM 
       Entitlements_SFDC e
   INNER JOIN 
-      batch_items b 
+  BatchAccounts b 
       ON b.EID=e.EnterpriseAccountID AND b.batchID='${batchName}'
   LEFT JOIN 
       CatalogSFDC lc
@@ -152,8 +160,7 @@ function selectEntitlementsSFDC(batchName) {
           AND e.CatID=lc.SKU 
           AND (e.ProductFamily!='Overage' AND lc.PRODUCT_FAMILY!='Overage'
               OR e.ProductFamily='Overage' AND lc.PRODUCT_FAMILY='Overage')
-     ORDER BY b.EID, e.CatID
-      `.replace(/\s+/g, " ");
+  ORDER BY b.EID, e.CatID`.replace(/\s+/g, " ");
   const info = db.prepare(insertSql).run();
   console.log(`${info} Inserted into BatchEntitlements table.`);
 }

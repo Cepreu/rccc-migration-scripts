@@ -27,7 +27,7 @@ export function prepareBatchFiles(batchName) {
             b.currency AS CURRENCY,
             'MONTHLY' AS BILLING_TERM,
             'LEGACY' AS CATALOG
-        FROM batch_items b
+        FROM BatchAccounts b
         INNER JOIN BatchEntitlements e
           ON b.EID=e.EID AND b.batchID=e.batchID
         WHERE

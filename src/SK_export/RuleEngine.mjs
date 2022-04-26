@@ -2,15 +2,16 @@ const OVERAGE = "Overage";
 
 class Rule {
   static portMap = {
-    LRCCCU2SEATO: ["LAPRTUESO", "LAPRTUPESO"],
-    LRCCCA2SEATO: ["LAPRTAAE2O", "LAPRTAAPEO"],
-    LRCCCUCSEATO: ["LAPRTUPESO", "LAPRTAUECO"],
-    LRCCCACSEATO: ["LAPRTAAECO"],
-    LRCCCBASEATO: ["LAPRTBESWAO"],
-    LRCCCUPSEATO: ["LAPRTUPESO"],
-    LRCCCAPSEATO: ["LAPRTAAPEO"],
-    LRCCCUSEATO: ["LAPRTAUEO"],
     LRCCCA1SEATO: ["LAPRTBESO"],
+    LRCCCA2SEATO: ["LAPRTAAE2O", "LAPRTAAPEO"],
+    LRCCCACSEATO: ["LAPRTAAECO"],
+    LRCCCAPSEATO: ["LAPRTAAPEO"],
+    LRCCCBASEATO: ["LAPRTBESWAO"],
+    LRCCCBSEATO: ["LAPRTBESO"],
+    LRCCCU2SEATO: ["LAPRTUESO", "LAPRTUPESO"],
+    LRCCCUCSEATO: ["LAPRTUPESO", "LAPRTAUECO"],
+    LRCCCUPSEATO: ["LAPRTUPESO"],
+    LRCCCUSEATO: ["LAPRTAUEO"],
   };
 
   static RCOTelecomLicenses = [
@@ -137,7 +138,10 @@ class RCCheckSeats extends Rule {
           /^307-/.test(e.EXT_PRODUCT_ID) &&
           e.Category !== seats[0].Category &&
           e.Category !== acct.facts.seat.Category &&
-          acct.logInfo(this.name, `Removed: ${e.EXT_PRODUCT_ID} ${e.ITEM_NAME}`)
+          acct.logInfo(
+            this.name,
+            `Removed: ${e.EXT_PRODUCT_ID} ${e.ITEM_NAME}, parent ${e.PARENT}`
+          )
         )
     );
     return true;
@@ -174,8 +178,11 @@ class RCFixPorts extends Rule {
     );
 
     if (entPorts.length === 0) {
-      acct.logError(this.name, "RC Port Overage license was not found");
-      return false;
+      acct.logWarning(
+        this.name,
+        "RC Port Overage license was not found. NEEDS ATTENTION!"
+      );
+      return true;
     }
     const nicPort = acct.nics.find((nic) => /^308-/.test(nic.SKU));
     if (nicPort === undefined) {
@@ -226,11 +233,32 @@ class RCExtraOverages extends Rule {
         !(
           e.ProductFamily === OVERAGE &&
           e.Category !== "LASRO" &&
+          e.EXT_PRODUCT_ID !== "610064-000-000" &&
+          e.EXT_PRODUCT_ID !== "610064-302-000" &&
           acct.cases.findIndex((c) => c.skuid === e.EXT_PRODUCT_ID) === -1 &&
           acct.nics.findIndex((n) => n.SKU === e.EXT_PRODUCT_ID) === -1 &&
           acct.logInfo(this.name, `Removed: ${e.EXT_PRODUCT_ID} ${e.ITBS_NAME}`)
         )
     );
+    return true;
+  }
+}
+
+/////////////
+class RCEntCheckDuplicates extends Rule {
+  constructor() {
+    super({
+      description:
+        "Checks if there are duplicates in result of name-less matching with the catalog",
+    });
+  }
+  action(acct) {
+    //4107-645-000:
+    if (acct.ents.findIndex((e) => e.Category === "LAURCRDA") > -1) {
+      acct.ents = acct.ents.filter(
+        (e) => e.Category !== "LWEMAUREC" && e.Category !== "LWEMAURECO"
+      );
+    }
     return true;
   }
 }
@@ -320,26 +348,26 @@ class RCFixPrices2 extends Rule {
   }
 }
 
-//////////////////
-class RCProfServOnDemand extends Rule {
-  constructor() {
-    super({
-      description: "Delete Professional Service Licenses",
-    });
-  }
-  action(acct) {
-    const toDeleteNames = ["610064-000-000", "610064-302-000"];
-    toDeleteNames.forEach((tdn) => {
-      const i = acct.ents.findIndex((e) => e.EXT_PRODUCT_ID === tdn);
-      if (i >= 0) {
-        const theIssue = `Removed: ${acct.ents[i].EXT_PRODUCT_ID} ${acct.ents[i].ITBS_NAME}`;
-        acct.logInfo(this.name, theIssue);
-        acct.ents.splice(i, 1);
-      }
-    });
-    return true;
-  }
-}
+// //////////////////
+// class RCProfServOnDemand extends Rule {
+//   constructor() {
+//     super({
+//       description: "Delete Professional Service Licenses",
+//     });
+//   }
+//   action(acct) {
+//     const toDeleteNames = ["610064-000-000", "610064-302-000"];
+//     toDeleteNames.forEach((tdn) => {
+//       const i = acct.ents.findIndex((e) => e.EXT_PRODUCT_ID === tdn);
+//       if (i >= 0) {
+//         const theIssue = `Removed: ${acct.ents[i].EXT_PRODUCT_ID} ${acct.ents[i].ITBS_NAME}`;
+//         acct.logInfo(this.name, theIssue);
+//         acct.ents.splice(i, 1);
+//       }
+//     });
+//     return true;
+//   }
+// }
 
 //////////////////
 class RCOldTelco extends Rule {
@@ -437,7 +465,15 @@ class RC25kBundles extends Rule {
   }
   action(acct) {
     const batchPattern =
-      /Contact Center: (?<Mega>\d+M )?(?<Kilo>\d+K )?Domestic Minutes Bundle/;
+      /Contact Center: (?<Mega>\d+M )?(?<Kilo>\d+K )?(Domestic )?Minutes Bundle/;
+
+    acct.ents = acct.ents.filter(
+      (e) =>
+        !("ITBS_NAME" in e && e.ITBS_NAME.match(batchPattern)) ||
+        e.QNTY_THRESHOLD > 0 ||
+        !acct.logInfo(this.name, `Deleted: "${e.ITBS_NAME}" with zero quantity`)
+    );
+
     acct.ents
       .filter((e) => "ITBS_NAME" in e && e.ITBS_NAME.match(batchPattern))
       .forEach((bundle) => {
@@ -447,18 +483,17 @@ class RC25kBundles extends Rule {
         );
 
         const { Mega, Kilo } = bundle.ITBS_NAME.match(batchPattern).groups;
-        const qtty =
-          ((Mega ? 40 * Mega.slice(0, -2) : 0) +
-            (Kilo ? 0.04 * Kilo.slice(0, -2) : 0)) *
-          bundle.QNTY_THRESHOLD;
+        const qtty25k =
+          (Mega ? 40 * Mega.slice(0, -2) : 0) +
+          (Kilo ? 0.04 * Kilo.slice(0, -2) : 0);
 
         bundle.Category = Rule.BUNDLE25K.Category;
         bundle.ITEM_NAME = Rule.BUNDLE25K.ITEM_NAME;
-        bundle.QNTY_THRESHOLD = qtty;
+        bundle.QNTY_THRESHOLD = qtty25k * bundle.QNTY_THRESHOLD;
         bundle.PRICE =
           bundle.CURRENCY === "USD" ? Rule.BUNDLE25K.USD : Rule.BUNDLE25K.CAD;
-        bundle.DISCOUNT = bundle.PRICE - bundle.OldPrice / qtty;
-        bundle.ProductFamily = OVERAGE;
+        bundle.DISCOUNT = bundle.PRICE - bundle.OldPrice / qtty25k;
+        //        bundle.ProductFamily = OVERAGE;
       });
     return true;
   }
@@ -543,12 +578,18 @@ class NiC_MRCvsDWH extends Rule {
     acct.nics.forEach((nl) => {
       const entLic = acct.ents.find((el) => nl.SKU === el.EXT_PRODUCT_ID);
       if (entLic === undefined) {
-        if (
-          nl.Amount == 0.0 &&
-          Rule.Exceptions.find((ex) => nl.SKU === ex) !== undefined
-        ) {
-          const theIssue = `${nl.SKU}  was found in NiC MRS file but not in RC entitlements. Ignored as a known exception`;
-          acct.logWarning(this.name, theIssue);
+        if (nl.Amount == 0.0) {
+          if (Rule.Exceptions.find((ex) => nl.SKU === ex) !== undefined) {
+            acct.logWarning(
+              this.name,
+              `${nl.SKU}  was found in NiC MRS file but not in RC entitlements. Ignored as a known exception`
+            );
+          } else {
+            acct.logWarning(
+              this.name,
+              `${nl.SKU} ($${nl.Amount}) was found in NiC MRS file but not in RC entitlements. NEEDS ATTENTION!`
+            );
+          }
         } else {
           acct.logError(
             this.name,
@@ -630,11 +671,10 @@ class NiC_MRCvsC2C extends Rule {
       ) {
         const entLic = acct.ents.find((el) => nl.SKU === el.EXT_PRODUCT_ID);
         if (entLic === undefined) {
-          acct.logError(
+          acct.logWarning(
             this.name,
-            `${nl.SKU} was not found in case2case but is presented in Monthly file. CANNOT BE RESTORED!`
+            `${nl.SKU} was not found in case2case and entitlements but is presented in Monthly file. CANNOT BE RESTORED!`
           );
-          rule_res = false;
           return;
         }
         if (nl.Quantity > 0) {
@@ -692,15 +732,19 @@ class NiCPorts extends Rule {
     });
   }
   action(acct) {
-    const casePortLic = acct.cases.find((c) => /^308-/.test(c.skuid));
-    if (casePortLic === undefined) {
-      acct.logError(this.name, "NiC PortOverage license was not found");
-      return false;
-    }
-    if (casePortLic.skuid !== acct.facts.entPortLic.EXT_PRODUCT_ID) {
-      const theIssue = `inContact port ${casePortLic.skuid} replaced by ${acct.facts.entPortLic.EXT_PRODUCT_ID} to match Entitlements`;
-      acct.logWarning(this.name, theIssue);
-      casePortLic.skuid = acct.facts.entPortLic.EXT_PRODUCT_ID;
+    if ("entPortLic" in acct.facts) {
+      const casePortLic = acct.cases.find((c) => /^308-/.test(c.skuid));
+      if (casePortLic === undefined) {
+        acct.logError(this.name, "NiC PortOverage license was not found");
+        return false;
+      }
+      if (casePortLic.skuid !== acct.facts.entPortLic.EXT_PRODUCT_ID) {
+        acct.logWarning(
+          this.name,
+          `inContact port ${casePortLic.skuid} replaced by ${acct.facts.entPortLic.EXT_PRODUCT_ID} to match Entitlements`
+        );
+        casePortLic.skuid = acct.facts.entPortLic.EXT_PRODUCT_ID;
+      }
     }
     return true;
   }
@@ -714,10 +758,11 @@ export class RuleEngine {
       new RCPorts4Seats(),
       new RCFixPorts(),
       new RCExtraOverages(),
+      new RCEntCheckDuplicates(),
       new RCEntNaming(),
       new RCNegDiscounts(),
       new RCFixPrices2(),
-      new RCProfServOnDemand(),
+      //      new RCProfServOnDemand(),
       new RCOldTelco(),
       new RCNewTelco(),
       new RCASROverage(),
