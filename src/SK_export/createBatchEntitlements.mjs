@@ -8,6 +8,7 @@ const Exc = [
   "309-565-000",
   "310-557-000", // Contact Center: PCI Level 1 Seat License - Add On (per Named-User Seat Edition) [+ Overage]
   "500-617-000",
+  "1012-150-000", // Contact Center: [(-)Service: Additional Local DID][(+)US Local Number]
   "1032-173-000",
   "1032-174-000",
   "1032-175-000",
@@ -15,16 +16,36 @@ const Exc = [
   "1032-493-000",
   "1032-494-000",
   "1032-572-000",
+  "1032-573-000", // Contact Center: Outbound SMS Application Fee [(-)- Canada][(+) Canada (per BU)]
+  "1032-574-000", // Contact Center: Inbound SMS Application Fee [(-)- Canada][(+) Canada (per BU)]
+  "1270-136-000", // Contact Center: Service: [(-)Additional][(+)US] Toll Free Number
+  "1500-000-000", // Contact Center: [(-)inContact ]Social Media[(+) Channel]
   "1503-693-000",
   "1503-694-000",
+  "1561-50-000", // Contact Center: Care [(+)Plus ]Monthly Success Package[(-) (99 users)]
+  "1561-55-000", // Contact Center: Premier Monthly Success Package [(-)(250 users)][+(up to 249 users)]
+  "3347-21-000", // Contact Center: [(+)inContact ]Agent for Salesforce
   "3465-22-000", // Contact Center: [(-)inView ]Performance Management (per Named-User)
   "3465-521-000", // Contact Center: [(+)Performance Management -][(-)InView] Gamification (per Named-User)
+  "3465-523-000", // Contact Center: [(+)inView ][(-)Performance Management -] Coaching and Learning Management[(-) (per Named-User)]
   "3465-1227-000",
+  "4058-000-000", // Contact Center[(-) ]: inContact Screen Recording
+  "4100-533-000", // Contact Center: [(-)NICE ]Workforce Management Essentials
+  "4100-534-000", // Contact Center: [(-)Workforce Management Advanced][(+)IEX WFM Integrated Advanced (per Named-User)]
   "4100-701-000",
+  "4101-537-000", // Contact Center: Workforce [(-)Optimization Advanced][(+)Engagement (WEM) Integrated Advanced (per Named-User)]
+  "4101-643-000", // Contact Center: Workforce [(-)Optimization Pro (per named-user)][(+)Engagement Management (per Named-User)]
+  "4102-538-000", // Contact Center: [(-)Quality Management Enterprise][(+)QM Integrated] (per Named-User)
+  "4102-539-000", // Contact Center: [(-)NICE Quality Management][(+)Quality Optimization Integrated (per Named-User)]
+  "4102-642-000", // Contact Center: Quality Management[(-) Pro] with Voice Recording (per [(-)named-user)[(+)Named-User])
   "4102-829-000", // Contact Center: Quality Management Analytics[(+) Pro] (per Named-User)
+  "4104-541-000", // Contact Center: [(-)Screen Recording][(+)Integrated Screen Recording (per Named-User)]
+  "4104-644-000", // Contact Center: Screen Recording Pro (per [(-)named-user][(+)Configured User])
+  "4105-542-000", // Contact Center: [(+)IEX WFM Integrated - ]Workload Manager[(+) (per Named-User)]
+  "4106-543-000", // Contact Center: [(+)Integrated][(-)Audio] Recording (per Named-User)"
   "4107-645-000", // Contact Center: Audio Recording [(-)Advanced][(+) Pro] (per Named-User)
   "4108-561-000", // Contact Center: [(-)Omnichannel Analytics][(+)Interaction Analytics (per Named-User)]
-  "4109-673-000",
+  "4109-673-000", // Contact Center: Interaction Analytics - Data Ingest API
   "610064-302-000", // Professional Services On[(+)-]Demand (per 15-minute block)
 ];
 

@@ -139,7 +139,13 @@ class BatchDescription {
     if (this.seatEdition) {
       const inOrNot = this.seatEdition === "Legacy" ? "NOT IN" : "IN";
       wheres.push(
-        `sf.EnterpriseAccountID ${inOrNot} (SELECT  a.accountID from nic_case_items a WHERE skuid LIKE '1265_-%')`
+        `sf.EnterpriseAccountID ${inOrNot} (
+          SELECT DISTINCT a.accountID 
+          FROM nic_case_items a 
+          WHERE 
+            skuid LIKE '1265_-%' OR 
+            skuid LIKE '510-13%' OR 
+            skuid IN ('4100-1713-000', '4102-1710-000', '4108-1716-000', '1440-1340-000', '1440-1341-000', '3350-1155-000', '3350-1157-000'))`
       );
     }
     if (this.accountList.length > 0) {
@@ -203,7 +209,11 @@ class BatchDescription {
 
     stmt = db.prepare(`DELETE FROM BatchAccounts WHERE batchID=?`);
     info = stmt.run(this.name);
-    console.log(`Number of rows deleted: ${info.changes}`);
+    console.log(`BatchAccounts. Number of rows deleted: ${info.changes}`);
+
+    stmt = db.prepare(`DELETE FROM BatchEntitlements WHERE batchID=?`);
+    info = stmt.run(this.name);
+    console.log(`BatchEntitlements. Number of rows deleted: ${info.changes}`);
 
     stmt = db.prepare(this.#batchSQL);
     info = stmt.run();
