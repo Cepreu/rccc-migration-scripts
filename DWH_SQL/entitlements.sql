@@ -25,9 +25,9 @@ FROM
     LEFT JOIN stat.ueh_detail_statuses     st ON st.detailstatusid = et.detailstatusid
     LEFT JOIN stat.ueh_detail_types        tt ON tt.detailtypeid = et.detailtypeid
     LEFT JOIN stat.swr_countrycode         cc ON cc.countryid = bit.countryid
-    LEFT JOIN stat.acct_statmetrics_mv00   mv00 ON mv00.userid = et.userid
+--    LEFT JOIN stat.acct_statmetrics_mv00   mv00 ON mv00.userid = et.userid
+
 WHERE
-        mv00.acct_brandid = 1210
-    AND mv00.acct_statusid = 7
+    et.entitlement_log_id > 700873
 ORDER BY
-    et.userid;    
+    et.userid;

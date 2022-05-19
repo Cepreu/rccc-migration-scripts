@@ -1,17 +1,17 @@
 SELECT
     u.userid,
     a.acct_brandid,
+    a08.accountid billing_id,
     b.brandname,
     i.ext_account_id,
     c.id_currency,
     c.currency_code,
-    c.currency_name,
     CASE
         WHEN a.acct_paysystemid = 0 THEN
             bp.mduration
         ELSE
             abt.mduration
-    END mduration,
+    END           mduration,
     tr.contract_term
 FROM
     (
@@ -31,6 +31,7 @@ FROM
                        AND e.start_date >= TO_DATE('01/04/2022', 'dd/mm/yyyy') ) )
     )                                 u
     LEFT JOIN stat.acct_statmetrics_mv00        a ON u.userid = a.userid
+    LEFT JOIN stat.acct_statmetrics_mv08        a08 ON u.userid = a08.userid
     LEFT JOIN stat.swr_brands                   b ON a.acct_brandid = b.brandid
     LEFT JOIN stat.swr_currencies               c ON c.id_currency = b.id_currency
     LEFT JOIN (

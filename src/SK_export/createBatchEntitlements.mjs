@@ -99,34 +99,31 @@ function selectEntitlements(batchName) {
         b.BID,
         b.AccountName,
         e.EXT_PRODUCT_ID,
-        lc.ngbs_name,
-        CASE WHEN e.ITEM_NAME!=lc.ngbs_name THEN e.ITEM_NAME ELSE '' END,
+        lc.PRODUCT_NAME,
+        e.ITEM_NAME,
         e.RETAIL_PRICE,
-        bi.MDURATION,
-        bi.CURRENCY_CODE,
-        (e.RETAIL_PRICE-e.DISCOUNT_VALUE) / CASE WHEN bi.DETAILTYPEID=5 THEN bi.MDURATION ELSE 1 END,
+        e.MDURATION,
+        e.CURRENCY_CODE,
+        (e.RETAIL_PRICE-e.DISCOUNT_VALUE) / CASE WHEN e.ProductFamily!='Overage' AND e.ChargeTerm='Annual' THEN 12 ELSE 1 END,
         e.QNTY_THRESHOLD,
-        lc.USD,
-        lc.CAD,
-        lc.USD - (e.RETAIL_PRICE - e.DISCOUNT_VALUE) / CASE WHEN bi.DETAILTYPEID=5 THEN bi.MDURATION ELSE 1 END,
-        lc.CAD - (e.RETAIL_PRICE - e.DISCOUNT_VALUE) / CASE WHEN bi.DETAILTYPEID=5 THEN bi.MDURATION ELSE 1 END,
-        lc.NiCPrice,
-        lc.element_id,
-        lc.Parent,
-        e.TYPE_NAME,
-        b.batchID
+        lc.PRICE_USD,
+        lc.PRICE_CAD,
+        lc.PRICE_USD - (e.RETAIL_PRICE - e.DISCOUNT_VALUE) / CASE WHEN e.ProductFamily!='Overage' THEN e.MDURATION ELSE 1 END,
+        lc.PRICE_CAD - (e.RETAIL_PRICE - e.DISCOUNT_VALUE) / CASE WHEN e.ProductFamily!='Overage' THEN e.MDURATION ELSE 1 END,
+        lc.NIC_PRICE,
+        lc.L_CATEGORY,
+        lc.PARENT,
+        e.ProductFamily,
+        '${batchName}'
     FROM 
-        EntitlememntLOG e
+        Entitlements_DWH e
     INNER JOIN 
         BatchAccounts b 
         ON EID=USERID AND b.batchID='${batchName}'
-    INNER JOIN 
-        BillingItemsAndEvents bi 
-        ON bi.ACCOUNTID=EID AND e.BILLING_ITEM_ID=bi.BILLINGITEMID
     LEFT JOIN 
-        CLicense lc 
+    CatalogSFDC lc 
         ON (
-            e.ITEM_NAME=lc.ngbs_name
+            e.ITEM_NAME=lc.PRODUCT_NAME
                 OR e.EXT_PRODUCT_ID IN (${"'" + Exc.join("', '") + "'"})
             )
             AND e.EXT_PRODUCT_ID=lc.SKU 
@@ -192,7 +189,8 @@ function selectEntitlementsSFDC(batchName) {
  **/
 export function createBatchEntitlementsSFDC(batchName) {
   prepareTable(batchName);
-  selectEntitlementsSFDC(batchName);
+  //  selectEntitlementsSFDC(batchName);
+  selectEntitlements(batchName);
   prepareBatchFiles(batchName);
 }
 
