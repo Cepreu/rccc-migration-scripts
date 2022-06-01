@@ -1,5 +1,5 @@
 import readLineSync from "readline-sync";
-import { createBatchEntitlementsSFDC as createBatchEntitlements } from "./createBatchEntitlements.mjs";
+import { createBatchEntitlements } from "./createBatchEntitlements.mjs";
 import { prepareBatchFiles } from "./prepareBatchFiles.mjs";
 
 const batchName = readLineSync.question("Batch name: ");

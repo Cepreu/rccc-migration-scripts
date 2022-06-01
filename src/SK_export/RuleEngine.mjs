@@ -129,6 +129,15 @@ class Rule {
     LRCCCUPSEATO: ["LAPRTUPESO"],
     LRCCCUSEATO: ["LAPRTAUEO"],
     LRCCCBCSEATO: ["LAPRTABECO"],
+    LRCCSEATUESO: ["APRTO"],
+    RCCCUCC3PSEATO: ["APRTO"],
+    RCCCE3PSEATO: ["APRTO"],
+    RCCCP3PSEATO: ["APRTO"],
+    RCCCS3PSEATO: ["APRTO"],
+    RCCCSC3PSEATO: ["APRTO"],
+    RCCCU3PSEATO: ["APRTO"],
+    RCCCEC3PSEATO: ["APRTO"],
+    RCCCPC3PSEATO: ["APRTO"],
   };
 
   static RCOTelecomLicenses = [
@@ -218,20 +227,23 @@ class Rule {
 class RCCheckSeats extends Rule {
   constructor() {
     super({
-      description: "Checks seats",
+      description: "Checks for the existence and uniqueness of a Seat license",
     });
   }
   action(acct) {
+    const seatPattern = /^307-(?!6-603).*$|^1265.-.*$/; // 307-6-603 is exclusion: the digital add-on; 1265* - new gen seats
     const seats = acct.ents.filter(
       (row) =>
-        /^307-(?!6-603).*$/.test(row.EXT_PRODUCT_ID) && // 307-6-603 is exclusion: the digital add-on
+        seatPattern.test(row.EXT_PRODUCT_ID) &&
         row.ITEM_NAME !== "Seat Overage" &&
         row.QNTY_THRESHOLD > 0
     );
     if (seats.length !== 1) {
       acct.logError(
         this.name,
-        "Incorrect number of Seat licenses (not found or more than one)"
+        seats.length === 0
+          ? "Seat licenses not found"
+          : `More than one seat licenses were found (${seats.length})`
       );
       return false;
     }
@@ -244,7 +256,7 @@ class RCCheckSeats extends Rule {
 class RCCSeatOverage extends Rule {
   constructor() {
     super({
-      description: "Checks Seat overage",
+      description: "Checks/Fixes Seat Overage license",
     });
   }
   action(acct) {
@@ -301,10 +313,12 @@ class RCCSeatOverage extends Rule {
   }
 }
 
+//////////
 class RCPorts4Seats extends Rule {
   constructor() {
     super({
-      description: "Checks if ports match seats",
+      description:
+        "Checks if the Additional Port licenses matches the Seat license",
     });
   }
   action(acct) {
@@ -321,7 +335,7 @@ class RCPorts4Seats extends Rule {
 class RCFixPorts extends Rule {
   constructor() {
     super({
-      description: "Check/Fix Ports",
+      description: "Check/Fix Port Overage license",
     });
   }
   action(acct) {
@@ -377,7 +391,7 @@ class RCFixPorts extends Rule {
 class RCExtraOverages extends Rule {
   constructor() {
     super({
-      description: "Remove overage licenses without direct order",
+      description: "Removes Overage licenses that were not explicitly ordered",
     });
   }
   action(acct) {
@@ -406,6 +420,29 @@ class RCExtraOverages extends Rule {
             ))
         )
     );
+    return true;
+  }
+}
+
+/////////////
+class RCFixTextelOvs extends Rule {
+  constructor() {
+    super({
+      description: "Replace Textel batch Overages",
+    });
+  }
+  action(acct) {
+    const textelOverage = acct.ents.find(
+      (t) => !t.ITEM_NAME && t.EXT_PRODUCT_ID.startsWith("3875-12")
+    );
+    if (textelOverage) {
+      textelOverage.ITEM_NAME = "Testel - Overage";
+      textelOverage.EXT_PRODUCT_ID = "";
+      textelOverage.Category = "LTXTO";
+      textelOverage.PRICE = 0.04;
+      textelOverage.DISCOUNT = 0.0;
+      textelOverage.QNTY_THRESHOLD = 0;
+    }
     return true;
   }
 }
@@ -454,7 +491,7 @@ class RCEntNaming extends Rule {
 class RCFixPrices2 extends Rule {
   constructor() {
     super({
-      description: "RC: fix Usage Licenses",
+      description: "Corrects outdated prices for certain usage licenses",
     });
   }
   action(acct) {
@@ -492,7 +529,7 @@ class RCNegDiscounts extends Rule {
   constructor() {
     super({
       description:
-        "Sanity check: Reject the migration if negative discount was found",
+        "Sanity check: Rejects the migration if negative discount was found",
     });
   }
   action(acct) {
@@ -511,7 +548,7 @@ class RCNegDiscounts extends Rule {
 class RCOldTelco extends Rule {
   constructor() {
     super({
-      description: "Delete old Telecom Licenses",
+      description: "Deletes old Telecom Licenses",
     });
   }
   action(acct) {
@@ -536,7 +573,7 @@ class RCOldTelco extends Rule {
 class RCNewTelco extends Rule {
   constructor() {
     super({
-      description: "Add Free Domestic Telephony Licenses",
+      description: "Adds Free Domestic Telephony Licenses",
     });
   }
   action(acct) {
@@ -565,7 +602,8 @@ class RCNewTelco extends Rule {
 class RCASROverage extends Rule {
   constructor() {
     super({
-      description: "Add ASR Overage License - if it was originally omitted",
+      description:
+        "Adds the ASR Overage License - if it was originally omitted",
     });
   }
   action(acct) {
@@ -597,7 +635,7 @@ class RCASROverage extends Rule {
 class RC25kBundles extends Rule {
   constructor() {
     super({
-      description: "Convert different-size toll-free bundles to 25K",
+      description: "Converts different-size toll-free bundles to 25K ones",
     });
   }
   action(acct) {
@@ -640,7 +678,7 @@ class RC25kBundles extends Rule {
 class RCFixSocMedia extends Rule {
   constructor() {
     super({
-      description: "Fix Social Media Overages",
+      description: "Fixes Social Media Overages",
     });
   }
   action(acct) {
@@ -684,7 +722,7 @@ class NiC_StripXX extends Rule {
   constructor() {
     super({
       description:
-        "RC: Removing the _XX suffix in C2C (to enable further matching)",
+        "RC: Removes the _XX suffix in C2C (to enable further matching)",
     });
   }
   action(acct) {
@@ -707,7 +745,7 @@ class NiC_MRCvsDWH extends Rule {
   constructor() {
     super({
       description:
-        "Check if there are licenses in Monthly which are absent in RC entitlements.",
+        "Checks if there are licenses in Monthly which are absent in RC entitlements",
     });
   }
   action(acct) {
@@ -746,7 +784,7 @@ class NiC_MRCvsDWH extends Rule {
 class NiC_NotFound extends Rule {
   constructor() {
     super({
-      description: "Check if the account is represented in Monthly",
+      description: "Checks if the account is represented in Monthly",
     });
   }
   action(acct) {
@@ -797,7 +835,7 @@ class NiC_MRCvsC2C extends Rule {
   constructor() {
     super({
       description:
-        "Check if there are licenses in Monthly which are absent in cases - and add them",
+        "Checks if there are licenses in Monthly which are absent in cases - and add them",
     });
   }
   action(acct) {
@@ -867,7 +905,7 @@ class RCCMapping extends Rule {
 class NiCPorts extends Rule {
   constructor() {
     super({
-      description: "Check/Fix NiC pors",
+      description: "Checks/Fixes NiC port licenses",
     });
   }
   action(acct) {
@@ -905,6 +943,7 @@ export class RuleEngine {
       new RCPorts4Seats(),
       new RCFixPorts(),
       new RCExtraOverages(),
+      new RCFixTextelOvs(),
       new RCEntCheckDuplicates(),
       new RCEntNaming(),
       new RCFixPrices2(),

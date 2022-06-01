@@ -104,7 +104,7 @@ function selectEntitlements(batchName) {
         e.RETAIL_PRICE,
         e.MDURATION,
         e.CURRENCY_CODE,
-        (e.RETAIL_PRICE-e.DISCOUNT_VALUE) / CASE WHEN e.ProductFamily!='Overage' AND e.ChargeTerm='Annual' THEN 12 ELSE 1 END,
+        (e.RETAIL_PRICE-e.DISCOUNT_VALUE) / CASE WHEN e.ProductFamily!='Overage' THEN e.MDURATION ELSE 1 END,
         e.QNTY_THRESHOLD,
         lc.PRICE_USD,
         lc.PRICE_CAD,
@@ -127,17 +127,18 @@ function selectEntitlements(batchName) {
                 OR e.EXT_PRODUCT_ID IN (${"'" + Exc.join("', '") + "'"})
             )
             AND e.EXT_PRODUCT_ID=lc.SKU 
-            AND (e.TYPE_NAME='Recurring' AND lc.billing_type='Recurring'
-                OR e.TYPE_NAME='Overage' AND lc.billing_type='Usage')
-    WHERE
+            AND (e.ProductFamily!='Overage' AND lc.PRODUCT_FAMILY!='Overage'
+            OR e.ProductFamily='Overage' AND lc.PRODUCT_FAMILY='Overage')
+  WHERE
         (END_DATE > date('now') OR END_DATE IS NULL) 
         AND STATUS_NAME='Active'
     ORDER BY b.EID, e.EXT_PRODUCT_ID 
     `.replace(/\s+/g, " ");
-  info = db.prepare(insertSql).run();
-  console.log(`Entitlements inserted.`);
+  const info = db.prepare(insertSql).run();
+  console.log(`${info} Inserted into BatchEntitlements table.`);
 }
 
+////// [Deprecated!]
 function selectEntitlementsSFDC(batchName) {
   const insertSql = `
   INSERT INTO BatchEntitlements
@@ -187,15 +188,8 @@ function selectEntitlementsSFDC(batchName) {
  * createBatch - Creates and populate a batch table.
  * @batchName - Name of the batch to create.
  **/
-export function createBatchEntitlementsSFDC(batchName) {
-  prepareTable(batchName);
-  //  selectEntitlementsSFDC(batchName);
-  selectEntitlements(batchName);
-  prepareBatchFiles(batchName);
-}
-
 export function createBatchEntitlements(batchName) {
   prepareTable(batchName);
-  selectEntitlements(batchName);
+  selectEntitlementsSFDC(batchName); ////<====
   prepareBatchFiles(batchName);
 }
