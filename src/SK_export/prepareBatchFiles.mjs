@@ -70,8 +70,6 @@ export function prepareBatchFiles(batchName) {
       account.INCONTACT_BUID,
       account.AccountName
     );
-    console.table(nics);
-    console.table(cases);
 
     const currAccount = new Account(account, ents, nics, cases, batchName);
     currAccount.validateAndExport(ruleEngine);

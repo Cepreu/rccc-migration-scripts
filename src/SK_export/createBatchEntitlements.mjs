@@ -130,8 +130,8 @@ function selectEntitlements(batchName) {
             AND (e.ProductFamily!='Overage' AND lc.PRODUCT_FAMILY!='Overage'
             OR e.ProductFamily='Overage' AND lc.PRODUCT_FAMILY='Overage')
   WHERE
-        (END_DATE > date('now') OR END_DATE IS NULL) 
-        AND STATUS_NAME='Active'
+      STATUS_NAME='Active'
+      AND (END_DATE = '' OR END_DATE IS NULL OR END_DATE > date('now')) 
     ORDER BY b.EID, e.EXT_PRODUCT_ID 
     `.replace(/\s+/g, " ");
   const info = db.prepare(insertSql).run();
@@ -190,6 +190,7 @@ function selectEntitlementsSFDC(batchName) {
  **/
 export function createBatchEntitlements(batchName) {
   prepareTable(batchName);
-  selectEntitlementsSFDC(batchName); ////<====
+  // selectEntitlementsSFDC(batchName); ////<====
+  selectEntitlements(batchName); ////<====
   prepareBatchFiles(batchName);
 }

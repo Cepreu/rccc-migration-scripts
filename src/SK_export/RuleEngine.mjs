@@ -1,3 +1,4 @@
+const RECURRING = "Recurring";
 const OVERAGE = "Overage";
 
 class Rule {
@@ -220,6 +221,23 @@ class Rule {
   }
   get name() {
     return this.constructor.name;
+  }
+}
+
+/////////////
+class CasesNBU extends Rule {
+  constructor() {
+    super({
+      description:
+        "Checks if we have all the cases (i.e. can we rely on the cases)",
+    });
+  }
+  action(acct) {
+    acct.facts.NBU = -1 !== acct.cases.findIndex((c) => /NBU/.test(c.subject));
+    if (!acct.facts.NBU) {
+      acct.logWarning(this.name, "NBU not found");
+    }
+    return true;
   }
 }
 
@@ -850,7 +868,7 @@ class NiC_MRCvsC2C extends Rule {
         if (entLic === undefined) {
           acct.logWarning(
             this.name,
-            `${nl.SKU} was not found in case2case and entitlements but is presented in Monthly file. CANNOT BE RESTORED!`
+            `${nl.SKU} was not found in case2case and entitlements but is presented in Monthly file. NEEDS ATTENTION!`
           );
           return;
         }
@@ -914,7 +932,7 @@ class NiCPorts extends Rule {
       if (casePortLic === undefined) {
         acct.logWarning(
           this.name,
-          "NiC PortOverage license was not found. Added ${acct.facts.entPortLic.EXT_PRODUCT_ID} to match Entitlements"
+          `NiC PortOverage license was not found. Added ${acct.facts.entPortLic.EXT_PRODUCT_ID} to match Entitlements`
         );
         acct.cases.push({
           skuid: acct.facts.entPortLic.EXT_PRODUCT_ID,
@@ -934,10 +952,79 @@ class NiCPorts extends Rule {
   }
 }
 
+//////////////////
+class QntyVsThrsh extends Rule {
+  constructor() {
+    super({
+      description: "Checks recurring QNTYs vs overages thresholds",
+    });
+  }
+  action(acct) {
+    let isOK = true;
+    acct.ents
+      .filter(
+        (row) => row.ProductFamily === RECURRING && row.EXT_PRODUCT_ID !== null
+      )
+      .forEach((r) => {
+        const overage = acct.ents.find(
+          (o) =>
+            o.ProductFamily === OVERAGE &&
+            o.EXT_PRODUCT_ID === r.EXT_PRODUCT_ID &&
+            o.QNTY_THRESHOLD !== r.QNTY_THRESHOLD
+        );
+        if (overage) {
+          acct.logWarning(
+            this.name,
+            `${r.EXT_PRODUCT_ID} ${r.ITBS_NAME} - Recurring qnty (${r.QNTY_THRESHOLD}) is not equal to overage (${overage.QNTY_THRESHOLD}) - NEEDS ATTENTION!`
+          );
+        }
+      });
+    return isOK;
+  }
+}
+
+//////////////////
+class QntyVsCases extends Rule {
+  constructor() {
+    super({
+      description: "Checks recurring QNTYs vs NiCs",
+    });
+  }
+  action(acct) {
+    let isOK = true;
+    acct.ents
+      .filter(
+        (row) => row.ProductFamily === RECURRING && row.EXT_PRODUCT_ID !== null
+      )
+      .forEach((r) => {
+        const nic = acct.cases.find(
+          (c) => c.skuid === r.EXT_PRODUCT_ID && c.qtty !== r.QNTY_THRESHOLD
+        );
+        if (nic) {
+          if (acct.facts.NBU) {
+            acct.logError(
+              this.name,
+              `${r.EXT_PRODUCT_ID} ${r.ITBS_NAME} - Recurring qnty (${r.QNTY_THRESHOLD}) is not equal to NiC (${nic.qtty}) while NBU was found`
+            );
+            isOK = false;
+          } else {
+            acct.logWarning(
+              this.name,
+              `${r.EXT_PRODUCT_ID} ${r.ITBS_NAME} - NiC case qnty (${nic.qtty}) is corrected to Recurring qnty (${r.QNTY_THRESHOLD}) - no NBU case found`
+            );
+            nic.qtty = r.QNTY_THRESHOLD;
+          }
+        }
+      });
+    return isOK;
+  }
+}
+
 //////////////////////////////////
 export class RuleEngine {
   constructor() {
     this.rules = [
+      new CasesNBU(),
       new RCCheckSeats(),
       new RCCSeatOverage(),
       new RCPorts4Seats(),
@@ -961,6 +1048,8 @@ export class RuleEngine {
       new NiC_MRCvsC2C(),
       new RCCMapping(),
       new NiCPorts(),
+      new QntyVsThrsh(),
+      new QntyVsCases(),
     ];
   }
   run(acct) {
@@ -968,7 +1057,6 @@ export class RuleEngine {
     let skipRules = false;
     this.rules.forEach((rule) => {
       if (!skipRules) {
-        console.log(rule.description);
         const res = rule.action(acct);
         if (!res) {
           skipRules = true;

@@ -1,27 +1,98 @@
-import {csv2sql} from '../utils/csv2sql.mjs'
-import configuration from '../../configuration.mjs'
+import { csv2sql } from "../utils/csv2sql.mjs";
+import configuration from "../../configuration.mjs";
 
 export const RCMRCSummary = () => {
-    const fields = [
-	  {field: 'Account',	    dbcolumn: 'Account',	  type: 'TEXT',	 pkey: false, func: x => x},
-	  {field: 'Customer',	    dbcolumn: 'Customer',	  type: 'TEXT',	 pkey: false, func: x => x},
-	  {field: 'Address1',	    dbcolumn: 'Address1',	  type: 'TEXT',	 pkey: false, func: x => x},
-	  {field: 'Address2',	    dbcolumn: 'Address2',	  type: 'TEXT',	 pkey: false, func: x => x},
-	  {field: 'City',	        dbcolumn: 'City',	      type: 'TEXT',	 pkey: false, func: x => x},
-	  {field: 'State',	        dbcolumn: 'State',        type: 'TEXT',	 pkey: false, func: x => x},
-	  {field: 'ZipCode',	    dbcolumn: 'ZipCode',	  type: 'TEXT',	 pkey: false, func: x => x},
-	  {field: 'Invoice',	    dbcolumn: 'Invoice',	  type: 'TEXT',	 pkey: false, func: x => x},
-	  {field: 'BillingPeriodStart',	dbcolumn: 'BillingPeriodStart',	  type: 'TEXT',	 pkey: false, func: x => x},
-	  {field: 'BillingPeriodEnd',	dbcolumn: 'BillingPeriodEnd',	  type: 'TEXT',	 pkey: false, func: x => x},
-	  {field: 'InvoiceDate',	dbcolumn: 'InvoiceDate',  type: 'TEXT',	 pkey: false, func: x => x},
-	  {field: 'DueDate',	    dbcolumn: 'DueDate',	  type: 'TEXT',	 pkey: false, func: x => x},
-	  {field: 'ProductType',	dbcolumn: 'ProductType',  type: 'TEXT',	 pkey: false, func: x => x},
-	  {field: 'CatalogID',	    dbcolumn: 'CatalogID',	  type: 'TEXT',	 pkey: false, func: x => x},
-	  {field: 'FeatureID',	    dbcolumn: 'FeatureID',	  type: 'TEXT',	 pkey: false, func: x => x},
-	  {field: 'FeatureDetailID',	dbcolumn: 'FeatureDetailID',	  type: 'TEXT',	 pkey: false, func: x => x},
-	  {field: 'Product',	    dbcolumn: 'Product',	  type: 'TEXT',	 pkey: false, func: x => x},
-	  {field: 'Quantity',	    dbcolumn: 'Quantity',	  type: 'TEXT',	 pkey: false, func: x => x},
-	  {field: 'Amount',     	dbcolumn: 'Amount', 	  type: 'TEXT',	 pkey: false, func: x => x}
-    ]
-    csv2sql('RCMRCSummary', fields, configuration.DWH_RCMRCSUMMARY, '|')
-}
+  const yyyymmdd = (s) => new Date(s).toISOString().split("T")[0];
+
+  const fields = [
+    {
+      field: "Account",
+      dbcolumn: "Account",
+    },
+    {
+      field: "Customer",
+      dbcolumn: "Customer",
+    },
+    {
+      field: "Address1",
+      dbcolumn: "Address1",
+    },
+    {
+      field: "Address2",
+      dbcolumn: "Address2",
+    },
+    {
+      field: "City",
+      dbcolumn: "City",
+    },
+    {
+      field: "State",
+      dbcolumn: "State",
+    },
+    {
+      field: "ZipCode",
+      dbcolumn: "ZipCode",
+    },
+    {
+      field: "Invoice",
+      dbcolumn: "Invoice",
+      pkey: true,
+    },
+    {
+      field: "BillingPeriodStart",
+      dbcolumn: "BillingPeriodStart",
+      func: (x) => yyyymmdd(x),
+    },
+    {
+      field: "BillingPeriodEnd",
+      dbcolumn: "BillingPeriodEnd",
+      func: (x) => yyyymmdd(x),
+    },
+    {
+      field: "InvoiceDate",
+      dbcolumn: "InvoiceDate",
+      pkey: false,
+      func: (x) => yyyymmdd(x),
+    },
+    {
+      field: "DueDate",
+      dbcolumn: "DueDate",
+      func: (x) => yyyymmdd(x),
+    },
+    {
+      field: "ProductType",
+      dbcolumn: "ProductType",
+    },
+    {
+      field: "CatalogID",
+      dbcolumn: "CatalogID",
+    },
+    {
+      field: "FeatureID",
+      dbcolumn: "FeatureID",
+    },
+    {
+      field: "FeatureDetailID",
+      dbcolumn: "FeatureDetailID",
+    },
+    {
+      field: "Product",
+      dbcolumn: "Product",
+      pkey: true,
+    },
+    {
+      field: "Quantity",
+      dbcolumn: "Quantity",
+    },
+    {
+      field: "Amount",
+      dbcolumn: "Amount",
+    },
+  ];
+  csv2sql(
+    "RCMRCSummary",
+    fields,
+    configuration.DWH_RCMRCSUMMARY,
+    configuration.DWH_RCMRCSUMMARY_SEP || "|"
+  );
+};
