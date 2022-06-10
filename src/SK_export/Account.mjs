@@ -39,6 +39,9 @@ export class Account {
   get cases() {
     return this.nicEntsC2C.wrkColl;
   }
+  set cases(newCases) {
+    this.nicEntsC2C.wrkColl = newCases;
+  }
 
   get errorsAndWarnings() {
     return this.logger.errsAndWars();
@@ -75,7 +78,7 @@ export class Account {
       ],
       [this.batchName],
       `${this.info.ENTERPRISE_ACCOUNT_ID}(${this.info.INCONTACT_BUID})${
-        this.info.VALID ? "" : "_FAILED"
+        this.info.VALID ? (this.logger.hasAlarm() ? "_ALARM" : "") : "_FAILED"
       }`
     );
     this.nicEntsC2C = null;
@@ -89,6 +92,10 @@ export class Account {
   }
   logWarning(ruleName, description) {
     this.logger.logElem(Logger.WARNING, ruleName, description);
+    return true;
+  }
+  logAlarm(ruleName, description) {
+    this.logger.logElem(Logger.ALARM, ruleName, description);
     return true;
   }
   logError(ruleName, description) {

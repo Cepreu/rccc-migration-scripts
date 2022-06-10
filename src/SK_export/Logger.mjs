@@ -1,5 +1,6 @@
 export class Logger {
   static ERROR = "ERROR";
+  static ALARM = "ALARM";
   static WARNING = "WARNING";
   static INFO = "INFO";
 
@@ -17,9 +18,16 @@ export class Logger {
     return true;
   }
 
+  hasAlarm() {
+    return !!this.log.find((p) => p.severity === Logger.ALARM);
+  }
+
   errsAndWars() {
     return this.log.filter(
-      (p) => p.severity === Logger.ERROR || p.severity === Logger.WARNING
+      (p) =>
+        p.severity === Logger.ERROR ||
+        p.severity === Logger.ALARM ||
+        p.severity === Logger.WARNING
     );
   }
 }

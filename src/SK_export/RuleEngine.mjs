@@ -3,118 +3,119 @@ const OVERAGE = "Overage";
 
 class Rule {
   static seatOverageMap = [
-    [
-      "LRCCCA1SEATO",
-      "Contact Center: Advanced Edition Seat",
-      139.99,
-      179.99,
-      "307-6-216",
-    ],
-    [
-      "LRCCCA2SEATO",
-      "Contact Center: Advanced Edition Seat (2 ports)",
-      179.99,
-      229.99,
-      "307-6-291",
-    ],
-    [
-      "LRCCCACSEATO",
-      "Contact Center: Advanced Edition Concurrent Seat",
-      259.99,
-      334.99,
-      "307-6-289",
-    ],
-    [
-      "LRCCCAPSEATO",
-      "Contact Center: Advanced-Plus Edition Seat",
-      169.99,
-      209.99,
-      "307-6-270",
-    ],
-    [
-      "LRCCCBASEATO",
-      "Contact Center: Basic Edition Seat with Advanced IVR (2 ports)",
-      179.99,
-      231.19,
-      "307-6-287",
-    ],
-    [
-      "LRCCCBCSEATO",
-      "Contact Center: Basic Edition Concurrent Seat",
-      214.99,
-      274.99,
-      "307-6-284",
-    ],
-    [
-      "LRCCCBCWASEATO",
-      "Contact Center: Basic Edition Concurrent Seat with Advanced IVR",
-      259.99,
-      336.78,
-      "307-6-288",
-    ],
-    [
-      "LRCCCBSEATO",
-      "Contact Center: Basic Edition Seat",
-      149.99,
-      169.99,
-      "307-6-216",
-    ],
-    [
-      "LRCCCPCINUSEATO",
-      "Contact Center: PCI Level 1 Edition Seat (per Named-User)",
-      187,
-      250,
-      "307-6-218",
-    ],
-    [
-      "LRCCCPCISEATO",
-      "Contact Center: PCI Level 1 Edition Seat (per Configured Station)",
-      230,
-      300,
-      "307-4-220",
-    ],
-    [
-      "LRCCCSSEATO",
-      "Contact Center: Configured Station License",
-      195,
-      254,
-      "307-4-178",
-    ],
-    [
-      "LRCCCU2SEATO",
-      "Contact Center: Ultimate Edition Seat (2.5 ports)",
-      219.99,
-      279.99,
-      "307-6-292",
-    ],
-    [
-      "LRCCCUCSEATO",
-      "Contact Center: Ultimate Edition Concurrent Seat",
-      319.99,
-      409.99,
-      "307-6-290",
-    ],
-    [
-      "LRCCCUPSEATO",
-      "Contact Center: Ultimate-Plus Edition Seat",
-      199.99,
-      259.99,
-      "307-6-271",
-    ],
-    [
-      "LRCCCUSEATO",
-      "Contact Center: Ultimate Edition Seat",
-      199.99,
-      259.99,
-      "307-6-217",
-    ],
-    [
-      "LRCCSEATUESO",
-      "Contact Center: Ultimate Edition Seat (3 ports)",
-      190,
-      235,
-      "12658-1727-001",
-    ],
+    {
+      Category: "LRCCCA1SEATO",
+      PARENT: "Contact Center: Advanced Edition Seat",
+      PRICE_USD: 139.99,
+      PRICE_CAD: 179.99,
+      EXT_PRODUCT_ID: "307-6-216",
+    },
+    {
+      Category: "LRCCCA2SEATO",
+      PARENT: "Contact Center: Advanced Edition Seat (2 ports)",
+      PRICE_USD: 179.99,
+      PRICE_CAD: 229.99,
+      EXT_PRODUCT_ID: "307-6-291",
+    },
+    {
+      Category: "LRCCCACSEATO",
+      PARENT: "Contact Center: Advanced Edition Concurrent Seat",
+      PRICE_USD: 259.99,
+      PRICE_CAD: 334.99,
+      EXT_PRODUCT_ID: "307-6-289",
+    },
+    {
+      Category: "LRCCCAPSEATO",
+      PARENT: "Contact Center: Advanced-Plus Edition Seat",
+      PRICE_USD: 169.99,
+      PRICE_CAD: 209.99,
+      EXT_PRODUCT_ID: "307-6-270",
+    },
+    {
+      Category: "LRCCCBASEATO",
+      PARENT: "Contact Center: Basic Edition Seat with Advanced IVR (2 ports)",
+      PRICE_USD: 179.99,
+      PRICE_CAD: 231.19,
+      EXT_PRODUCT_ID: "307-6-287",
+    },
+    {
+      Category: "LRCCCBCSEATO",
+      PARENT: "Contact Center: Basic Edition Concurrent Seat",
+      PRICE_USD: 214.99,
+      PRICE_CAD: 274.99,
+      EXT_PRODUCT_ID: "307-6-284",
+    },
+    {
+      Category: "LRCCCBCWASEATO",
+      PARENT: "Contact Center: Basic Edition Concurrent Seat with Advanced IVR",
+      PRICE_USD: 259.99,
+      PRICE_CAD: 336.78,
+      EXT_PRODUCT_ID: "307-6-288",
+    },
+    {
+      Category: "LRCCCBSEATO",
+      PARENT: "Contact Center: Basic Edition Seat",
+      PRICE_USD: 149.99,
+      PRICE_CAD: 169.99,
+      EXT_PRODUCT_ID: "307-6-216",
+    },
+    {
+      Category: "LRCCCPCINUSEATO",
+      PARENT: "Contact Center: PCI Level 1 Edition Seat (per Named-User)",
+      PRICE_USD: 187,
+      PRICE_CAD: 250,
+      EXT_PRODUCT_ID: "307-6-218",
+    },
+    {
+      Category: "LRCCCPCISEATO",
+      PARENT:
+        "Contact Center: PCI Level 1 Edition Seat (per Configured Station)",
+      PRICE_USD: 230,
+      PRICE_CAD: 300,
+      EXT_PRODUCT_ID: "307-4-220",
+    },
+    {
+      Category: "LRCCCSSEATO",
+      PARENT: "Contact Center: Configured Station License",
+      PRICE_USD: 195,
+      PRICE_CAD: 254,
+      EXT_PRODUCT_ID: "307-4-178",
+    },
+    {
+      Category: "LRCCCU2SEATO",
+      PARENT: "Contact Center: Ultimate Edition Seat (2.5 ports)",
+      PRICE_USD: 219.99,
+      PRICE_CAD: 279.99,
+      EXT_PRODUCT_ID: "307-6-292",
+    },
+    {
+      Category: "LRCCCUCSEATO",
+      PARENT: "Contact Center: Ultimate Edition Concurrent Seat",
+      PRICE_USD: 319.99,
+      PRICE_CAD: 409.99,
+      EXT_PRODUCT_ID: "307-6-290",
+    },
+    {
+      Category: "LRCCCUPSEATO",
+      PARENT: "Contact Center: Ultimate-Plus Edition Seat",
+      PRICE_USD: 199.99,
+      PRICE_CAD: 259.99,
+      EXT_PRODUCT_ID: "307-6-271",
+    },
+    {
+      Category: "LRCCCUSEATO",
+      PARENT: "Contact Center: Ultimate Edition Seat",
+      PRICE_USD: 199.99,
+      PRICE_CAD: 259.99,
+      EXT_PRODUCT_ID: "307-6-217",
+    },
+    {
+      Category: "LRCCSEATUESO",
+      PARENT: "Contact Center: Ultimate Edition Seat (3 ports)",
+      PRICE_USD: 190,
+      PRICE_CAD: 235,
+      EXT_PRODUCT_ID: "12658-1727-001",
+    },
   ];
 
   ////////////
@@ -191,6 +192,7 @@ class Rule {
       CAD: 0.0,
     },
   ];
+
   static ASR_OVERAGE = {
     Category: "LASRO",
     ITEM_NAME: "Contact Center: Automated Speech Recognition (per minute)",
@@ -233,7 +235,7 @@ class CasesNBU extends Rule {
     });
   }
   action(acct) {
-    acct.facts.NBU = -1 !== acct.cases.findIndex((c) => /NBU/.test(c.subject));
+    acct.facts.NBU = !!acct.cases.find((c) => /NBU/.test(c.subject));
     if (!acct.facts.NBU) {
       acct.logWarning(this.name, "NBU not found");
     }
@@ -290,17 +292,25 @@ class RCCSeatOverage extends Rule {
         row.PARENT === strippedSeatName
     );
     if (acct.facts.seatOverage === undefined) {
-      const SOLic = Rule.seatOverageMap.find((l) => l[1] === strippedSeatName);
-      if (!SOLic) return false; // (shouldn't happen)
+      const SOLic = Rule.seatOverageMap.find(
+        (l) => l.PARENT === strippedSeatName
+      );
+      if (!SOLic) {
+        acct.logError(
+          this.name,
+          `INTERNAL ERROR: Parent: ${strippedSeatName} - not found`
+        );
+        return false; // (shouldn't happen)
+      }
       acct.facts.seatOverage = {
-        EXT_PRODUCT_ID: SOLic[4],
-        Category: SOLic[0],
+        EXT_PRODUCT_ID: SOLic.EXT_PRODUCT_ID,
+        Category: SOLic.Category,
         ITEM_NAME: "Seat Overage",
         QNTY_THRESHOLD: acct.facts.seat.QNTY_THRESHOLD,
-        PRICE: "USD" ? SOLic[2] : SOLic[3],
+        PRICE: acct.facts.seat.CURRENCY ? SOLic.PRICE_USD : SOLic.PRICE_CAD,
         DISCOUNT: 0,
         NiCPrice: acct.facts.seat.NiCPrice,
-        CURRENCY: acct.CURRENCY,
+        CURRENCY: acct.facts.seat.CURRENCY,
         ProductFamily: OVERAGE,
         batchID: "",
       };
@@ -363,44 +373,86 @@ class RCFixPorts extends Rule {
     );
 
     if (entPorts.length === 0) {
-      acct.logWarning(
+      acct.logAlarm(
         this.name,
         "RC Port Overage license was not found. NEEDS ATTENTION!"
       );
       return true;
     }
-    const nicPort = acct.nics.find((nic) => /^308-/.test(nic.SKU));
-    if (nicPort === undefined) {
-      acct.logWarning(this.name, "NiC Port Overage license was not found");
-    } else if (nicPort.SKU !== entPorts[0].EXT_PRODUCT_ID) {
+
+    const port = entPorts.find(
+      (e) =>
+        !!Rule.portMap[acct.facts.seatOverage.Category].find(
+          (p) => p === e.Category
+        )
+    ); // Expected port by seat type
+    if (port !== undefined) {
+      acct.facts.entPortLic = port;
+    } else {
       acct.logWarning(
         this.name,
-        `NiC Port license ${nicPort.SKU} doesn't match RC entitlements: ${entPorts[0].EXT_PRODUCT_ID}. Action: Replaced by RC`
+        `No proper PortOverage found for ${acct.facts.seatOverage.Category}. Selected ${entPorts[0].Category} (${entPorts[0].EXT_PRODUCT_ID})`
       );
-      nicPort.SKU = entPorts[0].EXT_PRODUCT_ID;
+      acct.facts.entPortLic = entPorts[0];
+    }
+    return true;
+  }
+}
+
+/////////////
+class NiCPorts extends Rule {
+  constructor() {
+    super({
+      description: "Checks NiC Ports",
+    });
+  }
+  action(acct) {
+    const nicPort = acct.nics.find((nic) => /^308-/.test(nic.SKU));
+    if (!!nicPort && nicPort.SKU !== acct.facts.entPortLic.EXT_PRODUCT_ID) {
+      acct.logAlert(
+        this.name,
+        `NiC Port license ${nicPort.SKU} doesn't match RC entitlements: ${acct.facts.entPortLic.EXT_PRODUCT_ID}`
+      );
+    }
+    return true;
+  }
+}
+
+/////////////
+class C2CPorts extends Rule {
+  constructor() {
+    super({
+      description: "Checks C2C Ports",
+    });
+  }
+  action(acct) {
+    const nicPort = acct.nics.find((nic) => /^308-/.test(nic.SKU));
+    if (!!nicPort && nicPort.SKU !== acct.facts.entPortLic.EXT_PRODUCT_ID) {
+      acct.logAlert(
+        this.name,
+        `NiC Port license ${nicPort.SKU} doesn't match RC entitlements: ${acct.facts.entPortLic.EXT_PRODUCT_ID}`
+      );
     }
 
-    acct.facts.entPortLic = entPorts[0];
-    if (entPorts.length > 1) {
-      const p = entPorts.find(
-        (e) =>
-          -1 <
-          Rule.portMap[acct.facts.seatOverage.Category].findIndex(
-            (p) => p === e.Category
-          )
-      ); // Expected port by seat type
-      if (p !== undefined) acct.facts.entPortLic = p;
+    const casePort = acct.cases.find((c) => /^308-/.test(c.skuid));
+    if (casePort === undefined) {
+      acct.cases.push({
+        skuid: acct.facts.entPortLic.EXT_PRODUCT_ID,
+        sku: "Additional Configured Universal Port",
+        qtty: 0,
+        price: acct.facts.entPortLic.NiCPrice,
+      });
+      acct.logWarning(
+        this.name,
+        `C2C Port Overage license was not found. Added ${acct.facts.entPortLic.EXT_PRODUCT_ID} from Entitlements`
+      );
+    } else if (casePort.skuid !== acct.facts.entPortLic.EXT_PRODUCT_ID) {
+      acct.logWarning(
+        this.name,
+        `NiC Port license ${casePort.skuid} doesn't match RC entitlements: ${acct.facts.entPortLic.EXT_PRODUCT_ID}. Action: Replaced by RC`
+      );
+      casePort.skuid = acct.facts.entPortLic.EXT_PRODUCT_ID;
     }
-
-    // Cleanup of extra overage ports
-    acct.ents = acct.ents.filter(
-      (e) =>
-        !(
-          /^308-/.test(e.EXT_PRODUCT_ID) &&
-          e.ProductFamily === OVERAGE &&
-          e.Category !== acct.facts.entPortLic.Category
-        )
-    );
     return true;
   }
 }
@@ -417,22 +469,25 @@ class RCExtraOverages extends Rule {
       (e) =>
         !(
           (e.ProductFamily === OVERAGE &&
+            e.Category !== acct.facts.entPortLic.Category &&
             e.Category !== "LASRO" &&
             e.EXT_PRODUCT_ID !== "610064-000-000" &&
             e.EXT_PRODUCT_ID !== "610064-302-000" &&
-            acct.cases.findIndex(
+            !acct.cases.find(
               (c) => c.skuid === e.EXT_PRODUCT_ID && c.qtty > 0
-            ) === -1 &&
-            acct.nics.findIndex((n) => n.SKU === e.EXT_PRODUCT_ID) === -1 &&
+            ) &&
+            !acct.nics.find((n) => n.SKU === e.EXT_PRODUCT_ID) &&
             acct.logInfo(
               this.name,
-              `Removed: ${e.EXT_PRODUCT_ID} ${e.ITBS_NAME}`
+              `Removed ${e.Category ? e.Category : ""}: ${e.EXT_PRODUCT_ID} ${
+                e.ITBS_NAME
+              }`
             )) ||
           (e.ProductFamily === OVERAGE &&
             ["3875-1292-000", "3875-1290-000", "3875-1289-000"].includes(
               e.EXT_PRODUCT_ID
             ) &&
-            acct.logWarning(
+            acct.logAlarm(
               this.name,
               `Removed: ${e.EXT_PRODUCT_ID} ${e.ITBS_NAME} (NEEDS ATTENTION)`
             ))
@@ -475,7 +530,7 @@ class RCEntCheckDuplicates extends Rule {
   }
   action(acct) {
     //4107-645-000:
-    if (acct.ents.findIndex((e) => e.Category === "LAURCRDA") > -1) {
+    if (!!acct.ents.find((e) => e.Category === "LAURCRDA")) {
       acct.ents = acct.ents.filter(
         (e) => e.Category !== "LWEMAUREC" && e.Category !== "LWEMAURECO"
       );
@@ -736,7 +791,7 @@ class RCFixPrices extends Rule {
 }
 
 //////////////////
-class NiC_StripXX extends Rule {
+class C2CStripXX extends Rule {
   constructor() {
     super({
       description:
@@ -759,6 +814,27 @@ class NiC_StripXX extends Rule {
 }
 
 //////////////////
+class C2CCorr extends Rule {
+  constructor() {
+    super({
+      description: "RC: Removes corrupted C2C (with empty SKU)",
+    });
+  }
+  action(acct) {
+    acct.cases = acct.cases.filter(
+      (c2c) =>
+        !(
+          !/\d+-\d+-\d+/.test(c2c.skuid) &&
+          acct.logWarning(
+            this.name,
+            `Removed corrupted c2c. skuid: "${c2c.skuid}", sku: "${c2c.sku}"`
+          )
+        )
+    );
+    return true;
+  }
+}
+//////////////////
 class NiC_MRCvsDWH extends Rule {
   constructor() {
     super({
@@ -772,7 +848,7 @@ class NiC_MRCvsDWH extends Rule {
       const entLic = acct.ents.find((el) => nl.SKU === el.EXT_PRODUCT_ID);
       if (entLic === undefined) {
         if (Rule.Exceptions.find((ex) => nl.SKU === ex) !== undefined) {
-          acct.logWarning(
+          acct.logAlarm(
             this.name,
             `${nl.SKU} ($${
               nl.Amount
@@ -781,7 +857,7 @@ class NiC_MRCvsDWH extends Rule {
             }`
           );
         } else if (nl.Amount <= 0.0) {
-          acct.logWarning(
+          acct.logAlarm(
             this.name,
             `${nl.SKU} ($${nl.Amount}) was found in NiC MRC file but not in RC entitlements. NEEDS ATTENTION!`
           );
@@ -818,7 +894,7 @@ class NiC_NotFound extends Rule {
 }
 
 //////////////////
-class NiC_C2CvsMRC extends Rule {
+class C2CvsMRC extends Rule {
   constructor() {
     super({
       description:
@@ -866,7 +942,7 @@ class NiC_MRCvsC2C extends Rule {
       ) {
         const entLic = acct.ents.find((el) => nl.SKU === el.EXT_PRODUCT_ID);
         if (entLic === undefined) {
-          acct.logWarning(
+          acct.logAlarm(
             this.name,
             `${nl.SKU} was not found in case2case and entitlements but is presented in Monthly file. NEEDS ATTENTION!`
           );
@@ -920,39 +996,6 @@ class RCCMapping extends Rule {
 }
 
 //////////////////
-class NiCPorts extends Rule {
-  constructor() {
-    super({
-      description: "Checks/Fixes NiC port licenses",
-    });
-  }
-  action(acct) {
-    if ("entPortLic" in acct.facts) {
-      const casePortLic = acct.cases.find((c) => /^308-/.test(c.skuid));
-      if (casePortLic === undefined) {
-        acct.logWarning(
-          this.name,
-          `NiC PortOverage license was not found. Added ${acct.facts.entPortLic.EXT_PRODUCT_ID} to match Entitlements`
-        );
-        acct.cases.push({
-          skuid: acct.facts.entPortLic.EXT_PRODUCT_ID,
-          sku: acct.facts.entPortLic.ITBS_NAME,
-          qtty: acct.facts.entPortLic.QNTY_THRESHOLD,
-          price: acct.facts.entPortLic.NiCPrice,
-        });
-      } else if (casePortLic.skuid !== acct.facts.entPortLic.EXT_PRODUCT_ID) {
-        acct.logWarning(
-          this.name,
-          `inContact port ${casePortLic.skuid} replaced by ${acct.facts.entPortLic.EXT_PRODUCT_ID} to match Entitlements`
-        );
-        casePortLic.skuid = acct.facts.entPortLic.EXT_PRODUCT_ID;
-      }
-    }
-    return true;
-  }
-}
-
-//////////////////
 class QntyVsThrsh extends Rule {
   constructor() {
     super({
@@ -973,7 +1016,7 @@ class QntyVsThrsh extends Rule {
             o.QNTY_THRESHOLD !== r.QNTY_THRESHOLD
         );
         if (overage) {
-          acct.logWarning(
+          acct.logAlarm(
             this.name,
             `${r.EXT_PRODUCT_ID} ${r.ITBS_NAME} - Recurring qnty (${r.QNTY_THRESHOLD}) is not equal to overage (${overage.QNTY_THRESHOLD}) - NEEDS ATTENTION!`
           );
@@ -1029,6 +1072,8 @@ export class RuleEngine {
       new RCCSeatOverage(),
       new RCPorts4Seats(),
       new RCFixPorts(),
+      new NiCPorts(),
+      new C2CPorts(),
       new RCExtraOverages(),
       new RCFixTextelOvs(),
       new RCEntCheckDuplicates(),
@@ -1042,12 +1087,12 @@ export class RuleEngine {
       new RCFixSocMedia(),
       new RCFixPrices(),
       new NiC_NotFound(),
-      new NiC_StripXX(),
-      new NiC_C2CvsMRC(),
+      new C2CStripXX(),
+      new C2CCorr(),
+      new C2CvsMRC(),
       new NiC_MRCvsDWH(),
       new NiC_MRCvsC2C(),
       new RCCMapping(),
-      new NiCPorts(),
       new QntyVsThrsh(),
       new QntyVsCases(),
     ];

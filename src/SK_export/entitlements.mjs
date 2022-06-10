@@ -186,6 +186,10 @@ export class CaseEntitlements extends EntCollection {
     return this.c2c;
   }
 
+  set wrkColl(newColl) {
+    this.c2c = newColl;
+  }
+
   get consColl() {
     return this.originalColl.reduce((acc, obj) => {
       const findObj = acc.find((alreadyIn) => alreadyIn.skuid === obj.skuid);

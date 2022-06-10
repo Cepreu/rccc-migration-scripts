@@ -139,50 +139,50 @@ function selectEntitlements(batchName) {
 }
 
 ////// [Deprecated!]
-function selectEntitlementsSFDC(batchName) {
-  const insertSql = `
-  INSERT INTO BatchEntitlements
-    (${flds.map((f) => f.name).join(", ")})
-  SELECT
-      b.EID,
-      b.UID,
-      b.BID,
-      b.AccountName,
-      e.CatID,
-      lc.PRODUCT_NAME,
-      e.EntitlementName,
-      e.Price,
-      CASE WHEN e.ChargeTerm='Annual' THEN 12 ELSE 1 END,
-      e.Currency AS CURRENCY_CODE,
-      (e.Price-e.Discount) / CASE WHEN e.ProductFamily!='Overage' AND e.ChargeTerm='Annual' THEN 12 ELSE 1 END,
-      e.QuantityOrThreshold,
-      lc.PRICE_USD,
-      lc.PRICE_CAD,
-      lc.PRICE_USD - (e.Price - e.Discount) / CASE WHEN e.ProductFamily!='Overage' AND e.ChargeTerm='Annual'  THEN 12 ELSE 1 END,
-      lc.PRICE_CAD - (e.Price - e.Discount)  / CASE WHEN e.ProductFamily!='Overage' AND e.ChargeTerm='Annual'  THEN 12 ELSE 1 END,
-      lc.NIC_PRICE,
-      lc.L_CATEGORY,
-      lc.PARENT,
-      e.ProductFamily,
-      '${batchName}'
-  FROM 
-      Entitlements_SFDC e
-  INNER JOIN 
-  BatchAccounts b 
-      ON b.EID=e.EnterpriseAccountID AND b.batchID='${batchName}'
-  LEFT JOIN 
-      CatalogSFDC lc
-      ON (
-          e.EntitlementName=lc.PRODUCT_NAME
-              OR e.CatID IN (${"'" + Exc.join("', '") + "'"})
-          )
-          AND e.CatID=lc.SKU 
-          AND (e.ProductFamily!='Overage' AND lc.PRODUCT_FAMILY!='Overage'
-              OR e.ProductFamily='Overage' AND lc.PRODUCT_FAMILY='Overage')
-  ORDER BY b.EID, e.CatID`.replace(/\s+/g, " ");
-  const info = db.prepare(insertSql).run();
-  console.log(`${info} Inserted into BatchEntitlements table.`);
-}
+// function selectEntitlementsSFDC(batchName) {
+//   const insertSql = `
+//   INSERT INTO BatchEntitlements
+//     (${flds.map((f) => f.name).join(", ")})
+//   SELECT
+//       b.EID,
+//       b.UID,
+//       b.BID,
+//       b.AccountName,
+//       e.CatID,
+//       lc.PRODUCT_NAME,
+//       e.EntitlementName,
+//       e.Price,
+//       CASE WHEN e.ChargeTerm='Annual' THEN 12 ELSE 1 END,
+//       e.Currency AS CURRENCY_CODE,
+//       (e.Price-e.Discount) / CASE WHEN e.ProductFamily!='Overage' AND e.ChargeTerm='Annual' THEN 12 ELSE 1 END,
+//       e.QuantityOrThreshold,
+//       lc.PRICE_USD,
+//       lc.PRICE_CAD,
+//       lc.PRICE_USD - (e.Price - e.Discount) / CASE WHEN e.ProductFamily!='Overage' AND e.ChargeTerm='Annual'  THEN 12 ELSE 1 END,
+//       lc.PRICE_CAD - (e.Price - e.Discount)  / CASE WHEN e.ProductFamily!='Overage' AND e.ChargeTerm='Annual'  THEN 12 ELSE 1 END,
+//       lc.NIC_PRICE,
+//       lc.L_CATEGORY,
+//       lc.PARENT,
+//       e.ProductFamily,
+//       '${batchName}'
+//   FROM
+//       Entitlements_SFDC e
+//   INNER JOIN
+//   BatchAccounts b
+//       ON b.EID=e.EnterpriseAccountID AND b.batchID='${batchName}'
+//   LEFT JOIN
+//       CatalogSFDC lc
+//       ON (
+//           e.EntitlementName=lc.PRODUCT_NAME
+//               OR e.CatID IN (${"'" + Exc.join("', '") + "'"})
+//           )
+//           AND e.CatID=lc.SKU
+//           AND (e.ProductFamily!='Overage' AND lc.PRODUCT_FAMILY!='Overage'
+//               OR e.ProductFamily='Overage' AND lc.PRODUCT_FAMILY='Overage')
+//   ORDER BY b.EID, e.CatID`.replace(/\s+/g, " ");
+//   const info = db.prepare(insertSql).run();
+//   console.log(`${info} Inserted into BatchEntitlements table.`);
+// }
 
 /**
  * createBatch - Creates and populate a batch table.
