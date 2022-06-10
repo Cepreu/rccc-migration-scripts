@@ -471,8 +471,8 @@ class RCExtraOverages extends Rule {
           (e.ProductFamily === OVERAGE &&
             e.Category !== acct.facts.entPortLic.Category &&
             e.Category !== "LASRO" &&
-            e.EXT_PRODUCT_ID !== "610064-000-000" &&
-            e.EXT_PRODUCT_ID !== "610064-302-000" &&
+            e.EXT_PRODUCT_ID !== "610064-000-000" && //PS OnDemand
+            e.EXT_PRODUCT_ID !== "610064-302-000" && //PS OnDemand - Professional Services On Demand
             !acct.cases.find(
               (c) => c.skuid === e.EXT_PRODUCT_ID && c.qtty > 0
             ) &&
@@ -824,16 +824,22 @@ class C2CCorr extends Rule {
     acct.cases = acct.cases.filter(
       (c2c) =>
         !(
-          !/\d+-\d+-\d+/.test(c2c.skuid) &&
-          acct.logWarning(
-            this.name,
-            `Removed corrupted c2c. skuid: "${c2c.skuid}", sku: "${c2c.sku}"`
-          )
+          (!/\d+-\d+-\d+/.test(c2c.skuid) &&
+            acct.logWarning(
+              this.name,
+              `Removed corrupted c2c. skuid: "${c2c.skuid}", sku: "${c2c.sku}"`
+            )) ||
+          (/610(?!064)\d{3}-.+/.test(c2c.skuid) &&
+            acct.logWarning(
+              this.name,
+              `Removed Prof service lic from c2c. skuid: "${c2c.skuid}", sku: "${c2c.sku}"`
+            ))
         )
     );
     return true;
   }
 }
+
 //////////////////
 class NiC_MRCvsDWH extends Rule {
   constructor() {
