@@ -1,9 +1,8 @@
 import { csv2sql } from "../utils/csv2sql.mjs";
 import configuration from "../../configuration.mjs";
+import { yyyymmdd } from "../utils/conversions.mjs";
 
 export const RCMRCSummary = () => {
-  const yyyymmdd = (s) => new Date(s).toISOString().split("T")[0];
-
   const fields = [
     {
       field: "Account",

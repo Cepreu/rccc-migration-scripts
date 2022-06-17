@@ -2,15 +2,32 @@ import configuration from "../../configuration.mjs";
 import { db } from "../utils/DBSingleton.mjs";
 import { write2excel } from "../utils/write2file.mjs";
 import { Account } from "./Account.mjs";
-import {
-  NgbsEntitlements,
-  NiCEntitlements,
-  CaseEntitlements,
-} from "./entitlements.mjs";
+import { NiCEntitlements, CaseEntitlements } from "./entitlements.mjs";
 import { RuleEngine } from "./RuleEngine.mjs";
 
 const allAccounts = [];
 const ruleEngine = new RuleEngine();
+
+const batchPostProcessing = (batchName, allAccounts) => {
+  const errs = allAccounts.reduce((res, acc) => {
+    res.push(...acc.errorsAndWarnings);
+    return res;
+  }, []);
+  write2excel(
+    [
+      {
+        tab: "Accounts",
+        data: allAccounts.reduce((res, acc) => {
+          res.push(acc.info);
+          return res;
+        }, []),
+      },
+      { tab: "ErrsAndWarns", data: errs },
+    ],
+    [batchName],
+    "account_list"
+  );
+};
 
 //////////////////////
 // prepareBatchFile
@@ -57,6 +74,12 @@ export function prepareBatchFiles(batchName) {
   );
 
   for (const account of stmtB.iterate()) {
+    console.log(
+      account.ENTERPRISE_ACCOUNT_ID,
+      account.INCONTACT_BUID,
+      account.AccountName
+    );
+
     const ents = stmt.all(batchName, account.ENTERPRISE_ACCOUNT_ID);
     const nics = db
       .prepare(NiCEntitlements.SQL)
@@ -65,33 +88,11 @@ export function prepareBatchFiles(batchName) {
       .prepare(CaseEntitlements.SQL)
       .all(account.ENTERPRISE_ACCOUNT_ID);
 
-    console.log(
-      account.ENTERPRISE_ACCOUNT_ID,
-      account.INCONTACT_BUID,
-      account.AccountName
-    );
-
     const currAccount = new Account(account, ents, nics, cases, batchName);
     currAccount.validateAndExport(ruleEngine);
+
     allAccounts.push(currAccount);
   }
 
-  const errs = allAccounts.reduce((res, acc) => {
-    res.push(...acc.errorsAndWarnings);
-    return res;
-  }, []);
-  write2excel(
-    [
-      {
-        tab: "Accounts",
-        data: allAccounts.reduce((res, acc) => {
-          res.push(acc.info);
-          return res;
-        }, []),
-      },
-      { tab: "ErrsAndWarns", data: errs },
-    ],
-    [batchName],
-    "account_list"
-  );
+  batchPostProcessing(batchName, allAccounts);
 }

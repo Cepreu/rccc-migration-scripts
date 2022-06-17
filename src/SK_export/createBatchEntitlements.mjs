@@ -192,5 +192,4 @@ export function createBatchEntitlements(batchName) {
   prepareTable(batchName);
   // selectEntitlementsSFDC(batchName); ////<====
   selectEntitlements(batchName); ////<====
-  prepareBatchFiles(batchName);
 }

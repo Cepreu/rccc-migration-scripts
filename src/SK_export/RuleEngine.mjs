@@ -205,7 +205,7 @@ class Rule {
     Category: "LICIBTF25KB",
     ITEM_NAME: "Inbound Toll Free 25K Bundle",
     USD: 350.0,
-    CAD: 450.0,
+    CAD: 455.0,
   };
 
   static Exceptions = [
@@ -235,9 +235,8 @@ class CasesNBU extends Rule {
     });
   }
   action(acct) {
-    acct.facts.NBU = !!acct.cases.find((c) => /NBU/.test(c.subject));
     if (!acct.facts.NBU) {
-      acct.logWarning(this.name, "NBU not found");
+      acct.logWarning(this.name, "NBU case wasn't not found");
     }
     return true;
   }
@@ -407,12 +406,14 @@ class NiCPorts extends Rule {
     });
   }
   action(acct) {
-    const nicPort = acct.nics.find((nic) => /^308-/.test(nic.SKU));
-    if (!!nicPort && nicPort.SKU !== acct.facts.entPortLic.EXT_PRODUCT_ID) {
-      acct.logAlert(
-        this.name,
-        `NiC Port license ${nicPort.SKU} doesn't match RC entitlements: ${acct.facts.entPortLic.EXT_PRODUCT_ID}`
-      );
+    if (acct.facts.entPortLic) {
+      const nicPort = acct.nics.find((nic) => /^308-/.test(nic.SKU));
+      if (!!nicPort && nicPort.SKU !== acct.facts.entPortLic.EXT_PRODUCT_ID) {
+        acct.logAlarm(
+          this.name,
+          `NiC Port license ${nicPort.SKU} doesn't match RC entitlements: ${acct.facts.entPortLic.EXT_PRODUCT_ID}`
+        );
+      }
     }
     return true;
   }
@@ -426,34 +427,56 @@ class C2CPorts extends Rule {
     });
   }
   action(acct) {
-    const nicPort = acct.nics.find((nic) => /^308-/.test(nic.SKU));
-    if (!!nicPort && nicPort.SKU !== acct.facts.entPortLic.EXT_PRODUCT_ID) {
-      acct.logAlert(
-        this.name,
-        `NiC Port license ${nicPort.SKU} doesn't match RC entitlements: ${acct.facts.entPortLic.EXT_PRODUCT_ID}`
-      );
-    }
+    if (acct.facts.entPortLic) {
+      const nicPort = acct.nics.find((nic) => /^308-/.test(nic.SKU));
+      if (!!nicPort && nicPort.SKU !== acct.facts.entPortLic.EXT_PRODUCT_ID) {
+        acct.logAlarm(
+          this.name,
+          `NiC Port license ${nicPort.SKU} doesn't match RC entitlements: ${acct.facts.entPortLic.EXT_PRODUCT_ID}`
+        );
+      }
 
-    const casePort = acct.cases.find((c) => /^308-/.test(c.skuid));
-    if (casePort === undefined) {
-      acct.cases.push({
-        skuid: acct.facts.entPortLic.EXT_PRODUCT_ID,
-        sku: "Additional Configured Universal Port",
-        qtty: 0,
-        price: acct.facts.entPortLic.NiCPrice,
-      });
-      acct.logWarning(
-        this.name,
-        `C2C Port Overage license was not found. Added ${acct.facts.entPortLic.EXT_PRODUCT_ID} from Entitlements`
-      );
-    } else if (casePort.skuid !== acct.facts.entPortLic.EXT_PRODUCT_ID) {
-      acct.logWarning(
-        this.name,
-        `NiC Port license ${casePort.skuid} doesn't match RC entitlements: ${acct.facts.entPortLic.EXT_PRODUCT_ID}. Action: Replaced by RC`
-      );
-      casePort.skuid = acct.facts.entPortLic.EXT_PRODUCT_ID;
+      const casePort = acct.cases.find((c) => /^308-/.test(c.skuid));
+      if (casePort === undefined) {
+        acct.cases.push({
+          skuid: acct.facts.entPortLic.EXT_PRODUCT_ID,
+          sku: "Additional Configured Universal Port",
+          qtty: 0,
+          price: acct.facts.entPortLic.NiCPrice,
+        });
+        acct.logWarning(
+          this.name,
+          `C2C Port Overage license was not found. Added ${acct.facts.entPortLic.EXT_PRODUCT_ID} from Entitlements`
+        );
+      } else if (casePort.skuid !== acct.facts.entPortLic.EXT_PRODUCT_ID) {
+        acct.logWarning(
+          this.name,
+          `NiC Port license ${casePort.skuid} doesn't match RC entitlements: ${acct.facts.entPortLic.EXT_PRODUCT_ID}. Action: Replaced by RC`
+        );
+        casePort.skuid = acct.facts.entPortLic.EXT_PRODUCT_ID;
+      }
     }
     return true;
+  }
+}
+
+/////////////
+class RCBadPrice extends Rule {
+  constructor() {
+    super({
+      description: "Checks if Price minus Discount is not negative",
+    });
+  }
+  action(acct) {
+    const withBadPrice = acct.ents.filter(
+      (e) =>
+        e.PRICE - e.DISCOUNT < 0.0 &&
+        acct.logError(
+          this.name,
+          `Discount (${e.DISCOUNT}) exceeds Price (${e.PRICE}): ${e.EXT_PRODUCT_ID} ${e.ITBS_NAME} (NEEDS ATTENTION)`
+        )
+    );
+    return withBadPrice.length === 0;
   }
 }
 
@@ -469,7 +492,8 @@ class RCExtraOverages extends Rule {
       (e) =>
         !(
           (e.ProductFamily === OVERAGE &&
-            e.Category !== acct.facts.entPortLic.Category &&
+            (!acct.facts.entPortLic ||
+              e.Category !== acct.facts.entPortLic.Category) &&
             e.Category !== "LASRO" &&
             e.EXT_PRODUCT_ID !== "610064-000-000" && //PS OnDemand
             e.EXT_PRODUCT_ID !== "610064-302-000" && //PS OnDemand - Professional Services On Demand
@@ -594,26 +618,6 @@ class RCFixPrices2 extends Rule {
         );
       });
     return true;
-  }
-}
-
-//////////////////
-class RCNegDiscounts extends Rule {
-  constructor() {
-    super({
-      description:
-        "Sanity check: Rejects the migration if negative discount was found",
-    });
-  }
-  action(acct) {
-    const negs = acct.ents.filter((e) => e.DISCOUNT < 0);
-    negs.forEach((neg) => {
-      acct.logError(
-        this.name,
-        `Negative discount ${neg.DISCOUNT} for: ${neg.EXT_PRODUCT_ID} ${neg.ITEM_NAME}`
-      );
-    });
-    return negs.length === 0;
   }
 }
 
@@ -791,6 +795,26 @@ class RCFixPrices extends Rule {
 }
 
 //////////////////
+class RCNegDiscounts extends Rule {
+  constructor() {
+    super({
+      description:
+        "Sanity check: Rejects the migration if negative discount was found",
+    });
+  }
+  action(acct) {
+    const negs = acct.ents.filter((e) => e.DISCOUNT < 0);
+    negs.forEach((neg) => {
+      acct.logError(
+        this.name,
+        `Negative discount ${neg.DISCOUNT} for: ${neg.EXT_PRODUCT_ID} ${neg.ITEM_NAME}`
+      );
+    });
+    return negs.length === 0;
+  }
+}
+
+//////////////////
 class C2CStripXX extends Rule {
   constructor() {
     super({
@@ -888,14 +912,13 @@ class NiC_NotFound extends Rule {
     });
   }
   action(acct) {
-    if (acct.nics.length === 0) {
+    return !(
+      acct.nics.length === 0 &&
       acct.logError(
         this.name,
         `No records were found for the account in the Monthly file`
-      );
-      return false;
-    }
-    return true;
+      )
+    );
   }
 }
 
@@ -935,7 +958,7 @@ class NiC_MRCvsC2C extends Rule {
   constructor() {
     super({
       description:
-        "Checks if there are licenses in Monthly which are absent in cases - and add them",
+        "Checks if there are licenses in Monthly which are absent in cases - and adds them",
     });
   }
   action(acct) {
@@ -1069,6 +1092,36 @@ class QntyVsCases extends Rule {
   }
 }
 
+//////////////////
+class C2CtoVenCat extends Rule {
+  constructor() {
+    super({
+      description:
+        "Removing of deleted licenses, comparing with new Engagements",
+    });
+  }
+  action(acct) {
+    acct.cases = acct.cases.filter(
+      (c2c) =>
+        !(
+          !acct.ents.find((r) => c2c.skuid === r.EXT_PRODUCT_ID) &&
+          ((acct.facts.NBU &&
+            c2c.qtty === 0 &&
+            acct.logInfo(
+              this.name,
+              `${c2c.skuid} was removed from Vendor catalog as obsolete`
+            )) ||
+            acct.logWarning(
+              this.name,
+              `${c2c.skuid} was removed from Vendor catalog: Qnty: ${c2c.qtty}`
+            ))
+        )
+    );
+
+    return true;
+  }
+}
+
 //////////////////////////////////
 export class RuleEngine {
   constructor() {
@@ -1080,12 +1133,12 @@ export class RuleEngine {
       new RCFixPorts(),
       new NiCPorts(),
       new C2CPorts(),
+      new RCBadPrice(),
       new RCExtraOverages(),
       new RCFixTextelOvs(),
       new RCEntCheckDuplicates(),
       new RCEntNaming(),
       new RCFixPrices2(),
-      new RCNegDiscounts(),
       new RCOldTelco(),
       new RCNewTelco(),
       new RCASROverage(),
@@ -1093,6 +1146,7 @@ export class RuleEngine {
       new RCFixSocMedia(),
       new RCFixPrices(),
       new NiC_NotFound(),
+      new RCNegDiscounts(),
       new C2CStripXX(),
       new C2CCorr(),
       new C2CvsMRC(),
@@ -1101,10 +1155,10 @@ export class RuleEngine {
       new RCCMapping(),
       new QntyVsThrsh(),
       new QntyVsCases(),
+      new C2CtoVenCat(),
     ];
   }
   run(acct) {
-    acct.facts = {};
     let skipRules = false;
     this.rules.forEach((rule) => {
       if (!skipRules) {

@@ -7,9 +7,11 @@ console.log("1) Renew Entitlements + Export");
 console.log("2) Export only");
 
 const userRes = readLineSync.question("Pick an option: ");
-if (userRes === "1") {
-  createBatchEntitlements(batchName);
-} else if (userRes === "2") {
-  prepareBatchFiles(batchName);
+switch (userRes) {
+  case "1":
+    createBatchEntitlements(batchName);
+  case "2":
+    prepareBatchFiles(batchName);
+    break;
 }
 console.log("G'buy");

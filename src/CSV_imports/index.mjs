@@ -4,6 +4,7 @@ import { Invoices, InvoiceLines } from "./invoices.mjs";
 import { RCMRCSummary } from "./RCMRCSummary.mjs";
 import { CatalogNGBS, CatalogSFDC } from "./Catalog.mjs";
 import { Entitlements_SFDC } from "./Entitlements_SFDC.mjs";
+import { importCaseReport } from "./importCaseReport.mjs";
 
 console.log("1) Entitlements");
 console.log("2) Invoices");
@@ -11,6 +12,7 @@ console.log("3) RCMRCSummary");
 console.log("4) Catalog");
 console.log("5) Entitlements SFDC");
 console.log("6) Entitlements DWH");
+console.log("7) Case2Case");
 
 const userRes = readLineSync.question("Pick an option: ");
 if (userRes === "1") {
@@ -27,5 +29,7 @@ if (userRes === "1") {
   Entitlements_SFDC();
 } else if (userRes === "6") {
   Entitlements_DWH();
+} else if (userRes === "7") {
+  importCaseReport();
 }
 console.log("G'buy");

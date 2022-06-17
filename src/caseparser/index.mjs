@@ -1,8 +1,9 @@
-import {db} from '../utils/DBSingleton.mjs'
-import {caseItems} from './CaseParserDB.mjs'
-import {importCaseReport} from './importCaseReport.mjs'
+import { db } from "../utils/DBSingleton.mjs";
+import { caseItems } from "./CaseParserDB.mjs";
+//import {importCaseReport} from '../CSV_imports/importCaseReport.mjs'
 
-db.prepare(`
+db.prepare(
+  `
     CREATE TABLE IF NOT EXISTS nic_case_items (
         accountID TEXT, 
         BUID TEXT, 
@@ -13,11 +14,10 @@ db.prepare(`
         qtty REAL, 
         price REAL
     )
-    `.replace(/\s+/g, " "))
-    .run()
+    `.replace(/\s+/g, " ")
+).run();
 
-importCaseReport()
+//importCaseReport();
 
-const outfile = '/Users/sergiy.krupnov/WORK/DATA/C2C/cases.sql'
-caseItems(outfile)
-//caseItems(outfile, '2022-01-31 15:16:25')
+const outfile = "/Users/sergiy.krupnov/WORK/DATA/C2C/cases02.sql";
+caseItems(outfile, "2022-06-16 18:22:05");
