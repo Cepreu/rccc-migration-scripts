@@ -4,7 +4,7 @@ import { Invoices, InvoiceLines } from "./invoices.mjs";
 import { RCMRCSummary } from "./RCMRCSummary.mjs";
 import { CatalogNGBS, CatalogSFDC } from "./Catalog.mjs";
 import { Entitlements_SFDC } from "./Entitlements_SFDC.mjs";
-import { importCaseReport } from "./importCaseReport.mjs";
+import { importCaseReport } from "./case2cases_SFDC.mjs";
 
 console.log("1) Entitlements");
 console.log("2) Invoices");

@@ -1,98 +1,119 @@
 import configuration from "../../configuration.mjs";
 import { db } from "../utils/DBSingleton.mjs";
-import { write2excel } from "../utils/write2file.mjs";
+import { StatExport } from "./StatExport.mjs";
+import { ICBExport } from "./ICBExport.mjs";
 import { Account } from "./Account.mjs";
 import { NiCEntitlements, CaseEntitlements } from "./entitlements.mjs";
 import { RuleEngine } from "./RuleEngine.mjs";
 
-const allAccounts = [];
 const ruleEngine = new RuleEngine();
-
-const batchPostProcessing = (batchName, allAccounts) => {
-  const errs = allAccounts.reduce((res, acc) => {
-    res.push(...acc.errorsAndWarnings);
-    return res;
-  }, []);
-  write2excel(
-    [
-      {
-        tab: "Accounts",
-        data: allAccounts.reduce((res, acc) => {
-          res.push(acc.info);
-          return res;
-        }, []),
-      },
-      { tab: "ErrsAndWarns", data: errs },
-    ],
-    [batchName],
-    "account_list"
-  );
-};
 
 //////////////////////
 // prepareBatchFile
 //////////////////////
 export function prepareBatchFiles(batchName) {
+  Account.statExport = new StatExport([batchName], "account_list");
+  Account.icbExport = new ICBExport([batchName], `ICB_${batchName}`);
+
   const stmtB = db.prepare(
-    `SELECT DISTINCT 
-            e.EID AS ENTERPRISE_ACCOUNT_ID,
-            e.UID AS INCONTACT_BUID,
-            e.BID AS BILLING_ID,
-            e.AccountName,
-            b.batchID,
-            b.brand AS BRANDNAME,
-            b.currency AS CURRENCY,
-            'MONTHLY' AS BILLING_TERM,
-            'LEGACY' AS CATALOG
-        FROM BatchAccounts b
-        INNER JOIN BatchEntitlements e
-          ON b.EID=e.EID AND b.batchID=e.batchID
-        WHERE
-          b.batchID='${batchName}'
-        ORDER BY e.AccountName`.replace(/\s+/g, " ")
+    `SELECT
+      EnterpriseAccountID AS ENTERPRISE_ACCOUNT_ID,	
+      BillingID AS BILLING_ACCOUNT_ID,
+      b.AccountName,
+      b.batchID, 
+      1210 AS ACCT_BRANDID,
+      a.Brand AS BRANDNAME,
+      PriceperSeatCurrency AS CURRENCY,
+      a.inContactBUID AS INCONTACT_BUID,
+      '' AS PACKAGE_ID,
+      PaymentPlan AS BILLING_TERM,
+      '' AS SPENDING_LIMIT,
+      a."No.ofInContactSeats",
+      nic.ContactCenterNumber,
+      DefaultTimeZone,
+      GeoRegion,
+      ImplementationTeam
+  FROM accounts_sfdc a
+    INNER JOIN BatchAccounts b ON b.EID = EnterpriseAccountID
+    INNER JOIN nic_cases nic ON nic.UID = EnterpriseAccountID
+  WHERE b.batchID=?
+  GROUP BY EnterpriseAccountID  
+  `.replace(/\s+/g, " ")
   );
 
   const stmt = db.prepare(
     `SELECT 
-          EXT_PRODUCT_ID,
-          Category,
-          ITEM_NAME,
-          ITBS_NAME,
-          QNTY_THRESHOLD,
-          OldPrice,
-          CASE CURRENCY_CODE WHEN 'USD' THEN round(PRICEUSD,2) WHEN 'CAD' THEN round(PRICE,2) END PRICE,
-          CASE CURRENCY_CODE WHEN 'USD' THEN round(DiscountUSD,2) WHEN 'CAD' THEN round(Discount,2) END DISCOUNT,
-          CURRENCY_CODE AS CURRENCY,
-          round(NiCPrice,2) NiCPrice,
-          PARENT,
-          ProductFamily,
-          batchID
-      FROM BatchEntitlements
-      WHERE batchID=? AND eid=?
-      ORDER BY AccountName, QNTY_THRESHOLD DESC, cast(EXT_PRODUCT_ID AS INTEGER), EXT_PRODUCT_ID, Category
+        b.EXT_PRODUCT_ID,
+        b.Category,
+        b.ITEM_NAME,
+        b.ITBS_NAME,
+        b.QNTY_THRESHOLD,
+        b.OldPrice,
+        CASE b.CURRENCY_CODE WHEN 'USD' THEN round(PRICEUSD,2) WHEN 'CAD' THEN round(PRICE,2) END PRICE,
+        CASE b.CURRENCY_CODE WHEN 'USD' THEN round(DiscountUSD,2) WHEN 'CAD' THEN round(Discount,2) END DISCOUNT,
+        b.CURRENCY_CODE AS CURRENCY,
+        round(NiCPrice,2) NiCPrice,
+        b.PARENT,
+        b.ProductFamily,
+        b.batchID
+    FROM BatchEntitlements b
+    WHERE eid=?
+    ORDER BY b.AccountName, b.QNTY_THRESHOLD DESC, cast(b.EXT_PRODUCT_ID AS INTEGER), b.EXT_PRODUCT_ID, b.Category
+  `.replace(/\s+/g, " ")
+  );
+
+  const rowEntsDWH = db.prepare(
+    `
+    SELECT
+      e.USERID AS ENTERPRISE_ACCOUNT_ID,
+      e.ID,
+      e.START_DATE,
+      e.END_DATE,
+      e.COUNTRY_ID,
+      e.COUNTRY_NAME,
+      e.BILLING_ITEM_ID,
+      e.EXT_PRODUCT_ID,
+      e.ITEM_NAME,
+      e.RETAIL_PRICE,
+      e.DISCOUNT_VALUE,
+      e.QNTY_THRESHOLD,
+      e.ProductFamily AS TYPE_NAME,
+      e.STATUS_NAME
+    FROM Entitlements_DWH e	
+    WHERE e.USERID=?
+        AND e.STATUS_NAME='Active'
+        AND (e.END_DATE > date('now') OR e.END_DATE IS NULL OR  e.END_DATE ='') 
       `.replace(/\s+/g, " ")
   );
 
-  for (const account of stmtB.iterate()) {
+  for (const account of stmtB.iterate(batchName)) {
     console.log(
       account.ENTERPRISE_ACCOUNT_ID,
       account.INCONTACT_BUID,
       account.AccountName
     );
 
-    const ents = stmt.all(batchName, account.ENTERPRISE_ACCOUNT_ID);
+    const row_ents = rowEntsDWH.all(account.ENTERPRISE_ACCOUNT_ID + "");
+
+    const ents = stmt.all(account.ENTERPRISE_ACCOUNT_ID + "");
     const nics = db
       .prepare(NiCEntitlements.SQL)
-      .all(account.INCONTACT_BUID, configuration.BILLING_MONTH);
+      .all(account.INCONTACT_BUID + "", configuration.BILLING_MONTH);
     const cases = db
       .prepare(CaseEntitlements.SQL)
-      .all(account.ENTERPRISE_ACCOUNT_ID);
+      .all(account.ENTERPRISE_ACCOUNT_ID + "");
 
-    const currAccount = new Account(account, ents, nics, cases, batchName);
+    const currAccount = new Account(
+      account,
+      ents,
+      nics,
+      cases,
+      row_ents,
+      batchName
+    );
     currAccount.validateAndExport(ruleEngine);
-
-    allAccounts.push(currAccount);
   }
 
-  batchPostProcessing(batchName, allAccounts);
+  Account.statExport.close();
+  Account.icbExport.close();
 }

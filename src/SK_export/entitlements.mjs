@@ -120,7 +120,7 @@ export class NgbsEntitlements extends EntCollection {
 
   constructor(coll) {
     super(coll);
-    this.ents = JSON.parse(JSON.stringify(coll));
+    this.ents = JSON.parse(JSON.stringify(coll)); //Deep copy of coll
   }
   get wrkColl() {
     return this.ents;
@@ -134,13 +134,11 @@ export class NgbsEntitlements extends EntCollection {
 export class NiCEntitlements extends EntCollection {
   static SQL = `
     SELECT 
+        *,
         CatalogID || '-' || 
           CASE WHEN FeatureID='' THEN '000' ELSE FeatureID END || '-' || 
           CASE WHEN FeatureDetailID='' THEN '000' ELSE FeatureDetailID END 
         AS SKU,
-        Product,
-        Quantity,
-        Amount,
         Amount/Quantity AS Price
     FROM RCMRCSummary
     WHERE Account=?
@@ -162,6 +160,8 @@ export class NiCEntitlements extends EntCollection {
 export class CaseEntitlements extends EntCollection {
   static SQL = `
     SELECT 
+        accountID,
+        BUID,
         SUBSTR(nic_cases.Subject, 1, 16) AS subject, 
         nic_cases.ProvisionDate, 
         sfdcCase,operation AS oper,
@@ -195,6 +195,8 @@ export class CaseEntitlements extends EntCollection {
       const findObj = acc.find((alreadyIn) => alreadyIn.skuid === obj.skuid);
       if (findObj === undefined) {
         acc.push({
+          accountID: obj.accountID,
+          BUID: obj.BUID,
           skuid: obj.skuid,
           sku: obj.sku,
           price: obj.price,

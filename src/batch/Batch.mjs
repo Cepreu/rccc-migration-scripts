@@ -47,10 +47,10 @@ class BatchDescription {
     this.telcoProvider = telcoProvider;
     this.seatEdition = seatEdition;
     this.accountList = accountList;
-    (this.casesMin = casesMin),
-      (this.casesMax = casesMax),
-      (this.casesNBU = casesNBU),
-      (this.maxSize = maxSize);
+    this.casesMin = casesMin;
+    this.casesMax = casesMax;
+    this.casesNBU = casesNBU;
+    this.maxSize = maxSize;
 
     if (saveFlag) {
       this.#saveToDB();

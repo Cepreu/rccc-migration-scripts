@@ -19,5 +19,5 @@ db.prepare(
 
 //importCaseReport();
 
-const outfile = "/Users/sergiy.krupnov/WORK/DATA/C2C/cases02.sql";
-caseItems(outfile, "2022-06-16 18:22:05");
+const outfile = "/Users/sergiy.krupnov/WORK/DATA/C2C/cases_2022-06-17.sql";
+caseItems(outfile, "2022-06-17 16:31:17");

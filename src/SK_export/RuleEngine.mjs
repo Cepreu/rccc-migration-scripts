@@ -302,6 +302,7 @@ class RCCSeatOverage extends Rule {
         return false; // (shouldn't happen)
       }
       acct.facts.seatOverage = {
+        ENTERPRISE_ACCOUNT_ID: acct.info.ENTERPRISE_ACCOUNT_ID,
         EXT_PRODUCT_ID: SOLic.EXT_PRODUCT_ID,
         Category: SOLic.Category,
         ITEM_NAME: "Seat Overage",
@@ -439,6 +440,9 @@ class C2CPorts extends Rule {
       const casePort = acct.cases.find((c) => /^308-/.test(c.skuid));
       if (casePort === undefined) {
         acct.cases.push({
+          ENTERPRISE_ACCOUNT_ID: acct.info.ENTERPRISE_ACCOUNT_ID,
+          accountID: acct.info.ENTERPRISE_ACCOUNT_ID,
+          BUID: acct.info.INCONTACT_BUID,
           skuid: acct.facts.entPortLic.EXT_PRODUCT_ID,
           sku: "Additional Configured Universal Port",
           qtty: 0,
@@ -657,6 +661,7 @@ class RCNewTelco extends Rule {
     Rule.RCOTelecomLicenses.forEach((tl) => {
       if (acct.ents.find((e) => e.Category === tl.Category) === undefined) {
         acct.ents.push({
+          ENTERPRISE_ACCOUNT_ID: acct.info.ENTERPRISE_ACCOUNT_ID,
           EXT_PRODUCT_ID: null,
           Category: tl.Category,
           ITEM_NAME: tl.ITEM_NAME,
@@ -689,6 +694,7 @@ class RCASROverage extends Rule {
       undefined
     ) {
       acct.ents.push({
+        ENTERPRISE_ACCOUNT_ID: acct.info.ENTERPRISE_ACCOUNT_ID,
         EXT_PRODUCT_ID: null,
         Category: Rule.ASR_OVERAGE.Category,
         ITEM_NAME: Rule.ASR_OVERAGE.ITEM_NAME,
@@ -979,6 +985,8 @@ class NiC_MRCvsC2C extends Rule {
         }
         if (nl.Quantity > 0) {
           acct.cases.push({
+            accountID: acct.info.ENTERPRISE_ACCOUNT_ID,
+            BUID: acct.info.INCONTACT_BUID,
             skuid: nl.SKU,
             sku: nl.Product,
             qtty: entLic.QNTY_THRESHOLD,
@@ -988,6 +996,8 @@ class NiC_MRCvsC2C extends Rule {
           acct.logWarning(this.name, theIssue);
         } else {
           acct.cases.push({
+            accountID: acct.info.ENTERPRISE_ACCOUNT_ID,
+            BUID: acct.info.INCONTACT_BUID,
             skuid: nl.SKU,
             sku: nl.Product,
             qtty: entLic.QNTY_THRESHOLD,

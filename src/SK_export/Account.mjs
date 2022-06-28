@@ -9,14 +9,17 @@ import { Logger } from "./Logger.mjs";
 import { db } from "../utils/DBSingleton.mjs";
 
 export class Account {
-  constructor(account, ents, nics, cases, batchName) {
+  static statExport;
+  static icbExport;
+
+  constructor(account, ents, nics, cases, row_ents, batchName) {
     this.info = account;
     this.nicEntsC2C = new CaseEntitlements(cases);
     this.ngbsEnts = new NgbsEntitlements(ents);
     this.nicEntsMRS = new NiCEntitlements(nics);
     this.batchName = batchName;
+    this.row_ents = row_ents;
 
-    this.batchName = batchName;
     this.info.VALID = true;
     this.logger = new Logger(this.info.ENTERPRISE_ACCOUNT_ID);
     this.facts = {
@@ -46,9 +49,6 @@ export class Account {
     this.nicEntsC2C.wrkColl = newCases;
   }
 
-  get errorsAndWarnings() {
-    return this.logger.errsAndWars();
-  }
   ////////
   validateAndExport(ruleEngine) {
     this.info.VALID = ruleEngine.run(this);
@@ -59,8 +59,9 @@ export class Account {
         `No invoices found in the DB for the month. NEEDS ATTENTION!`
       );
     } else if (
+      calcInvoice.length &&
       calcInvoice[0].TOTAL_AMOUNT.toFixed(0) !==
-      this.invoiceLines[0].TOTAL_AMOUNT.toFixed(0)
+        this.invoiceLines[0].TOTAL_AMOUNT.toFixed(0)
     ) {
       this.logAlarm(
         "Invoices",
@@ -94,6 +95,21 @@ export class Account {
   }
 
   #finalize() {
+    this.#export2sk();
+    Account.statExport.appendData([this.info], this.logger.errsAndWars());
+    Account.icbExport.appendData(
+      [this.info],
+      this.row_ents,
+      this.nicEntsC2C.wrkColl,
+      this.nicEntsMRS.originalColl
+    );
+
+    this.nicEntsC2C = null;
+    this.ngbsEnts = null;
+    this.nicEntsMRS = null;
+  }
+
+  #export2sk() {
     write2excel(
       [
         { tab: "Account", data: [this.info] },
@@ -111,9 +127,33 @@ export class Account {
         },
         { tab: "NiC Entitlements", data: this.nicEntsC2C.wrkColl },
         { tab: "Changelog", data: this.logger.log },
-        { tab: "Raw DWH", data: this.ngbsEnts.originalColl },
-        { tab: "Raw Monthly", data: this.nicEntsMRS.originalColl },
-        { tab: "Raw Cases", data: this.nicEntsC2C.originalColl },
+        {
+          tab: "Orig DWH",
+          data: this.ngbsEnts.originalColl,
+        },
+        {
+          tab: "Raw DWH",
+          data: this.row_ents,
+        },
+        {
+          tab: "Raw Monthly",
+          data: this.nicEntsMRS.originalColl,
+          columns: ["SKU", "Product", "Quantity", "Amount", "Price"],
+        },
+        {
+          tab: "Raw Cases",
+          data: this.nicEntsC2C.originalColl,
+          columns: [
+            "subject",
+            "ProvisionDate",
+            "sfdcCase",
+            "oper",
+            "skuid",
+            "sku",
+            "qtty",
+            "price",
+          ],
+        },
         { tab: "GroupedCases", data: this.nicEntsC2C.consColl },
         {
           tab: "Invoice",
@@ -135,9 +175,6 @@ export class Account {
         this.info.VALID ? (this.logger.hasAlarm() ? "_ALARM" : "") : "_FAILED"
       }`
     );
-    this.nicEntsC2C = null;
-    this.ngbsEnts = null;
-    this.nicEntsMRS = null;
   }
 
   #prepareInvoice() {
