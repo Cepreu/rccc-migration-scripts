@@ -8,6 +8,8 @@ import { write2excel } from "../utils/write2file.mjs";
 import { Logger } from "./Logger.mjs";
 import { db } from "../utils/DBSingleton.mjs";
 
+const DELTA = 1.0;
+
 export class Account {
   static statExport;
   static icbExport;
@@ -53,25 +55,7 @@ export class Account {
   validateAndExport(ruleEngine) {
     this.info.VALID = ruleEngine.run(this);
     const calcInvoice = this.#prepareInvoice();
-    if (this.invoiceLines.length === 0) {
-      this.logAlarm(
-        "Invoices",
-        `No invoices found in the DB for the month. NEEDS ATTENTION!`
-      );
-    } else if (
-      calcInvoice.length &&
-      calcInvoice[0].TOTAL_AMOUNT.toFixed(0) !==
-        this.invoiceLines[0].TOTAL_AMOUNT.toFixed(0)
-    ) {
-      this.logAlarm(
-        "Invoices",
-        `Estimated total (${calcInvoice[0].TOTAL_AMOUNT.toFixed(
-          2
-        )}) does not matches real total (${this.invoiceLines[0].TOTAL_AMOUNT.toFixed(
-          2
-        )}). NEEDS ATTENTION!`
-      );
-    }
+
     this.invoiceLines.push(...calcInvoice);
     this.#finalize();
   }
@@ -125,7 +109,11 @@ export class Account {
             "CURRENCY",
           ],
         },
-        { tab: "NiC Entitlements", data: this.nicEntsC2C.wrkColl },
+        {
+          tab: "NiC Entitlements",
+          data: this.nicEntsC2C.wrkColl,
+          columns: ["accountID", "BUID", "skuid", "sku", "price", "qtty"],
+        },
         { tab: "Changelog", data: this.logger.log },
         {
           tab: "Orig DWH",
@@ -165,7 +153,7 @@ export class Account {
             "ITEMNAME",
             "QUANTITY",
             "ITEM_PRICE",
-            "ITEM_DISCOUNT",
+            "ITEM_DISC",
             "AMOUNT",
           ],
         },
@@ -200,7 +188,7 @@ export class Account {
           ITEMNAME: ent.ITEM_NAME,
           QUANTITY: qnty,
           ITEM_PRICE: ent.PRICE,
-          ITEM_DISCOUNT: ent.DISCOUNT,
+          ITEM_DISC: ent.DISCOUNT,
           AMOUNT: amount,
         });
       }
@@ -229,6 +217,24 @@ export class Account {
       toInvoice.push(usage);
     }
     const total = toInvoice.reduce((prev, curr) => (prev += curr.AMOUNT), 0);
-    return toInvoice.map((x) => ((x.TOTAL_AMOUNT = total), x));
+
+    if (this.invoiceLines.length === 0) {
+      this.logAlarm(
+        "Invoices",
+        `No invoices found in the DB for the month. NEEDS ATTENTION!`
+      );
+    } else if (Math.abs(total - this.invoiceLines[0].TOTAL_AMOUNT) > DELTA) {
+      this.logAlarm(
+        "Invoices",
+        `Estimated total ($${total.toFixed(
+          2
+        )}) does not matches real total ($${this.invoiceLines[0].TOTAL_AMOUNT.toFixed(
+          2
+        )}). NEEDS ATTENTION!`
+      );
+    }
+
+    toInvoice.forEach((x) => (x.TOTAL_AMOUNT = total));
+    return toInvoice;
   }
 }

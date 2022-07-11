@@ -9,7 +9,7 @@ export class StatExport extends Export2Excel {
           columns: [
             "ENTERPRISE_ACCOUNT_ID",
             "INCONTACT_BUID",
-            "BILLING_ID",
+            "BILLING_ACCOUNT_ID",
             "AccountName",
             "batchID",
             "BRANDNAME",

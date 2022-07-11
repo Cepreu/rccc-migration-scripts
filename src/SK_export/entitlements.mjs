@@ -164,7 +164,8 @@ export class CaseEntitlements extends EntCollection {
         BUID,
         SUBSTR(nic_cases.Subject, 1, 16) AS subject, 
         nic_cases.ProvisionDate, 
-        sfdcCase,operation AS oper,
+        sfdcCase,
+        operation AS oper,
         skuid,
         sku,
         qtty,
@@ -191,19 +192,26 @@ export class CaseEntitlements extends EntCollection {
   }
 
   get consColl() {
+    const replacements = { RC_PREM: "307-6-217" };
+
     return this.originalColl.reduce((acc, obj) => {
-      const findObj = acc.find((alreadyIn) => alreadyIn.skuid === obj.skuid);
+      const theLic =
+        obj.skuid in replacements ? replacements[obj.skuid] : obj.skuid;
+
+      const findObj = acc.find((alreadyIn) => alreadyIn.skuid === theLic);
       if (findObj === undefined) {
         acc.push({
           accountID: obj.accountID,
           BUID: obj.BUID,
-          skuid: obj.skuid,
+          skuid: theLic,
           sku: obj.sku,
           price: obj.price,
           qtty: obj.qtty,
+          oper: obj.oper,
         });
       } else {
         findObj.qtty += obj.qtty;
+        findObj.oper = obj.oper; // last oparation
       }
       return acc;
     }, []);

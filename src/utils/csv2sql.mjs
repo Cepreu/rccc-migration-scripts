@@ -6,14 +6,16 @@ import { db } from "./DBSingleton.mjs";
 
 export const csv2sql = (
   table,
-  fields,
+  fieldDescs,
   csv_file,
   separator = ",",
   guardFunc,
   dropTable = false
 ) => {
-  const crtTblFlds = fields.map((x) => x.dbcolumn + " " + (x.type || "TEXT"));
-  const crtTblPKeys = fields
+  const crtTblFlds = fieldDescs.map(
+    (x) => x.dbcolumn + " " + (x.type || "TEXT")
+  );
+  const crtTblPKeys = fieldDescs
     .filter((x) => x.pkey)
     .map((y) => y.dbcolumn)
     .join(",");
@@ -26,8 +28,8 @@ export const csv2sql = (
     `CREATE TABLE IF NOT EXISTS ${table} (${crtTblFlds.join(",")})`
   ).run();
 
-  const fldNames = fields.map((x) => x.dbcolumn).join(",");
-  const qtnMarks = fields.map((x) => "?").join(",");
+  const fldNames = fieldDescs.map((x) => x.dbcolumn).join(",");
+  const qtnMarks = fieldDescs.map((x) => "?").join(",");
   const stmt = db.prepare(
     `INSERT OR IGNORE INTO ${table} (${fldNames}) VALUES (${qtnMarks})`
   );
@@ -38,12 +40,15 @@ export const csv2sql = (
     .on("data", (row) => {
       if (guardFunc === undefined || guardFunc(row)) {
         stmt.run(
-          ...fields.map((x) => {
-            return "field" in x
-              ? "func" in x && row[x.field]
-                ? x.func(row[x.field])
-                : row[x.field]
-              : x.rowfunc(row);
+          ...fieldDescs.map((fd) => {
+            if ("field" in fd) {
+              return row[fd.field]
+                ? "func" in fd
+                  ? fd.func(row[fd.field])
+                  : row[fd.field]
+                : null;
+            }
+            return "rowfunc" in fd ? fd.rowfunc(row) : null;
           })
         );
       }

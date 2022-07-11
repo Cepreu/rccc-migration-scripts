@@ -43,7 +43,7 @@ export class ICBExport extends Export2Excel {
           ],
         },
         {
-          tab: "RCMRCSummary",
+          tab: "RCMRCSummary_",
           columns: [
             "Account",
             "Customer",
@@ -79,7 +79,7 @@ export class ICBExport extends Export2Excel {
     super.appendData([
       { tab: "Accounts", data: accInfo },
       { tab: "Entitlements", data: entitlements },
-      { tab: "RCMRCSummary", data: monthly_data },
+      { tab: "RCMRCSummary_", data: monthly_data },
       { tab: "CasesData", data: cases },
     ]);
   }

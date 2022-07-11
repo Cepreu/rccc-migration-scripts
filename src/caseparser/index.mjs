@@ -1,6 +1,6 @@
 import { db } from "../utils/DBSingleton.mjs";
 import { caseItems } from "./CaseParserDB.mjs";
-//import {importCaseReport} from '../CSV_imports/importCaseReport.mjs'
+import configuration from "../../configuration.mjs";
 
 db.prepare(
   `
@@ -17,7 +17,5 @@ db.prepare(
     `.replace(/\s+/g, " ")
 ).run();
 
-//importCaseReport();
-
-const outfile = "/Users/sergiy.krupnov/WORK/DATA/C2C/cases_2022-06-17.sql";
-caseItems(outfile, "2022-06-17 16:31:17");
+const outfile = `/Users/sergiy.krupnov/WORK/DATA/C2C/cases_2022-07-07.sql`;
+caseItems(outfile, "2022-07-07 09:51:01");

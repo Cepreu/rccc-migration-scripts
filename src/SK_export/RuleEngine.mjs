@@ -216,6 +216,7 @@ class Rule {
     "610060-296-000", // "Contact Center: Instructor-Led Interactive Training (At Customer Facility; min 2"
     "154-487-000", // SMS/MMS Setup
     "154-493-000", // SMS/MMS Setup
+    "154-173-000", // SMS/MMS Setup
   ];
 
   constructor({ description = "" } = {}) {
@@ -262,7 +263,9 @@ class RCCheckSeats extends Rule {
         this.name,
         seats.length === 0
           ? "Seat licenses not found"
-          : `More than one seat licenses were found (${seats.length})`
+          : `More than one seat licenses were found: ${seats.map(
+              (s) => s.EXT_PRODUCT_ID
+            )}`
       );
       return false;
     }
@@ -395,9 +398,47 @@ class RCFixPorts extends Rule {
       );
       acct.facts.entPortLic = entPorts[0];
     }
+    // remove extra port lics:
+    acct.ents = acct.ents.filter(
+      (e) =>
+        !(
+          e.EXT_PRODUCT_ID === acct.facts.entPortLic.EXT_PRODUCT_ID &&
+          e.Category !== acct.facts.entPortLic.Category &&
+          acct.logInfo(
+            this.name,
+            `Removed ephemeral port ${e.Category ? e.Category : ""}: ${
+              e.EXT_PRODUCT_ID
+            } ${e.ITBS_NAME}`
+          )
+        )
+    );
+
     return true;
   }
 }
+
+// /////////////
+// class C2CLegacy extends Rule {
+//   static replacements = { RC_PREM: "307-6-217" };
+//   constructor() {
+//     super({
+//       description: "Replace obsolete Set license codes with SKUIDs",
+//     });
+//   }
+//   action(acct) {
+//     const legacySeat = acct.cases.forEach((c2c) => {
+//       if (c2c.skuid.startsWith("RC_")) {
+//         const newSeat = C2CLegacy.replacements[c2c.skuid];
+//         acct.logInfo(
+//           this.name,
+//           `Obsolete license "${c2c.skuid}" was replaced by "${newSeat}"`
+//         );
+//         c2c.skuid = newSeat;
+//       }
+//     });
+//     return true;
+//   }
+// }
 
 /////////////
 class NiCPorts extends Rule {
@@ -502,7 +543,8 @@ class RCExtraOverages extends Rule {
             e.EXT_PRODUCT_ID !== "610064-000-000" && //PS OnDemand
             e.EXT_PRODUCT_ID !== "610064-302-000" && //PS OnDemand - Professional Services On Demand
             !acct.cases.find(
-              (c) => c.skuid === e.EXT_PRODUCT_ID && c.qtty > 0
+              (c) =>
+                c.skuid === e.EXT_PRODUCT_ID && (c.qtty > 0 || c.oper === "ADD")
             ) &&
             !acct.nics.find((n) => n.SKU === e.EXT_PRODUCT_ID) &&
             acct.logInfo(
@@ -534,10 +576,13 @@ class RCFixTextelOvs extends Rule {
   }
   action(acct) {
     const textelOverage = acct.ents.find(
-      (t) => !t.ITEM_NAME && t.EXT_PRODUCT_ID.startsWith("3875-12")
+      (t) =>
+        !t.ITEM_NAME &&
+        t.EXT_PRODUCT_ID &&
+        t.EXT_PRODUCT_ID.startsWith("3875-12")
     );
     if (textelOverage) {
-      textelOverage.ITEM_NAME = "Testel - Overage";
+      textelOverage.ITEM_NAME = "Textel - Overage";
       textelOverage.EXT_PRODUCT_ID = "";
       textelOverage.Category = "LTXTO";
       textelOverage.PRICE = 0.04;
@@ -1141,6 +1186,7 @@ export class RuleEngine {
       new RCCSeatOverage(),
       new RCPorts4Seats(),
       new RCFixPorts(),
+      //      new C2CLegacy(),
       new NiCPorts(),
       new C2CPorts(),
       new RCBadPrice(),

@@ -15,7 +15,7 @@ export function prepareBatchFiles(batchName) {
   Account.statExport = new StatExport([batchName], "account_list");
   Account.icbExport = new ICBExport([batchName], `ICB_${batchName}`);
 
-  const stmtB = db.prepare(
+  const stmtBatchAccounts = db.prepare(
     `SELECT
       EnterpriseAccountID AS ENTERPRISE_ACCOUNT_ID,	
       BillingID AS BILLING_ACCOUNT_ID,
@@ -41,7 +41,7 @@ export function prepareBatchFiles(batchName) {
   `.replace(/\s+/g, " ")
   );
 
-  const stmt = db.prepare(
+  const stmtAccntEntitlements = db.prepare(
     `SELECT 
         b.EXT_PRODUCT_ID,
         b.Category,
@@ -86,7 +86,7 @@ export function prepareBatchFiles(batchName) {
       `.replace(/\s+/g, " ")
   );
 
-  for (const account of stmtB.iterate(batchName)) {
+  for (const account of stmtBatchAccounts.iterate(batchName)) {
     console.log(
       account.ENTERPRISE_ACCOUNT_ID,
       account.INCONTACT_BUID,
@@ -95,7 +95,7 @@ export function prepareBatchFiles(batchName) {
 
     const row_ents = rowEntsDWH.all(account.ENTERPRISE_ACCOUNT_ID + "");
 
-    const ents = stmt.all(account.ENTERPRISE_ACCOUNT_ID + "");
+    const ents = stmtAccntEntitlements.all(account.ENTERPRISE_ACCOUNT_ID + "");
     const nics = db
       .prepare(NiCEntitlements.SQL)
       .all(account.INCONTACT_BUID + "", configuration.BILLING_MONTH);
