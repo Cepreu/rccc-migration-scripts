@@ -12,7 +12,7 @@ const ruleEngine = new RuleEngine();
 // prepareBatchFile
 //////////////////////
 export function prepareBatchFiles(batchName) {
-  Account.statExport = new StatExport([batchName], "account_list");
+  Account.statExport = new StatExport([batchName], batchName);
   Account.icbExport = new ICBExport([batchName], `ICB_${batchName}`);
 
   const stmtBatchAccounts = db.prepare(
@@ -32,7 +32,9 @@ export function prepareBatchFiles(batchName) {
       nic.ContactCenterNumber,
       DefaultTimeZone,
       GeoRegion,
-      ImplementationTeam
+      ImplementationTeam,
+      ContactCenterMRR,
+      CurrentTotalMRRconverted as totalMRR
   FROM accounts_sfdc a
     INNER JOIN BatchAccounts b ON b.EID = EnterpriseAccountID
     INNER JOIN nic_cases nic ON nic.UID = EnterpriseAccountID

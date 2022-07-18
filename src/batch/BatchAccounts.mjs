@@ -1,11 +1,17 @@
+import { db } from "../utils/DBSingleton.mjs";
+
 export class BatchAccounts {
   constructor(batchDescription) {
     this.bd = batchDescription;
-    this.name = batchDescription.name;
+    console.log(JSON.stringify(this.bd));
   }
 
   /////////
   get #batchSQL() {
+    if (!this.bd.name) {
+      console.log("ERROR: batchSQLBuilder: batchName is undefined");
+      return null;
+    }
     const wheres = ["1=1"];
     if (this.bd.accSizeMin) {
       wheres.push(`sf."No.ofInContactSeats" >= ${this.bd.accSizeMin}`);
@@ -19,7 +25,7 @@ export class BatchAccounts {
         : `(sf.brand='RingCentral' OR sf.brand='RingCentral Canada')`
     );
     if (this.bd.telcoProvider) {
-      if (this.telcoProvider === "RC") {
+      if (this.bd.telcoProvider === "RC") {
         wheres.push(`sf.OutboundTransport LIKE 'RC Ad-Hoc%'`);
       } else if (this.bd.telcoProvider === "NiC") {
         wheres.push(`sf.OutboundTransport LIKE 'inContact Ad-Hoc%'`);
@@ -31,7 +37,7 @@ export class BatchAccounts {
       }
     }
     if (this.bd.seatEdition) {
-      const inOrNot = this.seatEdition === "Legacy" ? "NOT IN" : "IN";
+      const inOrNot = this.bd.seatEdition === "Legacy" ? "NOT IN" : "IN";
       wheres.push(
         `sf.EnterpriseAccountID ${inOrNot} (
           SELECT DISTINCT a.accountID 
@@ -43,11 +49,15 @@ export class BatchAccounts {
       );
     }
     if (this.bd.accountList.length > 0) {
-      wheres.push(`sf.EnterpriseAccountID IN (${this.accountList.join(",")})`);
+      wheres.push(
+        `sf.EnterpriseAccountID IN (${this.bd.accountList.join(",")})`
+      );
     }
-    if (!this.bd.name) {
-      console.log("ERROR: batchSQLBuilder: batchName is undefined");
-      return null;
+    if (this.bd.maxContactCenterMRR) {
+      wheres.push(`sf.ContactCenterMRR >= ${this.bd.maxContactCenterMRR}`);
+    }
+    if (this.bd.maxTotalMRR) {
+      wheres.push(`sf.totalMRR >= ${this.bd.maxTotalMRR}`);
     }
 
     let inner_join = "";
@@ -102,11 +112,11 @@ export class BatchAccounts {
     let info = stmt.run();
 
     stmt = db.prepare(`DELETE FROM BatchAccounts WHERE batchID=?`);
-    info = stmt.run(this.name);
+    info = stmt.run(this.bd.name);
     console.log(`BatchAccounts. Number of rows deleted: ${info.changes}`);
 
     stmt = db.prepare(`DELETE FROM BatchEntitlements WHERE batchID=?`);
-    info = stmt.run(this.name);
+    info = stmt.run(this.bd.name);
     console.log(`BatchEntitlements. Number of rows deleted: ${info.changes}`);
 
     stmt = db.prepare(this.#batchSQL);

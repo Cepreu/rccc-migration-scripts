@@ -21,6 +21,8 @@ export class ICBExport extends Export2Excel {
             "DefaultTimeZone",
             "GeoRegion",
             "ImplementationTeam",
+            "ContactCenterMRR",
+            "totalMRR",
           ],
         },
         {

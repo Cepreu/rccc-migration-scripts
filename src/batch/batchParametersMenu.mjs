@@ -20,7 +20,9 @@ export function batchParametersMenu(batchName) {
       0,
       0,
       false,
-      2000
+      2000,
+      0,
+      0
     );
   }
 
@@ -66,6 +68,13 @@ export function batchParametersMenu(batchName) {
   let maxSize =
     readLineSync.question(`Max number of accounts [${batchDB.maxSize}]: `) ||
     batchDB.maxSize;
+  let ContactCenterMRR =
+    readLineSync.question(
+      `Max Contact Center MRR [${batchDB.maxContactCenterMRR}]: `
+    ) || batchDB.maxContactCenterMRR;
+  let totalMRR =
+    readLineSync.question(`Max total MRR [${batchDB.maxTotalMRR}]: `) ||
+    batchDB.maxTotalMRR;
 
   return new BatchDescription(
     batchName,
@@ -102,6 +111,8 @@ export function batchParametersMenu(batchName) {
     casesMin,
     casesMax,
     casesNBU === "Y",
-    maxSize
+    maxSize,
+    ContactCenterMRR,
+    totalMRR
   );
 }

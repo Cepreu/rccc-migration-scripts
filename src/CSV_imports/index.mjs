@@ -1,35 +1,39 @@
-import readLineSync from "readline-sync";
+import consMenu from "../utils/consMenu.mjs";
 import { Entitlements_DWH } from "./Entitlements_DWH.mjs";
 import { Invoices, InvoiceLines } from "./invoices.mjs";
 import { RCMRCSummary } from "./RCMRCSummary.mjs";
 import { CatalogNGBS, CatalogSFDC } from "./Catalog.mjs";
-import { Entitlements_SFDC } from "./Entitlements_SFDC.mjs";
+import { importAccountReport } from "./Accounts_SFDC.mjs";
 import { importCaseReport } from "./case2cases_SFDC.mjs";
 
-console.log("1) Entitlements");
-console.log("2) Invoices");
-console.log("3) RCMRCSummary");
-console.log("4) Catalog");
-console.log("5) Entitlements SFDC");
-console.log("6) Entitlements DWH");
-console.log("7) Case2Case");
+const userRes = consMenu(
+  [
+    "Entitlements",
+    "Invoices",
+    "RCMRCSummary",
+    "Catalog",
+    "Account Report SFDC",
+    "Entitlements DWH",
+    "Case2Case",
+  ],
+  true
+);
 
-const userRes = readLineSync.question("Pick an option: ");
-if (userRes === "1") {
+if (userRes === 0) {
   EntitlementsLOG();
-} else if (userRes === "2") {
+} else if (userRes === 1) {
   Invoices();
   InvoiceLines();
-} else if (userRes === "3") {
+} else if (userRes === 2) {
   RCMRCSummary();
-} else if (userRes === "4") {
+} else if (userRes === 3) {
   CatalogNGBS();
   CatalogSFDC();
-} else if (userRes === "5") {
-  Entitlements_SFDC();
-} else if (userRes === "6") {
+} else if (userRes === 4) {
+  importAccountReport();
+} else if (userRes === 5) {
   Entitlements_DWH();
-} else if (userRes === "7") {
+} else if (userRes === 6) {
   importCaseReport();
 }
 console.log("G'buy");

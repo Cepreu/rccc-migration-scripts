@@ -1,22 +1,16 @@
-import chalk from "chalk";
-import clear from "clear";
-import figlet from "figlet";
 import readLineSync from "readline-sync";
+import { BatchAccounts } from "./BatchAccounts.mjs";
 import { batchParametersMenu } from "./batchParametersMenu.mjs";
+import consMenu from "../utils/consMenu.mjs";
 
-clear();
-console.log(
-  chalk.yellow(figlet.textSync("Migra-2", { horizontalLayout: "full" }))
-);
+const userResp = consMenu(["Create New Batch", "Modify Batch"], true);
 
-console.log("1) Create New Batch");
-console.log("2) Modify Batch");
-
-const userRes = readLineSync.question("Pick an option: ");
-if (userRes === "1") {
-  console.log(batchParametersMenu());
-} else if (userRes === "2") {
-  const batchName = readLineSync.question("Batch name: ");
-  console.log(batchParametersMenu(batchName));
+let batchName;
+if (userResp === 1) {
+  batchName = readLineSync.question("Batch name: ");
 }
+const batchDescr = batchParametersMenu(batchName);
+const batchAccs = new BatchAccounts(batchDescr);
+batchAccs.selectBatchAccounts();
+
 console.log("G'buy");

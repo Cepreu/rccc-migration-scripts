@@ -1,16 +1,15 @@
 import readLineSync from "readline-sync";
+import consMenu from "../utils/consMenu.mjs";
 import { createBatchEntitlements } from "./createBatchEntitlements.mjs";
 import { prepareBatchFiles } from "./prepareBatchFiles.mjs";
 
 const batchName = readLineSync.question("Batch name: ");
-console.log("1) Renew Entitlements + Export");
-console.log("2) Export only");
 
-const userRes = readLineSync.question("Pick an option: ");
-switch (userRes) {
-  case "1":
+const userResp = consMenu(["Renew Entitlements + Export", "Export only"]);
+switch (userResp) {
+  case 0:
     createBatchEntitlements(batchName);
-  case "2":
+  case 1:
     prepareBatchFiles(batchName);
     break;
 }
