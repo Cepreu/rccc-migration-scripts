@@ -359,12 +359,13 @@ class RCPorts4Seats extends Rule {
     );
   }
   action(acct) {
-    if (!Rule.portMap.hasOwnProperty(acct.facts.seatOverage.Category)) {
-      const theIssue = `Unknown port2seat mapping: ${acct.facts.seatOverage.Category}`;
-      acct.logError(this.name, theIssue);
-      return false;
-    }
-    return true;
+    return (
+      Rule.portMap.hasOwnProperty(acct.facts.seatOverage.Category) ||
+      !acct.logError(
+        this.name,
+        `Unknown port2seat mapping: ${acct.facts.seatOverage.Category}`
+      )
+    );
   }
 }
 
@@ -422,6 +423,37 @@ class RCFixPorts extends Rule {
 }
 
 /////////////
+class RecurringPorts extends Rule {
+  static {
+    super.Register("Syncs Port Overages with Recurring Ports");
+  }
+  action(acct) {
+    const RecurringPort = acct.ents.find(
+      (row) =>
+        /^308-/.test(row.EXT_PRODUCT_ID) && row.ProductFamily === "Recurring"
+    );
+    if (
+      !!RecurringPort &&
+      !!acct.facts.entPortLic &&
+      RecurringPort.EXT_PRODUCT_ID !== acct.facts.entPortLic.EXT_PRODUCT_ID
+    ) {
+      acct.logAlarm(
+        this.name,
+        `Recurring Port license ${RecurringPort.EXT_PRODUCT_ID} doesn't match Overage: ${acct.facts.entPortLic.EXT_PRODUCT_ID}. Overage replaced by ${RecurringPort.EXT_PRODUCT_ID}`
+      );
+
+      acct.facts.entPortLic.EXT_PRODUCT_ID = RecurringPort.EXT_PRODUCT_ID;
+
+      const nicPort = acct.nics.find((nic) => /^308-/.test(nic.SKU));
+      if (!!nicPort && nicPort.SKU !== acct.facts.entPortLic.EXT_PRODUCT_ID) {
+        nicPort.SKU = acct.facts.entPortLic.EXT_PRODUCT_ID;
+      }
+    }
+    return true;
+  }
+}
+
+/////////////
 class NiCPorts extends Rule {
   static {
     super.Register("Checks NiC Ports");
@@ -447,14 +479,6 @@ class C2CPorts extends Rule {
   }
   action(acct) {
     if (acct.facts.entPortLic) {
-      const nicPort = acct.nics.find((nic) => /^308-/.test(nic.SKU));
-      if (!!nicPort && nicPort.SKU !== acct.facts.entPortLic.EXT_PRODUCT_ID) {
-        acct.logAlarm(
-          this.name,
-          `NiC Port license ${nicPort.SKU} doesn't match RC entitlements: ${acct.facts.entPortLic.EXT_PRODUCT_ID}`
-        );
-      }
-
       const casePort = acct.cases.find((c) => /^308-/.test(c.skuid));
       if (casePort === undefined) {
         acct.cases.push({
@@ -1097,7 +1121,10 @@ class QntyVsCases extends Rule {
       )
       .forEach((r) => {
         const nic = acct.cases.find(
-          (c) => c.skuid === r.EXT_PRODUCT_ID && c.qtty !== r.QNTY_THRESHOLD
+          (c) =>
+            c.skuid === r.EXT_PRODUCT_ID &&
+            c.qtty !== r.QNTY_THRESHOLD &&
+            r.EXT_PRODUCT_ID != acct.facts.entPortLic.EXT_PRODUCT_ID
         );
         if (nic) {
           if (acct.facts.NBU) {
