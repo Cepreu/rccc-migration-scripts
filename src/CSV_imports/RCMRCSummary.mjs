@@ -91,7 +91,7 @@ export const RCMRCSummary = () => {
   csv2sql(
     "RCMRCSummary",
     fields,
-    configuration.DWH_RCMRCSUMMARY,
-    configuration.DWH_RCMRCSUMMARY_SEP || "|"
+    configuration.NIC_RCMRCSUMMARY,
+    configuration.NIC_RCMRCSUMMARY_SEP || "|"
   );
 };

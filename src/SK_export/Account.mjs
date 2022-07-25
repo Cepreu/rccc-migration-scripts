@@ -54,9 +54,7 @@ export class Account {
   ////////
   validateAndExport(ruleEngine) {
     this.info.VALID = ruleEngine.run(this);
-    const calcInvoice = this.#prepareInvoice();
-
-    this.invoiceLines.push(...calcInvoice);
+    this.#compareInvoices();
     this.#finalize();
   }
   ////////
@@ -85,7 +83,8 @@ export class Account {
       [this.info],
       this.row_ents,
       this.nicEntsC2C.wrkColl,
-      this.nicEntsMRS.originalColl
+      //      this.nicEntsMRS.originalColl
+      this.nicEntsMRS.wrkColl
     );
 
     this.nicEntsC2C = null;
@@ -148,7 +147,6 @@ export class Account {
           data: this.invoiceLines,
           columns: [
             "BILLING_MONTH",
-            "TOTAL_AMOUNT",
             "EXT_PRODUCT_ID",
             "ITEMNAME",
             "QUANTITY",
@@ -165,76 +163,96 @@ export class Account {
     );
   }
 
-  #prepareInvoice() {
-    const toInvoice = [];
-    this.ngbsEnts.wrkColl.forEach((ent) => {
-      let qnty = 0;
-      if (ent.ProductFamily === "Recurring") {
-        qnty = ent.QNTY_THRESHOLD;
-      } else {
-        const mrc = this.nicEntsMRS.wrkColl.find(
-          (e) => ent.EXT_PRODUCT_ID === e.SKU
-        );
-        if (mrc && mrc.Quantity > ent.QNTY_THRESHOLD) {
-          qnty = mrc.Quantity - ent.QNTY_THRESHOLD;
-        }
-      }
-      const amount = qnty * (ent.PRICE - ent.DISCOUNT);
-
-      if (amount > 0) {
-        toInvoice.push({
-          BILLING_MONTH: configuration.BILLING_MONTH,
-          EXT_PRODUCT_ID: ent.EXT_PRODUCT_ID + "/" + ent.Category,
-          ITEMNAME: ent.ITEM_NAME,
-          QUANTITY: qnty,
-          ITEM_PRICE: ent.PRICE,
-          ITEM_DISC: ent.DISCOUNT,
-          AMOUNT: amount,
-        });
-      }
-    });
-
-    const usageItems = this.invoiceLines.filter(
+  #compareInvoices() {
+    this.invoiceLines = this.invoiceLines.filter(
       (il) =>
-        il.ITEMNAME === "Domestic Minutes Overage" ||
-        il.ITEMNAME === "International Minutes Overage" ||
-        il.ITEMNAME === "IVN Minutes Overage"
+        il.ITEMNAME !== "Domestic Minutes Overage" &&
+        il.ITEMNAME !== "International Minutes Overage" &&
+        il.ITEMNAME !== "IVN Minutes Overage"
     );
-    if (usageItems.length > 0) {
-      const usage = usageItems.reduce(
-        (prev, curr) => {
-          prev.AMOUNT += curr.AMOUNT;
-          prev.QUANTITY += curr.QUANTITY;
-          return prev;
-        },
-        {
-          BILLING_MONTH: configuration.BILLING_MONTH,
-          ITEMNAME: "Total Dom, Int, and IVN Minutes Overages",
-          QUANTITY: 0,
-          AMOUNT: 0,
-        }
-      );
-      toInvoice.push(usage);
-    }
-    const total = toInvoice.reduce((prev, curr) => (prev += curr.AMOUNT), 0);
-
-    if (this.invoiceLines.length === 0) {
+    const total = this.invoiceLines.reduce(
+      (prev, curr) => (prev += curr.AMOUNT),
+      0
+    );
+    const calcInvoice = this.#prepareInvoice();
+    const newTotal = calcInvoice.reduce(
+      (prev, curr) => (prev += curr.AMOUNT),
+      0
+    );
+    if (Math.abs(total - newTotal) > DELTA) {
       this.logAlarm(
         "Invoices",
-        `No invoices found in the DB for the month. NEEDS ATTENTION!`
-      );
-    } else if (Math.abs(total - this.invoiceLines[0].TOTAL_AMOUNT) > DELTA) {
-      this.logAlarm(
-        "Invoices",
-        `Estimated total ($${total.toFixed(
+        `Estimated total ($${newTotal.toFixed(
           2
-        )}) does not matches real total ($${this.invoiceLines[0].TOTAL_AMOUNT.toFixed(
+        )}) does not matches real total ($${total.toFixed(
           2
         )}). NEEDS ATTENTION!`
       );
     }
 
-    toInvoice.forEach((x) => (x.TOTAL_AMOUNT = total));
+    this.invoiceLines.push({
+      BILLING_MONTH: configuration.BILLING_MONTH,
+      ITEMNAME: "Total:",
+      AMOUNT: total,
+    });
+    this.invoiceLines.push(...calcInvoice);
+    this.invoiceLines.push({
+      BILLING_MONTH: configuration.BILLING_MONTH,
+      ITEMNAME: "Total:",
+      AMOUNT: newTotal,
+    });
+  }
+
+  #prepareInvoice() {
+    // (1) Add recurrings
+    const toInvoice = this.ngbsEnts.wrkColl
+      .filter((ent) => ent.ProductFamily === "Recurring")
+      .reduce((prev, ent) => {
+        prev.push({
+          EXT_PRODUCT_ID: `${ent.Category} (${
+            ent.EXT_PRODUCT_ID ? ent.EXT_PRODUCT_ID : ""
+          })`,
+          ITEMNAME: ent.ITEM_NAME,
+          QUANTITY: ent.QNTY_THRESHOLD,
+          ITEM_PRICE: ent.PRICE,
+          ITEM_DISC: ent.DISCOUNT,
+          AMOUNT: ent.QNTY_THRESHOLD * (ent.PRICE - ent.DISCOUNT),
+        });
+        return prev;
+      }, []);
+
+    // (2) Add overages
+    this.nicEntsMRS.wrkColl
+      .filter((nic) => !!nic.SKU)
+      .forEach((nic) => {
+        const rcrnt = this.ngbsEnts.wrkColl.find(
+          (ent) =>
+            ent.EXT_PRODUCT_ID === nic.SKU && ent.ProductFamily === "Recurring"
+        );
+        const threshold = rcrnt ? rcrnt.QNTY_THRESHOLD : 0;
+
+        const ovrg = this.ngbsEnts.wrkColl.find(
+          (ent) =>
+            ent.EXT_PRODUCT_ID === nic.SKU && ent.ProductFamily === "Overage"
+        );
+
+        if (ovrg) {
+          const qnty = nic.Quantity - threshold;
+          const amount = qnty * (ovrg.PRICE - ovrg.DISCOUNT);
+          if (amount > 0) {
+            toInvoice.push({
+              EXT_PRODUCT_ID: `${ovrg.Category} (${
+                ovrg.EXT_PRODUCT_ID ? ovrg.EXT_PRODUCT_ID : ""
+              })`,
+              ITEMNAME: ovrg.ITEM_NAME,
+              QUANTITY: qnty,
+              ITEM_PRICE: ovrg.PRICE,
+              ITEM_DISC: ovrg.DISCOUNT,
+              AMOUNT: amount,
+            });
+          }
+        }
+      });
     return toInvoice;
   }
 }

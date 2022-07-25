@@ -2,12 +2,16 @@ const RECURRING = "Recurring";
 const OVERAGE = "Overage";
 
 export class Rule {
-  static descriptions = [];
-  static AddDescr(descr) {
-    this.descriptions.push({ Rule: this.name, Description: descr });
+  static Registered = [];
+  static Register(descr) {
+    this.Registered.push({
+      Rule: this.name,
+      Description: descr,
+      Action: new this(),
+    });
   }
   static GetDescriptions() {
-    return this.descriptions;
+    return this.Registered;
   }
 
   static seatOverageMap = [
@@ -227,9 +231,9 @@ export class Rule {
     "154-173-000", // SMS/MMS Setup
   ];
 
-  constructor({ description = "" } = {}) {
-    this.description = description;
-  }
+  // constructor({ description = "" } = {}) {
+  //   this.description = description;
+  // }
   get name() {
     return this.constructor.name;
   }
@@ -238,7 +242,7 @@ export class Rule {
 /////////////
 class CasesNBU extends Rule {
   static {
-    super.AddDescr(
+    super.Register(
       "Checks if we have all the cases (i.e. can we rely on the cases)"
     );
   }
@@ -253,7 +257,7 @@ class CasesNBU extends Rule {
 /////////////
 class RCCheckSeats extends Rule {
   static {
-    super.AddDescr("Checks for the existence and uniqueness of a Seat license");
+    super.Register("Checks for the existence and uniqueness of a Seat license");
   }
   action(acct) {
     const seatPattern = /^307-(?!6-603).*$|^1265.-.*$/; // 307-6-603 is exclusion: the digital add-on; 1265* - new gen seats
@@ -282,7 +286,7 @@ class RCCheckSeats extends Rule {
 /////////////
 class RCCSeatOverage extends Rule {
   static {
-    super.AddDescr("Checks/Fixes Seat Overage license");
+    super.Register("Checks/Fixes Seat Overage license");
   }
   action(acct) {
     let strippedSeatName = acct.facts.seat.ITEM_NAME;
@@ -350,7 +354,7 @@ class RCCSeatOverage extends Rule {
 //////////
 class RCPorts4Seats extends Rule {
   static {
-    super.AddDescr(
+    super.Register(
       "Checks if the Additional Port licenses matches the Seat license"
     );
   }
@@ -367,7 +371,7 @@ class RCPorts4Seats extends Rule {
 /////////////
 class RCFixPorts extends Rule {
   static {
-    super.AddDescr("Check/Fix Port Overage license");
+    super.Register("Check/Fix Port Overage license");
   }
   action(acct) {
     const entPorts = acct.ents.filter(
@@ -420,7 +424,7 @@ class RCFixPorts extends Rule {
 /////////////
 class NiCPorts extends Rule {
   static {
-    super.AddDescr("Checks NiC Ports");
+    super.Register("Checks NiC Ports");
   }
   action(acct) {
     if (acct.facts.entPortLic) {
@@ -439,7 +443,7 @@ class NiCPorts extends Rule {
 /////////////
 class C2CPorts extends Rule {
   static {
-    super.AddDescr("Checks C2C Ports");
+    super.Register("Checks C2C Ports");
   }
   action(acct) {
     if (acct.facts.entPortLic) {
@@ -481,7 +485,7 @@ class C2CPorts extends Rule {
 /////////////
 class RCBadPrice extends Rule {
   static {
-    super.AddDescr("Checks if Price minus Discount is not negative");
+    super.Register("Checks if Price minus Discount is not negative");
   }
   action(acct) {
     const withBadPrice = acct.ents.filter(
@@ -499,7 +503,7 @@ class RCBadPrice extends Rule {
 /////////////
 class RCExtraOverages extends Rule {
   static {
-    super.AddDescr("Removes Overage licenses that were not explicitly ordered");
+    super.Register("Removes Overage licenses that were not explicitly ordered");
   }
   action(acct) {
     acct.ents = acct.ents.filter(
@@ -539,7 +543,7 @@ class RCExtraOverages extends Rule {
 /////////////
 class RCFixTextelOvs extends Rule {
   static {
-    super.AddDescr("Replace Textel batch Overages");
+    super.Register("Replace Textel batch Overages");
   }
   action(acct) {
     const textelOverage = acct.ents.find(
@@ -563,7 +567,7 @@ class RCFixTextelOvs extends Rule {
 /////////////
 class RCEntCheckDuplicates extends Rule {
   static {
-    super.AddDescr(
+    super.Register(
       "Checks if there are duplicates in result of name-less matching with the catalog"
     );
   }
@@ -581,7 +585,7 @@ class RCEntCheckDuplicates extends Rule {
 /////////////
 class RCEntNaming extends Rule {
   static {
-    super.AddDescr(
+    super.Register(
       "Prints warning if the license name (in the new catalog) and the entitlement name do not match exactly"
     );
   }
@@ -601,7 +605,7 @@ class RCEntNaming extends Rule {
 //////////////////
 class RCFixPrices2 extends Rule {
   static {
-    super.AddDescr("Corrects outdated prices for certain usage licenses");
+    super.Register("Corrects outdated prices for certain usage licenses");
   }
   action(acct) {
     const targetCats = [
@@ -636,7 +640,7 @@ class RCFixPrices2 extends Rule {
 //////////////////
 class RCOldTelco extends Rule {
   static {
-    super.AddDescr("Deletes old Telecom Licenses");
+    super.Register("Deletes old Telecom Licenses");
   }
   action(acct) {
     const toDeleteNames = [
@@ -659,7 +663,7 @@ class RCOldTelco extends Rule {
 //////////////////
 class RCNewTelco extends Rule {
   static {
-    super.AddDescr("Adds Free Domestic Telephony Licenses");
+    super.Register("Adds Free Domestic Telephony Licenses");
   }
   action(acct) {
     Rule.RCOTelecomLicenses.forEach((tl) => {
@@ -687,7 +691,7 @@ class RCNewTelco extends Rule {
 //////////////////
 class RCASROverage extends Rule {
   static {
-    super.AddDescr(
+    super.Register(
       "Adds the ASR Overage License - if it was originally omitted"
     );
   }
@@ -720,7 +724,7 @@ class RCASROverage extends Rule {
 //////////////////
 class RC25kBundles extends Rule {
   static {
-    super.AddDescr("Converts different-size toll-free bundles to 25K ones");
+    super.Register("Converts different-size toll-free bundles to 25K ones");
   }
   action(acct) {
     const batchPattern =
@@ -761,7 +765,7 @@ class RC25kBundles extends Rule {
 //////////////////
 class RCFixSocMedia extends Rule {
   static {
-    super.AddDescr("Fixes Social Media Overages");
+    super.Register("Fixes Social Media Overages");
   }
   action(acct) {
     acct.ents = acct.ents.filter(
@@ -779,7 +783,7 @@ class RCFixSocMedia extends Rule {
 //////////////////
 class RCFixPrices extends Rule {
   static {
-    super.AddDescr("RC: fix Usage Licenses");
+    super.Register("RC: fix Usage Licenses");
   }
   action(acct) {
     const targetSkus = ["4109-673-000", "3399-769-000"];
@@ -798,9 +802,24 @@ class RCFixPrices extends Rule {
 }
 
 //////////////////
+class NiC_NotFound extends Rule {
+  static {
+    super.Register("Checks if the account is represented in Monthly");
+  }
+  action(acct) {
+    return !(
+      acct.nics.length === 0 &&
+      acct.logError(
+        this.name,
+        `No records were found for the account in the Monthly file`
+      )
+    );
+  }
+}
+//////////////////
 class RCNegDiscounts extends Rule {
   static {
-    super.AddDescr(
+    super.Register(
       "Sanity check: Rejects the migration if negative discount was found"
     );
   }
@@ -819,7 +838,7 @@ class RCNegDiscounts extends Rule {
 //////////////////
 class C2CStripXX extends Rule {
   static {
-    super.AddDescr(
+    super.Register(
       "RC: Removes the _XX suffix in C2C (to enable further matching)"
     );
   }
@@ -841,7 +860,7 @@ class C2CStripXX extends Rule {
 //////////////////
 class C2CCorr extends Rule {
   static {
-    super.AddDescr("RC: Removes corrupted C2C (with empty SKU)");
+    super.Register("RC: Removes corrupted C2C (with empty SKU)");
   }
   action(acct) {
     acct.cases = acct.cases.filter(
@@ -864,9 +883,70 @@ class C2CCorr extends Rule {
 }
 
 //////////////////
+class C2CvsMRC extends Rule {
+  static {
+    super.Register(
+      "(1) Checks if there are licenses in Cases which are absent in Monthly, (2) Checks if their prices are the same"
+    );
+  }
+  action(acct) {
+    let rule_res = true;
+    acct.cases.forEach((c2c) => {
+      const nicLic = acct.nics.find((nl) => nl.SKU === c2c.skuid);
+      const entLic = acct.ents.find((ent) => ent.EXT_PRODUCT_ID === c2c.skuid);
+      if (nicLic === undefined) {
+        acct.logWarning(
+          this.name,
+          `${c2c.skuid} was not found in Monthly file but is presented in case2case`
+        );
+        if (entLic) {
+          const skuArr = c2c.skuid.split("-");
+          acct.nics.push({
+            Account: acct.info.INCONTACT_BUID,
+            Customer: acct.info.AccountName,
+            ProductType: "MRC",
+            CatalogID: skuArr[0],
+            FeatureID: skuArr[1],
+            FeatureDetailID: skuArr[2],
+            Product: c2c.sku,
+            Quantity: 0,
+            Amount: 0,
+            SKU: c2c.skuid,
+          });
+
+          // Address1
+          // Address2
+          // City
+          // State
+          // ZipCode
+          // Invoice
+          // BillingPeriodStart
+          // BillingPeriodEnd
+          // InvoiceDate
+          // DueDate
+
+          acct.logWarning(
+            this.name,
+            `${c2c.skuid} was not found in Monthly file but is presented in case2case. Added to Monthly.`
+          );
+        }
+      } else if (nicLic.Quantity > 0) {
+        const p = Math.round((nicLic.Amount / nicLic.Quantity) * 100) / 100;
+        if (c2c.price != p) {
+          acct.logWarning(
+            this.name,
+            `Different prices ${c2c.skuid}: $${c2c.price} in cases vs $${p} in Monthly`
+          );
+        }
+      }
+    });
+    return rule_res;
+  }
+}
+//////////////////
 class NiC_MRCvsDWH extends Rule {
   static {
-    super.AddDescr(
+    super.Register(
       "Checks if there are licenses in Monthly which are absent in RC entitlements"
     );
   }
@@ -903,55 +983,9 @@ class NiC_MRCvsDWH extends Rule {
 }
 
 //////////////////
-class NiC_NotFound extends Rule {
-  static {
-    super.AddDescr("Checks if the account is represented in Monthly");
-  }
-  action(acct) {
-    return !(
-      acct.nics.length === 0 &&
-      acct.logError(
-        this.name,
-        `No records were found for the account in the Monthly file`
-      )
-    );
-  }
-}
-
-//////////////////
-class C2CvsMRC extends Rule {
-  static {
-    super.AddDescr(
-      "(1) Checks if there are licenses in Cases which are absent in Monthly, (2) Checks if their prices are the same"
-    );
-  }
-  action(acct) {
-    let rule_res = true;
-    acct.cases.forEach((c2c) => {
-      const nicLic = acct.nics.find((nl) => nl.SKU === c2c.skuid);
-      if (nicLic === undefined) {
-        acct.logWarning(
-          this.name,
-          `${c2c.skuid} was not found in Monthly file but is presented in case2case`
-        );
-      } else if (nicLic.Quantity > 0) {
-        const p = Math.round((nicLic.Amount / nicLic.Quantity) * 100) / 100;
-        if (c2c.price != p) {
-          acct.logWarning(
-            this.name,
-            `Different prices ${c2c.skuid}: $${c2c.price} in cases vs $${p} in Monthly`
-          );
-        }
-      }
-    });
-    return rule_res;
-  }
-}
-
-//////////////////
 class NiC_MRCvsC2C extends Rule {
   static {
-    super.AddDescr(
+    super.Register(
       "Checks if there are licenses in Monthly which are absent in cases - and adds them"
     );
   }
@@ -1003,7 +1037,7 @@ class NiC_MRCvsC2C extends Rule {
 //////////////////
 class RCCMapping extends Rule {
   static {
-    super.AddDescr(
+    super.Register(
       "Checks if there are no acct.problems with mapping ITBS licenses to NGBS catalog"
     );
   }
@@ -1024,7 +1058,7 @@ class RCCMapping extends Rule {
 //////////////////
 class QntyVsThrsh extends Rule {
   static {
-    super.AddDescr("Checks recurring QNTYs vs overages thresholds");
+    super.Register("Checks recurring QNTYs vs overages thresholds");
   }
   action(acct) {
     let isOK = true;
@@ -1053,7 +1087,7 @@ class QntyVsThrsh extends Rule {
 //////////////////
 class QntyVsCases extends Rule {
   static {
-    super.AddDescr("Checks recurring QNTYs vs NiCs");
+    super.Register("Checks recurring QNTYs vs NiCs");
   }
   action(acct) {
     let isOK = true;
@@ -1088,7 +1122,7 @@ class QntyVsCases extends Rule {
 //////////////////
 class C2CtoVenCat extends Rule {
   static {
-    super.AddDescr(
+    super.Register(
       "Removing of deleted licenses, comparing with new Engagements"
     );
   }
@@ -1116,45 +1150,11 @@ class C2CtoVenCat extends Rule {
 
 //////////////////////////////////
 export class RuleEngine {
-  constructor() {
-    this.rules = [
-      new CasesNBU(),
-      new RCCheckSeats(),
-      new RCCSeatOverage(),
-      new RCPorts4Seats(),
-      new RCFixPorts(),
-      new NiCPorts(),
-      new C2CPorts(),
-      new RCBadPrice(),
-      new RCExtraOverages(),
-      new RCFixTextelOvs(),
-      new RCEntCheckDuplicates(),
-      new RCEntNaming(),
-      new RCFixPrices2(),
-      new RCOldTelco(),
-      new RCNewTelco(),
-      new RCASROverage(),
-      new RC25kBundles(),
-      new RCFixSocMedia(),
-      new RCFixPrices(),
-      new NiC_NotFound(),
-      new RCNegDiscounts(),
-      new C2CStripXX(),
-      new C2CCorr(),
-      new C2CvsMRC(),
-      new NiC_MRCvsDWH(),
-      new NiC_MRCvsC2C(),
-      new RCCMapping(),
-      new QntyVsThrsh(),
-      new QntyVsCases(),
-      new C2CtoVenCat(),
-    ];
-  }
   run(acct) {
     let skipRules = false;
-    this.rules.forEach((rule) => {
+    Rule.Registered.forEach((rule) => {
       if (!skipRules) {
-        const res = rule.action(acct);
+        const res = rule.Action.action(acct);
         if (!res) {
           skipRules = true;
         }
