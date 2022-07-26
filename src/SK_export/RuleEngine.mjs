@@ -220,20 +220,21 @@ export class Rule {
     CAD: 455.0,
   };
 
-  static Exceptions = [
-    "1561-49-000", // Service Package - CXsuccess Care Package
-    "3157-18-204", // Chat  and Email Channel - CXone Chat & Email (per Configured User)
-    "1028-171-000", // SIP Trunking Service - CXone SIP Connectivity over Internet
-    "610148-597-000", // NICE Training - IEX WFM Integrated Training
-    "610060-296-000", // "Contact Center: Instructor-Led Interactive Training (At Customer Facility; min 2"
-    "154-487-000", // SMS/MMS Setup
-    "154-493-000", // SMS/MMS Setup
-    "154-173-000", // SMS/MMS Setup
-  ];
+  static IsException(nl) {
+    return (
+      [
+        "1561-49-000", // Service Package - CXsuccess Care Package
+        "3157-18-204", // Chat  and Email Channel - CXone Chat & Email (per Configured User)
+        "1028-171-000", // SIP Trunking Service - CXone SIP Connectivity over Internet
+        "610148-597-000", // NICE Training - IEX WFM Integrated Training
+        "610060-296-000", // "Contact Center: Instructor-Led Interactive Training (At Customer Facility; min 2"
+        "154-487-000", // SMS/MMS Setup
+        "154-493-000", // SMS/MMS Setup
+        "154-173-000", // SMS/MMS Setup
+      ].find((ex) => nl.SKU === ex) !== undefined
+    );
+  }
 
-  // constructor({ description = "" } = {}) {
-  //   this.description = description;
-  // }
   get name() {
     return this.constructor.name;
   }
@@ -442,7 +443,19 @@ class RecurringPorts extends Rule {
         `Recurring Port license ${RecurringPort.EXT_PRODUCT_ID} doesn't match Overage: ${acct.facts.entPortLic.EXT_PRODUCT_ID}. Overage replaced by ${RecurringPort.EXT_PRODUCT_ID}`
       );
 
+      const raw_port_ovr = acct.raw_ents.find(
+        (re) => re.EXT_PRODUCT_ID === acct.facts.entPortLic.EXT_PRODUCT_ID
+      );
+      raw_port_ovr.EXT_PRODUCT_ID = RecurringPort.EXT_PRODUCT_ID;
+
       acct.facts.entPortLic.EXT_PRODUCT_ID = RecurringPort.EXT_PRODUCT_ID;
+      const mapping = {
+        "308-8-167": { rec: "LAPRTA", ovr: "LAPRTACSO" },
+        "308-8-214": { rec: "LAPRTBA", ovr: "LAPRTAAEO" },
+        "308-8-215": { rec: "LAPRTBAU", ovr: "LAPRTAUEO" },
+      };
+      acct.facts.entPortLic.Category =
+        mapping[RecurringPort.EXT_PRODUCT_ID].ovr;
 
       const nicPort = acct.nics.find((nic) => /^308-/.test(nic.SKU));
       if (!!nicPort && nicPort.SKU !== acct.facts.entPortLic.EXT_PRODUCT_ID) {
@@ -979,7 +992,7 @@ class NiC_MRCvsDWH extends Rule {
     acct.nics.forEach((nl) => {
       const entLic = acct.ents.find((el) => nl.SKU === el.EXT_PRODUCT_ID);
       if (entLic === undefined) {
-        if (Rule.Exceptions.find((ex) => nl.SKU === ex) !== undefined) {
+        if (!Rule.IsException(nl)) {
           acct.logAlarm(
             this.name,
             `${nl.SKU} ($${
@@ -1017,10 +1030,7 @@ class NiC_MRCvsC2C extends Rule {
     let rule_res = true;
     acct.nics.forEach((nl) => {
       const caseLic = acct.cases.find((cl) => nl.SKU === cl.skuid);
-      if (
-        caseLic === undefined &&
-        Rule.Exceptions.find((ex) => nl.SKU === ex) === undefined
-      ) {
+      if (caseLic === undefined && Rule.IsException(nl)) {
         const entLic = acct.ents.find((el) => nl.SKU === el.EXT_PRODUCT_ID);
         if (entLic === undefined) {
           acct.logAlarm(

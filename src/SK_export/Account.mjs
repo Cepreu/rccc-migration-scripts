@@ -14,13 +14,13 @@ export class Account {
   static statExport;
   static icbExport;
 
-  constructor(account, ents, nics, cases, row_ents, batchName) {
+  constructor(account, ents, nics, cases, raw_ents, batchName) {
     this.info = account;
     this.nicEntsC2C = new CaseEntitlements(cases);
     this.ngbsEnts = new NgbsEntitlements(ents);
     this.nicEntsMRS = new NiCEntitlements(nics);
     this.batchName = batchName;
-    this.row_ents = row_ents;
+    this.raw_ents = raw_ents;
 
     this.info.VALID = true;
     this.logger = new Logger(this.info.ENTERPRISE_ACCOUNT_ID);
@@ -81,7 +81,7 @@ export class Account {
     Account.statExport.appendData([this.info], this.logger.errsAndWars());
     Account.icbExport.appendData(
       [this.info],
-      this.row_ents,
+      this.raw_ents,
       this.nicEntsC2C.wrkColl,
       //      this.nicEntsMRS.originalColl
       this.nicEntsMRS.wrkColl
@@ -120,7 +120,7 @@ export class Account {
         },
         {
           tab: "Raw DWH",
-          data: this.row_ents,
+          data: this.raw_ents,
         },
         {
           tab: "Raw Monthly",
