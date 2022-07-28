@@ -59,7 +59,7 @@ export class StatExport extends Export2Excel {
       },
       { Parameter: "Cases Min", Value: batchObj.casesMin },
       { Parameter: "Cases Max", Value: batchObj.casesMax },
-      { Parameter: "NBU Case availamle", Value: batchObj.casesNBU },
+      { Parameter: "NBU Case available", Value: batchObj.casesNBU },
       { Parameter: "Batch Size", Value: batchObj.maxSize },
       {
         Parameter: "Max ContactCenter MRR",

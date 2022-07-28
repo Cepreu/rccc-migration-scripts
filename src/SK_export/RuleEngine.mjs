@@ -423,48 +423,48 @@ class RCFixPorts extends Rule {
   }
 }
 
-/////////////
-class RecurringPorts extends Rule {
-  static {
-    super.Register("Syncs Port Overages with Recurring Ports");
-  }
-  action(acct) {
-    const RecurringPort = acct.ents.find(
-      (row) =>
-        /^308-/.test(row.EXT_PRODUCT_ID) && row.ProductFamily === "Recurring"
-    );
-    if (
-      !!RecurringPort &&
-      !!acct.facts.entPortLic &&
-      RecurringPort.EXT_PRODUCT_ID !== acct.facts.entPortLic.EXT_PRODUCT_ID
-    ) {
-      acct.logAlarm(
-        this.name,
-        `Recurring Port license ${RecurringPort.EXT_PRODUCT_ID} doesn't match Overage: ${acct.facts.entPortLic.EXT_PRODUCT_ID}. Overage replaced by ${RecurringPort.EXT_PRODUCT_ID}`
-      );
+// /////////////
+// class RecurringPorts extends Rule {
+//   static {
+//     super.Register("Syncs Port Overages with Recurring Ports");
+//   }
+//   action(acct) {
+//     const RecurringPort = acct.ents.find(
+//       (ent) =>
+//         /^308-/.test(ent.EXT_PRODUCT_ID) && ent.ProductFamily === "Recurring"
+//     );
+//     if (
+//       !!RecurringPort &&
+//       !!acct.facts.entPortLic &&
+//       RecurringPort.EXT_PRODUCT_ID !== acct.facts.entPortLic.EXT_PRODUCT_ID
+//     ) {
+//       acct.logAlarm(
+//         this.name,
+//         `Recurring Port license ${RecurringPort.EXT_PRODUCT_ID} doesn't match Overage: ${acct.facts.entPortLic.EXT_PRODUCT_ID}. Overage replaced by ${RecurringPort.EXT_PRODUCT_ID}`
+//       );
 
-      const raw_port_ovr = acct.raw_ents.find(
-        (re) => re.EXT_PRODUCT_ID === acct.facts.entPortLic.EXT_PRODUCT_ID
-      );
-      raw_port_ovr.EXT_PRODUCT_ID = RecurringPort.EXT_PRODUCT_ID;
+//       const icb_port_ovr = acct.icb_ents.find(
+//         (re) => re.EXT_PRODUCT_ID === acct.facts.entPortLic.EXT_PRODUCT_ID
+//       );
+//       icb_port_ovr.EXT_PRODUCT_ID = RecurringPort.EXT_PRODUCT_ID;
 
-      acct.facts.entPortLic.EXT_PRODUCT_ID = RecurringPort.EXT_PRODUCT_ID;
-      const mapping = {
-        "308-8-167": { rec: "LAPRTA", ovr: "LAPRTACSO" },
-        "308-8-214": { rec: "LAPRTBA", ovr: "LAPRTAAEO" },
-        "308-8-215": { rec: "LAPRTBAU", ovr: "LAPRTAUEO" },
-      };
-      acct.facts.entPortLic.Category =
-        mapping[RecurringPort.EXT_PRODUCT_ID].ovr;
+//       acct.facts.entPortLic.EXT_PRODUCT_ID = RecurringPort.EXT_PRODUCT_ID;
+//       const mapping = {
+//         "308-8-167": { rec: "LAPRTA", ovr: "LAPRTACSO" },
+//         "308-8-214": { rec: "LAPRTBA", ovr: "LAPRTAAEO" },
+//         "308-8-215": { rec: "LAPRTBAU", ovr: "LAPRTAUEO" },
+//       };
+//       acct.facts.entPortLic.Category =
+//         mapping[RecurringPort.EXT_PRODUCT_ID].ovr;
 
-      const nicPort = acct.nics.find((nic) => /^308-/.test(nic.SKU));
-      if (!!nicPort && nicPort.SKU !== acct.facts.entPortLic.EXT_PRODUCT_ID) {
-        nicPort.SKU = acct.facts.entPortLic.EXT_PRODUCT_ID;
-      }
-    }
-    return true;
-  }
-}
+//       const nicPort = acct.nics.find((nic) => /^308-/.test(nic.SKU));
+//       if (!!nicPort && nicPort.SKU !== acct.facts.entPortLic.EXT_PRODUCT_ID) {
+//         nicPort.SKU = acct.facts.entPortLic.EXT_PRODUCT_ID;
+//       }
+//     }
+//     return true;
+//   }
+// }
 
 /////////////
 class NiCPorts extends Rule {
@@ -559,9 +559,9 @@ class RCExtraOverages extends Rule {
             !acct.nics.find((n) => n.SKU === e.EXT_PRODUCT_ID) &&
             acct.logInfo(
               this.name,
-              `Removed ${e.Category ? e.Category : ""}: ${e.EXT_PRODUCT_ID} ${
-                e.ITBS_NAME
-              }`
+              `Removed ${e.Category ? e.Category : ""}: ${
+                e.EXT_PRODUCT_ID ? e.EXT_PRODUCT_ID : ""
+              } ${e.ITBS_NAME}`
             )) ||
           (e.ProductFamily === OVERAGE &&
             ["3875-1292-000", "3875-1290-000", "3875-1289-000"].includes(
@@ -1020,7 +1020,7 @@ class NiC_MRCvsDWH extends Rule {
 }
 
 //////////////////
-class NiC_MRCvsC2C extends Rule {
+class MRCvsC2C extends Rule {
   static {
     super.Register(
       "Checks if there are licenses in Monthly which are absent in cases - and adds them"
@@ -1119,6 +1119,38 @@ class QntyVsThrsh extends Rule {
 }
 
 //////////////////
+class EntsVsCases extends Rule {
+  static {
+    super.Register("Checks if all recurring entitlements are known to NiC");
+  }
+  action(acct) {
+    let isOK = true;
+    acct.ents
+      .filter(
+        (ent) =>
+          !!ent.EXT_PRODUCT_ID &&
+          ent.ProductFamily === RECURRING &&
+          !acct.cases.find((c) => c.skuid === ent.EXT_PRODUCT_ID)
+      )
+      .forEach((re) => {
+        if (acct.facts.NBU) {
+          acct.logError(
+            this.name,
+            `${re.EXT_PRODUCT_ID} ${re.ITBS_NAME} - Recurring entitlement is not found in NiC while NBU was found`
+          );
+          isOK = false;
+        } else {
+          acct.logAlert(
+            this.name,
+            `${re.EXT_PRODUCT_ID} ${re.ITBS_NAME} - Recurring entitlement is not found in NiC. No NBU case found. NEEDS ATTENTION!!!`
+          );
+        }
+      });
+    return isOK;
+  }
+}
+
+//////////////////
 class QntyVsCases extends Rule {
   static {
     super.Register("Checks recurring QNTYs vs NiCs");
@@ -1126,29 +1158,27 @@ class QntyVsCases extends Rule {
   action(acct) {
     let isOK = true;
     acct.ents
-      .filter(
-        (row) => row.ProductFamily === RECURRING && row.EXT_PRODUCT_ID !== null
-      )
+      .filter((ent) => ent.ProductFamily === RECURRING && !!ent.EXT_PRODUCT_ID)
       .forEach((r) => {
-        const nic = acct.cases.find(
+        const c2c = acct.cases.find(
           (c) =>
             c.skuid === r.EXT_PRODUCT_ID &&
             c.qtty !== r.QNTY_THRESHOLD &&
             r.EXT_PRODUCT_ID != acct.facts.entPortLic.EXT_PRODUCT_ID
         );
-        if (nic) {
+        if (c2c) {
           if (acct.facts.NBU) {
             acct.logError(
               this.name,
-              `${r.EXT_PRODUCT_ID} ${r.ITBS_NAME} - Recurring qnty (${r.QNTY_THRESHOLD}) is not equal to NiC (${nic.qtty}) while NBU was found`
+              `${r.EXT_PRODUCT_ID} ${r.ITBS_NAME} - Recurring qnty (${r.QNTY_THRESHOLD}) is not equal to NiC (${c2c.qtty}) while NBU was found`
             );
             isOK = false;
           } else {
             acct.logWarning(
               this.name,
-              `${r.EXT_PRODUCT_ID} ${r.ITBS_NAME} - NiC case qnty (${nic.qtty}) is corrected to Recurring qnty (${r.QNTY_THRESHOLD}) - no NBU case found`
+              `${r.EXT_PRODUCT_ID} ${r.ITBS_NAME} - NiC case qnty (${c2c.qtty}) is corrected to Recurring qnty (${r.QNTY_THRESHOLD}) - no NBU case found`
             );
-            nic.qtty = r.QNTY_THRESHOLD;
+            c2c.qtty = r.QNTY_THRESHOLD;
           }
         }
       });
@@ -1157,7 +1187,7 @@ class QntyVsCases extends Rule {
 }
 
 //////////////////
-class C2CtoVenCat extends Rule {
+class C2CtoVendCat extends Rule {
   static {
     super.Register(
       "Removing of deleted licenses, comparing with new Engagements"
