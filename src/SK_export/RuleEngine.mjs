@@ -261,13 +261,15 @@ class RCCheckSeats extends Rule {
     super.Register("Checks for the existence and uniqueness of a Seat license");
   }
   action(acct) {
-    const seatPattern = /^307-(?!6-603).*$|^1265.-.*$/; // 307-6-603 is exclusion: the digital add-on; 1265* - new gen seats
-    const seats = acct.ents.filter(
-      (row) =>
-        seatPattern.test(row.EXT_PRODUCT_ID) &&
-        row.ITEM_NAME !== "Seat Overage" &&
-        row.QNTY_THRESHOLD > 0
-    );
+    const isReccurentSeat = (ent) => {
+      const seatPattern = /^307-(?!6-603).*$|^1265.-.*$/; // 307-6-603 is exclusion: the digital add-on; 1265* - new gen seats
+      return (
+        seatPattern.test(ent.EXT_PRODUCT_ID) &&
+        ent.ITEM_NAME !== "Seat Overage" &&
+        ent.QNTY_THRESHOLD > 0
+      );
+    };
+    const seats = acct.ents.filter((ent) => isReccurentSeat(ent));
     if (seats.length !== 1) {
       acct.logError(
         this.name,
@@ -610,7 +612,7 @@ class RCEntCheckDuplicates extends Rule {
   }
   action(acct) {
     //4107-645-000:
-    if (!!acct.ents.find((e) => e.Category === "LAURCRDA")) {
+    if (!!acct.ents.find(({ Category }) => Category === "LAURCRDA")) {
       acct.ents = acct.ents.filter(
         (e) => e.Category !== "LWEMAUREC" && e.Category !== "LWEMAURECO"
       );

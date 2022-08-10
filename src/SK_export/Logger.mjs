@@ -22,6 +22,13 @@ export class Logger {
     return !!this.log.find((p) => p.severity === Logger.ALARM);
   }
 
+  worstProblem() {
+    const ea =
+      this.log.find(({ severity }) => severity === Logger.ERROR) ||
+      this.log.find(({ severity }) => severity === Logger.ALARM);
+    return ea ? `${ea.severity}: ${ea.issue}` : "";
+  }
+
   errsAndWars() {
     return this.log.filter(
       (p) =>

@@ -74,7 +74,11 @@ export class Account {
 
   #finalize() {
     this.#export2sk();
-    Account.statExport.appendData([this.info], this.logger.errsAndWars());
+
+    const errors = this.logger.errsAndWars();
+    this.info.Error = this.logger.worstProblem();
+    Account.statExport.appendData([this.info], errors);
+
     Account.icbExport.appendData(
       [this.info],
       this.icb_ents,
@@ -151,7 +155,7 @@ export class Account {
           ],
         },
       ],
-      [this.batchName],
+      [this.batchName, "Account Analytics"],
       `${this.info.ENTERPRISE_ACCOUNT_ID}(${this.info.INCONTACT_BUID})${
         this.info.VALID ? (this.logger.hasAlarm() ? "_ALARM" : "") : "_FAILED"
       }`

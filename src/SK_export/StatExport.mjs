@@ -25,7 +25,7 @@ export class StatExport extends Export2Excel {
             "No.ofInContactSeats",
             "ContactCenterMRR",
             "totalMRR",
-            "VALID",
+            "Error",
           ],
         },
         {
@@ -38,7 +38,7 @@ export class StatExport extends Export2Excel {
         },
       ],
       pathArr,
-      "account_list"
+      "batch_description"
     );
 
     this.#addBatchData(batchName);
