@@ -33,8 +33,14 @@ export function prepareBatchFiles(batchName) {
       DefaultTimeZone,
       GeoRegion,
       ImplementationTeam,
-      ContactCenterMRR,
-      CurrentTotalMRRconverted as totalMRR
+      a.PaymentMethod,
+      a.ContactCenterMRR,
+      a.CurrentTotalMRRconverted as totalMRR,
+      a.BillingStreet || ', ' || a.BillingCity || ', ' || a.BillingState || ' ' || a.BillingZipCode || ', ' || a.BillingCountry AS BILLING_ADDRESS,
+      a.CCStartDate,
+      a.CCEndDate,
+      a.SalesAgreementStartDate,
+      a.SalesAgreementEndDate
   FROM accounts_sfdc a
     INNER JOIN BatchAccounts b ON b.EID = EnterpriseAccountID
     INNER JOIN nic_cases nic ON nic.UID = EnterpriseAccountID

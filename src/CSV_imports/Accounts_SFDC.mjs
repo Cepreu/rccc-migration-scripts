@@ -47,22 +47,58 @@ export const importAccountReport = () => {
     { field: "Price per Seat Currency", dbcolumn: "PriceperSeatCurrency" },
     { field: "Price per Seat", dbcolumn: "PriceperSeat", type: "NUMERIC" },
     {
-      field: "Contact Center MRR Currency",
-      dbcolumn: "ContactCenterMRRCurrency",
+      field: "Payment Method",
+      dbcolumn: "PaymentMethod",
     },
     {
-      field: "Contact Center MRR",
+      field: "Contact Center MRR (converted)",
       dbcolumn: "ContactCenterMRR",
       type: "NUMERIC",
-    },
-    {
-      field: "Current Total MRR (converted) Currency",
-      dbcolumn: "CurrentTotalMRRconvertedCurrency",
     },
     {
       field: "Current Total MRR (converted)",
       dbcolumn: "CurrentTotalMRRconverted",
       type: "NUMERIC",
+    },
+    {
+      field: "Billing Street",
+      dbcolumn: "BillingStreet",
+    },
+    {
+      field: "Billing City",
+      dbcolumn: "BillingCity",
+    },
+    {
+      field: "Billing State/Province",
+      dbcolumn: "BillingState",
+    },
+    {
+      field: "Billing Zip/Postal Code",
+      dbcolumn: "BillingZipCode",
+    },
+    {
+      field: "Billing Country",
+      dbcolumn: "BillingCountry",
+    },
+    {
+      field: "Timezone",
+      dbcolumn: "Timezone",
+    },
+    {
+      field: "Contact Center Start Date",
+      dbcolumn: "CCStartDate",
+    },
+    {
+      field: "Contact Center End Date",
+      dbcolumn: "CCEndDate",
+    },
+    {
+      field: "Sales Agreement Start Date",
+      dbcolumn: "SalesAgreementStartDate",
+    },
+    {
+      field: "Sales Agreement End Date",
+      dbcolumn: "SalesAgreementEndDate",
     },
   ];
   //const guardFunc = (row) => row["IC Case Number"] !== "";

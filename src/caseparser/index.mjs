@@ -17,5 +17,5 @@ db.prepare(
     `.replace(/\s+/g, " ")
 ).run();
 
-const outfile = `/Users/sergiy.krupnov/WORK/DATA/C2C/cases_2022-07-07.sql`;
-caseItems(outfile, "2022-07-07 09:51:01");
+const outfile = `/Users/sergiy.krupnov/WORK/DATA/C2C/cases_2022-08-10.sql`;
+caseItems(outfile, "2022-08-10 18:07:09");

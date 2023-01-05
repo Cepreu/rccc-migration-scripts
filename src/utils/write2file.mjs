@@ -2,6 +2,7 @@ import path from "path";
 import fs1 from "fs-extra";
 import excel from "excel4node";
 import configuration from "../../configuration.mjs";
+import { SummaryTempl } from "../utils/tabTemplates.mjs";
 
 const defaultHeaderStyle = {
   font: {
@@ -35,6 +36,8 @@ export class Export2Excel {
     const dir = getDir(pathArr);
     this.fileName = path.resolve(dir, `${fileName}.xlsx`);
     this.workbook = new excel.Workbook();
+    SummaryTempl(this.workbook);
+
     this.styleForData = this.workbook.createStyle(defaultDataStyle);
     this.tabs = tabsDescrArr.map((t) => {
       const theTab = {

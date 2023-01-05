@@ -604,6 +604,35 @@ class RCFixTextelOvs extends Rule {
 }
 
 /////////////
+class RCEntAbsentOvs extends Rule {
+  static {
+    super.Register(
+      "Checks if there are recurrent entitlements without corresponding overages"
+    );
+  }
+  action(acct) {
+    const withoutOvs = acct.ents.filter(
+      (e) =>
+        e.ProductFamily === RECURRING &&
+        !/^307-(?!6-603).*$|^1265.-.*$/.test(e.EXT_PRODUCT_ID) &&
+        !/^308-/.test(e.EXT_PRODUCT_ID) &&
+        !acct.ents.find(
+          (ov) =>
+            ov.ProductFamily === OVERAGE &&
+            ov.EXT_PRODUCT_ID === e.EXT_PRODUCT_ID
+        ) &&
+        /* && catalog.find(c=>c.CatID===ov.EXT_PRODUCT_ID) && c.Category=OVERAGE*/
+        acct.logAlarm(
+          this.name,
+          `Overage missed for: ${e.EXT_PRODUCT_ID} ${e.ITBS_NAME} (NEEDS ATTENTION)`
+        )
+    );
+
+    return !withoutOvs;
+  }
+}
+
+/////////////
 class RCEntCheckDuplicates extends Rule {
   static {
     super.Register(
@@ -735,10 +764,7 @@ class RCASROverage extends Rule {
     );
   }
   action(acct) {
-    if (
-      acct.ents.find((e) => e.Category === Rule.ASR_OVERAGE.Category) ===
-      undefined
-    ) {
+    if (!acct.ents.find((e) => e.Category === Rule.ASR_OVERAGE.Category)) {
       acct.ents.push({
         ENTERPRISE_ACCOUNT_ID: acct.info.ENTERPRISE_ACCOUNT_ID,
         EXT_PRODUCT_ID: null,
@@ -1125,6 +1151,8 @@ class EntsVsCases extends Rule {
   static {
     super.Register("Checks if all recurring entitlements are known to NiC");
   }
+  static RecPortExclusions = ["308-8-167"];
+
   action(acct) {
     let isOK = true;
     acct.ents
@@ -1135,14 +1163,19 @@ class EntsVsCases extends Rule {
           !acct.cases.find((c) => c.skuid === ent.EXT_PRODUCT_ID)
       )
       .forEach((re) => {
-        if (acct.facts.NBU) {
+        if (EntsVsCases.RecPortExclusions.includes(re.EXT_PRODUCT_ID)) {
+          acct.logAlarm(
+            this.name,
+            `${re.EXT_PRODUCT_ID} ${re.ITBS_NAME} - Recurring port entitlement was not found in NiC`
+          );
+        } else if (acct.facts.NBU) {
           acct.logError(
             this.name,
             `${re.EXT_PRODUCT_ID} ${re.ITBS_NAME} - Recurring entitlement is not found in NiC while NBU was found`
           );
           isOK = false;
         } else {
-          acct.logAlert(
+          acct.logAlarm(
             this.name,
             `${re.EXT_PRODUCT_ID} ${re.ITBS_NAME} - Recurring entitlement is not found in NiC. No NBU case found. NEEDS ATTENTION!!!`
           );
