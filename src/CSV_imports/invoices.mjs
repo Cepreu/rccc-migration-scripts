@@ -1,8 +1,7 @@
 import { csv2sql } from "../utils/csv2sql.mjs";
-import configuration from "../../configuration.mjs";
 import { yyyymmdd } from "../utils/conversions.mjs";
 
-export const Invoices = () => {
+export const Invoices = (file) => {
   const fields = [
     { field: "CCBID", dbcolumn: "CCBID", type: "TEXT" },
     { field: "USERID", dbcolumn: "USERID", type: "TEXT", pkey: true },
@@ -30,10 +29,10 @@ export const Invoices = () => {
       type: "TEXT",
     },
   ];
-  csv2sql("invoices", fields, configuration.DWH_INVOICES);
+  csv2sql("invoices", fields, file);
 };
 
-export const InvoiceLines = () => {
+export const InvoiceLines = (file) => {
   const fields = [
     { field: "CCBID", dbcolumn: "CCBID", type: "INTEGER" },
     { field: "USERID", dbcolumn: "USERID", type: "INTEGER", pkey: true },
@@ -69,5 +68,5 @@ export const InvoiceLines = () => {
     { field: "TAX_AMOUNT", dbcolumn: "TAX_AMOUNT", type: "NUMBER" },
     { field: "VSOE_PRICE", dbcolumn: "VSOE_PRICE", type: "NUMBER" },
   ];
-  csv2sql("invoiceLines", fields, configuration.DWH_INVOICE_LINES);
+  csv2sql("invoiceLines", fields, file);
 };

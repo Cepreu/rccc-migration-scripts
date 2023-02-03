@@ -11,7 +11,7 @@ const ruleEngine = new RuleEngine();
 //////////////////////
 // prepareBatchFile
 //////////////////////
-export function prepareBatchFiles(batchName) {
+export function prepareBatchFiles(batchName, billingMonth) {
   Account.statExport = new StatExport([batchName], batchName);
   Account.icbExport = new ICBExport([batchName], `ICB_${batchName}`);
 
@@ -106,7 +106,7 @@ export function prepareBatchFiles(batchName) {
     const ents = stmtAccntEntitlements.all(account.ENTERPRISE_ACCOUNT_ID + "");
     const nics = db
       .prepare(NiCEntitlements.SQL)
-      .all(account.INCONTACT_BUID + "", configuration.BILLING_MONTH);
+      .all(account.INCONTACT_BUID + "", billingMonth);
     const cases = db
       .prepare(CaseEntitlements.SQL)
       .all(account.ENTERPRISE_ACCOUNT_ID + "");
@@ -117,7 +117,8 @@ export function prepareBatchFiles(batchName) {
       nics,
       cases,
       row_ents,
-      batchName
+      batchName,
+      billingMonth
     );
     currAccount.validateAndExport(ruleEngine);
   }

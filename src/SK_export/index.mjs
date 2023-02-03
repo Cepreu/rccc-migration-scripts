@@ -1,26 +1,22 @@
-import readLineSync from "readline-sync";
+import batchChooser from "../utils/batchChooser.mjs";
 import consMenu from "../utils/consMenu.mjs";
 import { createBatchEntitlements } from "./createBatchEntitlements.mjs";
 import { prepareBatchFiles } from "./prepareBatchFiles.mjs";
-import { db } from "../utils/DBSingleton.mjs";
+import { Invoice } from "./Invoice.mjs";
 
-const stmtBatches = db.prepare(
-  `SELECT name,description FROM BatchDescription ORDER BY name`
-);
-const batches = stmtBatches.all();
-if (batches.length) {
-  console.log("Batch name: ");
-  const theBatchNo = consMenu(
-    batches.map((b) => b.name + "\t" + b.description)
-  );
-  const batchName = batches[theBatchNo].name;
+const batchName = batchChooser();
+if (batchName) {
   console.log(batchName);
+
+  const billingMonth = consMenu(Invoice.invoiceDates);
+  console.log(billingMonth);
+
   const userResp = consMenu(["Renew Entitlements + Export", "Export only"]);
   switch (userResp) {
     case 0:
-      createBatchEntitlements(batchName);
+      createBatchEntitlements(batchName, billingMonth);
     case 1:
-      prepareBatchFiles(batchName);
+      prepareBatchFiles(batchName, billingMonth);
       break;
   }
 }

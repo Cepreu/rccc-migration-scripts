@@ -19,7 +19,8 @@ export class BatchDescription {
             maxSize INTEGER,
             ContactCenterMRR NUMBER,
             totalMRR NUMBER,
-            timestamp TEXT
+            timestamp TEXT,
+            PaymentPlan TEXT
         )
         `.replace(/\s+/g, " ")
     ).run();
@@ -40,7 +41,8 @@ export class BatchDescription {
     casesNBU = false,
     maxSize = 2000,
     maxContactCenterMRR = 0.0,
-    maxTotalMRR = 0.0
+    maxTotalMRR = 0.0,
+    PaymentPlan
   ) {
     this.name = name;
     this.description = description;
@@ -56,6 +58,7 @@ export class BatchDescription {
     this.maxSize = maxSize;
     this.maxContactCenterMRR = maxContactCenterMRR;
     this.maxTotalMRR = maxTotalMRR;
+    this.PaymentPlan = PaymentPlan;
 
     if (saveFlag) {
       this.#saveToDB();
@@ -83,7 +86,8 @@ export class BatchDescription {
         row.casesNBU === "true",
         row.maxSize,
         row.ContactCenterMRR,
-        row.totalMRR
+        row.totalMRR,
+        row.PaymentPlan
       );
     }
     return undefined;
@@ -96,9 +100,9 @@ export class BatchDescription {
       `INSERT OR REPLACE INTO BatchDescription 
             (name, description, accSizeMin, accSizeMax, brand, telcoProvider, seatEdition, accountList, 
                 casesMin, casesMax, casesNBU, 
-                maxSize, ContactCenterMRR, totalMRR,
+                maxSize, ContactCenterMRR, totalMRR, PaymentPlan,
                 timestamp)
-            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?, strftime('%Y-%m-%d %H:%M:%S','now'))`
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?, strftime('%Y-%m-%d %H:%M:%S','now'))`
     );
 
     const info = stmt.run(
@@ -115,7 +119,8 @@ export class BatchDescription {
       this.casesNBU.toString(),
       this.maxSize,
       this.maxContactCenterMRR,
-      this.maxTotalMRR
+      this.maxTotalMRR,
+      this.PaymentPlan
     );
     console.log(`Number of rows inserted: ${info.changes}`);
   }

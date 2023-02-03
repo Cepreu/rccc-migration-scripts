@@ -1,7 +1,7 @@
 import configuration from "../../configuration.mjs";
 import { csv2sql } from "../utils/csv2sql.mjs";
 
-export const importAccountReport = () => {
+export const importAccountReport = (file) => {
   const fields = [
     { field: "InContact BU ID", dbcolumn: "InContactBUID", type: "INTEGER" },
     {
@@ -102,9 +102,5 @@ export const importAccountReport = () => {
     },
   ];
   //const guardFunc = (row) => row["IC Case Number"] !== "";
-  csv2sql(
-    "accounts_sfdc",
-    fields,
-    configuration.SFDC_ACCOUNTS /*, ",", guardFunc*/
-  );
+  csv2sql("accounts_sfdc", fields, file /*, ",", guardFunc*/);
 };

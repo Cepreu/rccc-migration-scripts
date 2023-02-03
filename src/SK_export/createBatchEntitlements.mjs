@@ -4,8 +4,10 @@ const Exc = [
   "308-8-167",
   "309-11-171",
   "309-11-172", // Contact Center: [(-)Additional ]Active Storage (per GB for concurrent user)  Overage
-  "309-565-000",
+  "309-565-000", // Contact Center: (-)[Monthly] Long-term Storage (per GB)   !!!!!!!!!!!!!
   "310-557-000", // Contact Center: PCI Level 1 Seat License - Add On (per Named-User Seat Edition) [+ Overage]
+  "311-620-000", // Contact Center: FedRAMP (per [(+)Configured User][(-)Named-User])
+  "312-913-000", // (+)[Contact Center: ]Custom Storage (per Seat)
   "500-617-000",
   "1012-150-000", // Contact Center: [(-)Service: Additional Local DID][(+)US Local Number]
   "1032-173-000",
@@ -24,10 +26,13 @@ const Exc = [
   "1561-50-000", // Contact Center: Care [(+)Plus ]Monthly Success Package[(-) (99 users)]
   "1561-55-000", // Contact Center: Premier Monthly Success Package [(-)(250 users)][+(up to 249 users)]
   "3347-21-000", // Contact Center: [(+)inContact ]Agent for Salesforce
+  "3399-1116-000", // Contact Center: Feedback [(+)Mgt][(-)Management] SMS Channel (per Agent)
   "3465-22-000", // Contact Center: [(-)inView ]Performance Management (per Named-User)
   "3465-521-000", // Contact Center: [(+)Performance Management -][(-)InView] Gamification (per Named-User)
   "3465-523-000", // Contact Center: [(+)inView ][(-)Performance Management -] Coaching and Learning Management[(-) (per Named-User)]
   "3465-1227-000",
+  "3613-38-208", // Contact Center: Personal Connection (per (+)[configured user](-)[Named-User])
+  "3875-1296-000", // Contact Center: Textel(+) (-) - Additional Line  <<invisible symbol
   "4058-000-000", // Contact Center[(-) ]: inContact Screen Recording
   "4100-533-000", // Contact Center: [(-)NICE ]Workforce Management Essentials
   "4100-534-000", // Contact Center: [(-)Workforce Management Advanced][(+)IEX WFM Integrated Advanced (per Named-User)]
@@ -90,6 +95,8 @@ function prepareTable(batchName) {
 }
 
 function selectEntitlements(batchName) {
+  prepareTable(batchName);
+
   const insertSql = `
     INSERT INTO BatchEntitlements
       (${flds.map((f) => f.name).join(", ")})

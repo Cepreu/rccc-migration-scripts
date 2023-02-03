@@ -1,9 +1,8 @@
 import path from "path";
 import date from "date-and-time";
-import configuration from "../../configuration.mjs";
 import { csv2sql } from "../utils/csv2sql.mjs";
 
-export const importCaseReport = () => {
+export const importCaseReport = (csvfile) => {
   const fields = [
     {
       field: "IC Case Number",
@@ -81,9 +80,9 @@ export const importCaseReport = () => {
     },
     {
       dbcolumn: "DBInserted",
-      rowfunc: () => date.format(new Date(), "YYYY-MM-DD HH:mm:ss"),
+      rowfunc: () => date.format(new Date(), "YYYY-MM-DD"),
     },
   ];
   const guardFunc = (row) => row["IC Case Number"] !== "";
-  csv2sql("nic_cases", fields, configuration.C2CPATH, ",", guardFunc);
+  csv2sql("nic_cases", fields, csvfile, ",", guardFunc);
 };

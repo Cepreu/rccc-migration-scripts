@@ -22,6 +22,8 @@ const defaultDataStyle = {
 };
 
 const getDir = (pathArr) => {
+  console.log(pathArr);
+  console.log(configuration.OUTPUTPATH);
   const dir = path.resolve(
     configuration.OUTPUTPATH ? configuration.OUTPUTPATH : process.cwd(),
     ...pathArr
@@ -69,10 +71,7 @@ export class Export2Excel {
     let excl_col = 1;
     tab.columns.forEach((col) => {
       tab.worksheet.column(excl_col).setWidth(col.length + 2);
-      tab.worksheet
-        .cell(1, excl_col++)
-        .string(col)
-        .style(style);
+      tab.worksheet.cell(1, excl_col++).string(col).style(style);
     });
   }
 

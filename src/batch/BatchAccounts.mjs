@@ -1,4 +1,5 @@
 import { db } from "../utils/DBSingleton.mjs";
+import configuration from "../../configuration.mjs";
 
 export class BatchAccounts {
   constructor(batchDescription) {
@@ -24,6 +25,9 @@ export class BatchAccounts {
         ? `sf.brand='${this.bd.brand}'`
         : `(sf.brand='RingCentral' OR sf.brand='RingCentral Canada')`
     );
+    if (this.bd.PaymentPlan) {
+      wheres.push(`sf.PaymentPlan='${this.bd.PaymentPlan}'`);
+    }
     if (this.bd.telcoProvider) {
       if (this.bd.telcoProvider === "RC") {
         wheres.push(`sf.OutboundTransport LIKE 'RC Ad-Hoc%'`);
@@ -87,6 +91,11 @@ export class BatchAccounts {
                 AND NOT EXISTS (
                     SELECT * FROM BatchAccounts bi WHERE sf.EnterpriseAccountID=bi.EID
                 )
+                AND EXISTS (
+                  SELECT * FROM invoiceLines WHERE BILLING_MONTH='${
+                    configuration.BILLING_MONTH
+                  }' AND USERID=sf.EnterpriseAccountID
+                )
                 ${group_by_having}
             LIMIT ${this.bd.maxSize}
             `
@@ -115,9 +124,9 @@ export class BatchAccounts {
     info = stmt.run(this.bd.name);
     console.log(`BatchAccounts. Number of rows deleted: ${info.changes}`);
 
-    stmt = db.prepare(`DELETE FROM BatchEntitlements WHERE batchID=?`);
-    info = stmt.run(this.bd.name);
-    console.log(`BatchEntitlements. Number of rows deleted: ${info.changes}`);
+    // stmt = db.prepare(`DELETE FROM BatchEntitlements WHERE batchID=?`);
+    // info = stmt.run(this.bd.name);
+    // console.log(`BatchEntitlements. Number of rows deleted: ${info.changes}`);
 
     stmt = db.prepare(this.#batchSQL);
     info = stmt.run();

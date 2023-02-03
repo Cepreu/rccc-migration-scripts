@@ -22,7 +22,8 @@ export function batchParametersMenu(batchName) {
       false,
       2000,
       0,
-      0
+      0,
+      "Monthly"
     );
   }
 
@@ -75,6 +76,9 @@ export function batchParametersMenu(batchName) {
   let totalMRR =
     readLineSync.question(`Max total MRR [${batchDB.maxTotalMRR}]: `) ||
     batchDB.maxTotalMRR;
+  let PaymentPlan = readLineSync.question(
+    `Payment Plan: 1=Monthly, 2=Annual, 3=1+2 [${batchDB.PaymentPlan || 3}]: `
+  );
 
   return new BatchDescription(
     batchName,
@@ -113,6 +117,13 @@ export function batchParametersMenu(batchName) {
     casesNBU === "Y",
     maxSize,
     ContactCenterMRR,
-    totalMRR
+    totalMRR,
+    PaymentPlan === "1"
+      ? "Monthly"
+      : seatEdition === "2"
+      ? "Annual"
+      : seatEdition === "3"
+      ? undefined
+      : batchDB.PaymentPlan
   );
 }

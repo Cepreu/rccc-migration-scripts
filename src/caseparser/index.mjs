@@ -1,6 +1,7 @@
 import { db } from "../utils/DBSingleton.mjs";
 import { caseItems } from "./CaseParserDB.mjs";
 import configuration from "../../configuration.mjs";
+import consMenu from "../utils/consMenu.mjs";
 
 db.prepare(
   `
@@ -17,5 +18,17 @@ db.prepare(
     `.replace(/\s+/g, " ")
 ).run();
 
-const outfile = `/Users/sergiy.krupnov/WORK/DATA/C2C/cases_2022-08-10.sql`;
-caseItems(outfile, "2022-08-10 18:07:09");
+const stmt = db.prepare(
+  `select DBInserted, count(*) as N from nic_cases group by DBInserted order by DBInserted DESC;`
+);
+const insDates = stmt.all();
+if (insDates.length) {
+  console.log("Inserting dates: ");
+  const choice = consMenu(insDates.map((b) => b.DBInserted + "\t" + b.N));
+  const theInsDate = insDates[choice].DBInserted;
+  console.log(theInsDate);
+  console.log(theInsDate);
+
+  const outfile = `${configuration.C2CPATH}/cases_${theInsDate}.sql`;
+  caseItems(outfile, theInsDate);
+}

@@ -11,7 +11,7 @@ export class Account {
   static statExport;
   static icbExport;
 
-  constructor(account, ents, nics, cases, raw_ents, batchName) {
+  constructor(account, ents, nics, cases, raw_ents, batchName, billingMonth) {
     this.info = account;
     this.nicEntsC2C = new CaseEntitlements(cases);
     this.ngbsEnts = new NgbsEntitlements(ents);
@@ -26,7 +26,7 @@ export class Account {
       NBU: !!this.nicEntsC2C.originalColl.find((c) => /^NBU/.test(c.subject)),
     };
 
-    this.invoice = new Invoice(this);
+    this.invoice = new Invoice(this, billingMonth);
   }
 
   get CURRENCY() {

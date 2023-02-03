@@ -137,12 +137,20 @@ export class Rule {
     LRCCCACSEATO: ["LAPRTAAECO"],
     LRCCCAPSEATO: ["LAPRTAAPEO"],
     LRCCCBASEATO: ["LAPRTBESWAO"],
+    LRCCCBCSEATO: ["LAPRTABECO"],
     LRCCCBSEATO: ["LAPRTBESO"],
+    LRCCCSEATECNO: ["LADTLPORTO"],
+    LRCCCSEATESSO: ["LADTLPORTO"],
+    LRCCCSEATPESO: ["LADTLPORTO"],
+    LRCCCSEATPSETO: ["LADTLPORTO"],
+    LRCCCSEATSCESO: ["LADTLPORTO"],
+    LRCCCSEATSESO: ["LADTLPORTO"],
+    LRCCCSEATUCESO: ["LADTLPORTO"],
+    LRCCCSEATUNLO: ["LADTLPORTO"],
     LRCCCU2SEATO: ["LAPRTUESO", "LAPRTUPESO"],
     LRCCCUCSEATO: ["LAPRTUPESO", "LAPRTAUECO"],
     LRCCCUPSEATO: ["LAPRTUPESO"],
     LRCCCUSEATO: ["LAPRTAUEO"],
-    LRCCCBCSEATO: ["LAPRTABECO"],
     LRCCSEATUESO: ["APRTO"],
     RCCCUCC3PSEATO: ["APRTO"],
     RCCCE3PSEATO: ["APRTO"],
@@ -221,18 +229,17 @@ export class Rule {
   };
 
   static IsException(nl) {
-    return (
-      [
-        "1561-49-000", // Service Package - CXsuccess Care Package
-        "3157-18-204", // Chat  and Email Channel - CXone Chat & Email (per Configured User)
-        "1028-171-000", // SIP Trunking Service - CXone SIP Connectivity over Internet
-        "610148-597-000", // NICE Training - IEX WFM Integrated Training
-        "610060-296-000", // "Contact Center: Instructor-Led Interactive Training (At Customer Facility; min 2"
-        "154-487-000", // SMS/MMS Setup
-        "154-493-000", // SMS/MMS Setup
-        "154-173-000", // SMS/MMS Setup
-      ].find((ex) => nl.SKU === ex) !== undefined
-    );
+    const exceptions = [
+      "1561-49-000", // Service Package - CXsuccess Care Package
+      "3157-18-204", // Chat  and Email Channel - CXone Chat & Email (per Configured User)
+      "1028-171-000", // SIP Trunking Service - CXone SIP Connectivity over Internet
+      "610148-597-000", // NICE Training - IEX WFM Integrated Training
+      "610060-296-000", // "Contact Center: Instructor-Led Interactive Training (At Customer Facility; min 2"
+      "154-487-000", // SMS/MMS Setup
+      "154-493-000", // SMS/MMS Setup
+      "154-173-000", // SMS/MMS Setup
+    ];
+    return exceptions.includes(nl.SKU);
   }
 
   get name() {
@@ -603,34 +610,35 @@ class RCFixTextelOvs extends Rule {
   }
 }
 
-/////////////
-class RCEntAbsentOvs extends Rule {
-  static {
-    super.Register(
-      "Checks if there are recurrent entitlements without corresponding overages"
-    );
-  }
-  action(acct) {
-    const withoutOvs = acct.ents.filter(
-      (e) =>
-        e.ProductFamily === RECURRING &&
-        !/^307-(?!6-603).*$|^1265.-.*$/.test(e.EXT_PRODUCT_ID) &&
-        !/^308-/.test(e.EXT_PRODUCT_ID) &&
-        !acct.ents.find(
-          (ov) =>
-            ov.ProductFamily === OVERAGE &&
-            ov.EXT_PRODUCT_ID === e.EXT_PRODUCT_ID
-        ) &&
-        /* && catalog.find(c=>c.CatID===ov.EXT_PRODUCT_ID) && c.Category=OVERAGE*/
-        acct.logAlarm(
-          this.name,
-          `Overage missed for: ${e.EXT_PRODUCT_ID} ${e.ITBS_NAME} (NEEDS ATTENTION)`
-        )
-    );
+// /////////////
+// class RCEntAbsentOvs extends Rule {
+//   static {
+//     super.Register(
+//       "Checks if there are recurrent entitlements without corresponding overages"
+//     );
+//   }
+//   action(acct) {
+//     const withoutOvs = acct.ents.filter(
+//       (e) =>
+//         e.ProductFamily === RECURRING &&
+//         !/^307-(?!6-603).*$|^1265.-.*$/.test(e.EXT_PRODUCT_ID) &&
+//         !/^308-/.test(e.EXT_PRODUCT_ID) &&
+//         !acct.ents.find(
+//           (ov) =>
+//             ov.ProductFamily === OVERAGE &&
+//             ov.EXT_PRODUCT_ID === e.EXT_PRODUCT_ID
+//         ) &&
+//         /* && catalog.find(c=>c.CatID===ov.EXT_PRODUCT_ID) && c.Category=OVERAGE*/
+//         acct.logAlarm(
+//           this.name,
+//           `Overage missed for: ${e.EXT_PRODUCT_ID} ${e.ITBS_NAME} (NEEDS ATTENTION)`
+//         )
+//     );
 
-    return !withoutOvs;
-  }
-}
+//     //   return !withoutOvs;
+//     return true;
+//   }
+// }
 
 /////////////
 class RCEntCheckDuplicates extends Rule {
@@ -872,15 +880,17 @@ class NiC_NotFound extends Rule {
     super.Register("Checks if the account is represented in Monthly");
   }
   action(acct) {
-    return !(
-      acct.nics.length === 0 &&
-      acct.logError(
+    if (acct.nics.length === 0) {
+      acct.logWarning(
+        ////To do: Alarm if monthly file with all ents
         this.name,
         `No records were found for the account in the Monthly file`
-      )
-    );
+      );
+    }
+    return true;
   }
 }
+
 //////////////////
 class RCNegDiscounts extends Rule {
   static {
@@ -1020,7 +1030,7 @@ class NiC_MRCvsDWH extends Rule {
     acct.nics.forEach((nl) => {
       const entLic = acct.ents.find((el) => nl.SKU === el.EXT_PRODUCT_ID);
       if (entLic === undefined) {
-        if (!Rule.IsException(nl)) {
+        if (Rule.IsException(nl)) {
           acct.logAlarm(
             this.name,
             `${nl.SKU} ($${
@@ -1124,6 +1134,7 @@ class QntyVsThrsh extends Rule {
   }
   action(acct) {
     let isOK = true;
+    const LicensesByBU = ["1301-994-000", "1032-173-000"];
     acct.ents
       .filter(
         (row) => row.ProductFamily === RECURRING && row.EXT_PRODUCT_ID !== null
@@ -1136,10 +1147,12 @@ class QntyVsThrsh extends Rule {
             o.QNTY_THRESHOLD !== r.QNTY_THRESHOLD
         );
         if (overage) {
-          acct.logAlarm(
-            this.name,
-            `${r.EXT_PRODUCT_ID} ${r.ITBS_NAME} - Recurring qnty (${r.QNTY_THRESHOLD}) is not equal to overage (${overage.QNTY_THRESHOLD}) - NEEDS ATTENTION!`
-          );
+          const msg = `${r.EXT_PRODUCT_ID} ${r.ITBS_NAME} - Recurring qnty (${r.QNTY_THRESHOLD}) is not equal to overage (${overage.QNTY_THRESHOLD}) - NEEDS ATTENTION!`;
+          if (LicensesByBU.includes(r.EXT_PRODUCT_ID)) {
+            acct.logWarning(this.name, msg);
+          } else {
+            acct.logAlarm(this.name, msg);
+          }
         }
       });
     return isOK;

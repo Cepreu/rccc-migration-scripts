@@ -2,7 +2,7 @@ import { csv2sql } from "../utils/csv2sql.mjs";
 import configuration from "../../configuration.mjs";
 import { yyyymmdd } from "../utils/conversions.mjs";
 
-export const RCMRCSummary = () => {
+export const RCMRCSummary = (file) => {
   const fields = [
     {
       field: "Account",
@@ -91,7 +91,7 @@ export const RCMRCSummary = () => {
   csv2sql(
     "RCMRCSummary",
     fields,
-    configuration.NIC_RCMRCSUMMARY,
+    file,
     configuration.NIC_RCMRCSUMMARY_SEP || "|"
   );
 };

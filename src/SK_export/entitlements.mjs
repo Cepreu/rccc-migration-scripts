@@ -136,8 +136,8 @@ export class NiCEntitlements extends EntCollection {
     SELECT 
         *,
         CatalogID || '-' || 
-          CASE WHEN FeatureID='' THEN '000' ELSE FeatureID END || '-' || 
-          CASE WHEN FeatureDetailID='' THEN '000' ELSE FeatureDetailID END 
+        CASE WHEN FeatureID='' OR  FeatureID IS NULL THEN '000' ELSE FeatureID END || '-' || 
+        CASE WHEN FeatureDetailID='' OR  FeatureDetailID IS NULL THEN '000' ELSE FeatureDetailID END 
         AS SKU,
         Amount/Quantity AS Price
     FROM RCMRCSummary

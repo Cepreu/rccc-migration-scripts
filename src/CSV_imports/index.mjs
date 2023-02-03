@@ -1,14 +1,17 @@
 import consMenu from "../utils/consMenu.mjs";
+import fileChooser from "../utils/fileChooser.mjs";
 import { Entitlements_DWH } from "./Entitlements_DWH.mjs";
 import { Invoices, InvoiceLines } from "./invoices.mjs";
 import { RCMRCSummary } from "./RCMRCSummary.mjs";
 import { CatalogNGBS, CatalogSFDC } from "./Catalog.mjs";
 import { importAccountReport } from "./Accounts_SFDC.mjs";
 import { importCaseReport } from "./case2cases_SFDC.mjs";
+import configuration from "../../configuration.mjs";
+import xlsxExtractor from "../utils/xlsxExtractor.mjs";
 
 const userRes = consMenu(
   [
-    "Entitlements",
+    "Entitlements (DEPRECATED)",
     "Invoices",
     "RCMRCSummary",
     "Catalog",
@@ -20,20 +23,27 @@ const userRes = consMenu(
 );
 
 if (userRes === 0) {
-  EntitlementsLOG();
+  //  EntitlementsLOG();
 } else if (userRes === 1) {
-  Invoices();
-  InvoiceLines();
+  const fileXlsx = fileChooser(configuration.DWH_INVOICES, "xlsx");
+  if (fileXlsx) {
+    xlsxExtractor(fileXlsx, "InvoiceHeader", Invoices);
+    xlsxExtractor(fileXlsx, "InvoiceLines", InvoiceLines);
+  }
 } else if (userRes === 2) {
-  RCMRCSummary();
+  const file = fileChooser(configuration.NIC_RCMRCSUMMARY);
+  RCMRCSummary(file);
 } else if (userRes === 3) {
   CatalogNGBS();
   CatalogSFDC();
 } else if (userRes === 4) {
-  importAccountReport();
+  const file = fileChooser(configuration.SFDC_ACCOUNTS);
+  importAccountReport(file);
 } else if (userRes === 5) {
-  Entitlements_DWH();
+  const file = fileChooser(configuration.DWH_ENTITLEMENTS);
+  Entitlements_DWH(file);
 } else if (userRes === 6) {
-  importCaseReport();
+  const file = fileChooser(configuration.C2CPATH);
+  importCaseReport(file);
 }
 console.log("G'buy");

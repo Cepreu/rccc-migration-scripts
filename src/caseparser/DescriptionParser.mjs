@@ -22,7 +22,12 @@ const parseMRC = (line, lineParseParam, theCase, theAccount, theBUID) => {
       const sku = extract(line, /\][- ]+([^\$]*)/);
       const skuId = extract(line, /\[(.+?)\]/);
       const price = extract(line, /.*\$(.*)$/, true).replace(",", "");
-      const qtty = extract(line, /(.*?)\[/, true);
+      const qtty = extract(line, /(.*?)\[/, true).replace(",", "");
+      if (isNaN(price) || isNaN(qtty)) {
+        console.error(
+          `price or qtty: ( "${theAccount}", "${theBUID}",  "${theCase}", "${lineParseParam}", "${line}")`
+        );
+      }
       insertVals = `( "${theAccount}", "${theBUID}", "${theCase}", "${lineParseParam}", ${skuId}, ${sku}, ${qtty}, ${price} )`;
     } else {
       if (
@@ -31,7 +36,7 @@ const parseMRC = (line, lineParseParam, theCase, theAccount, theBUID) => {
         !/^Application Fee/.test(line)
       ) {
         console.error(
-          `( "${theAccount}", "${theBUID}",  "${theCase}", "${lineParseParam}", "${line}")`
+          `unparsed: ( "${theAccount}", "${theBUID}",  "${theCase}", "${lineParseParam}", "${line}")`
         );
       }
       insertVals = `( "${theAccount}", "${theBUID}", "${theCase}", "${lineParseParam}", null, "${line}", null, null )`;
@@ -76,7 +81,9 @@ export function parseDescription(
       continue;
     }
     if (
-      /^(SERVICES|Services|SERVICE|ADD SERVICE|ADD SERVICES):?$/.test(theLine)
+      /^(SERVICES|Services|SERVICE|ADD SERVICE|ADD SERVICES|REDUCE SERVICES|REMOVE SERVICES):?$/.test(
+        theLine
+      )
     ) {
       lineParser = parseMRC;
       lineParseParam = "SERVICES";

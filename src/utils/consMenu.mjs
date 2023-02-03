@@ -11,16 +11,17 @@ export default (optArr, upper = false) => {
       chalk.yellow(figlet.textSync("Migra-2", { horizontalLayout: "full" }))
     );
   }
-  let prompt = optArr.map((opt, ind) => `${ind + 1}) ${opt}`).join("\n");
+  // let prompt = optArr.map((opt, ind) => `${ind + 1}) ${opt}`).join("\n");
   let re = new RegExp(
     "^(" + optArr.map((opt, ind) => `${ind + 1}`).join("|") + ")$"
   );
   let wrn = "";
   let r;
   do {
-    console.log(wrn + prompt);
+    console.log(wrn);
+    console.table(["(Exit)", ...optArr]);
     r = readLineSync.question("Pick an option: ");
     wrn = `ATTENTION: "${r}" is incorrect input\n`;
-  } while (!re.test(r));
+  } while (r !== "0" && !re.test(r));
   return parseInt(r) - 1;
 };

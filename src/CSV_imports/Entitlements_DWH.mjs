@@ -1,7 +1,6 @@
 import { csv2sql } from "../utils/csv2sql.mjs";
-import configuration from "../../configuration.mjs";
 
-export const Entitlements_DWH = () => {
+export const Entitlements_DWH = (file) => {
   const fields = [
     { field: "USERID", dbcolumn: "USERID" },
     { field: "ID", dbcolumn: "ID", type: "INTEGER", pkey: true },
@@ -31,5 +30,5 @@ export const Entitlements_DWH = () => {
     { field: "RAMPUP_START", dbcolumn: "RAMPUP_START" },
     { field: "RAMPUP_END", dbcolumn: "RAMPUP_END" },
   ];
-  csv2sql("Entitlements_DWH", fields, configuration.DWH_ENTITLEMENTS);
+  csv2sql("Entitlements_DWH", fields, file);
 };

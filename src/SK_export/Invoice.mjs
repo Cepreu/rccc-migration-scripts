@@ -2,15 +2,24 @@ import configuration from "../../configuration.mjs";
 import { db } from "../utils/DBSingleton.mjs";
 
 export class Invoice {
-  constructor(account) {
+  constructor(account, billing_month) {
     this.account = account;
+    this.billing_month = billing_month;
+  }
+
+  static get invoiceDates() {
+    return db
+      .prepare(
+        "SELECT DISTINCT(BILLING_MONTH) FROM invoiceLines ORDER BY BILLING_MONTH DESC"
+      )
+      .all();
   }
 
   get invoiceLines() {
     const DELTA = 1.0;
     const invoiceLines = db
       .prepare("SELECT * FROM invoiceLines WHERE BILLING_MONTH=? AND USERID=?")
-      .all(configuration.BILLING_MONTH, this.account.info.ENTERPRISE_ACCOUNT_ID)
+      .all(this.billing_month, this.account.info.ENTERPRISE_ACCOUNT_ID)
       .filter(
         (il) =>
           il.ITEMNAME !== "Domestic Minutes Overage" &&
@@ -23,7 +32,13 @@ export class Invoice {
       (prev, curr) => (prev += curr.AMOUNT),
       0
     );
-    if (Math.abs(total - newTotal) > DELTA) {
+
+    if (invoiceLines.lenth === 0) {
+      this.account.logAlarm(
+        "Invoices",
+        `Invoice not found for the month beginning ${this.billing_month}`
+      );
+    } else if (Math.abs(total - newTotal) > DELTA) {
       this.account.logAlarm(
         "Invoices",
         `Estimated total ($${newTotal.toFixed(
@@ -35,13 +50,13 @@ export class Invoice {
     }
 
     invoiceLines.push({
-      BILLING_MONTH: configuration.BILLING_MONTH,
+      BILLING_MONTH: this.billing_month,
       ITEMNAME: "Total:",
       AMOUNT: total,
     });
     invoiceLines.push(...calcInvoice);
     invoiceLines.push({
-      BILLING_MONTH: configuration.BILLING_MONTH,
+      BILLING_MONTH: this.billing_month,
       ITEMNAME: "Total:",
       AMOUNT: newTotal,
     });

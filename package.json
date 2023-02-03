@@ -34,6 +34,7 @@
     "inquirer": "^8.1.2",
     "minimist": "^1.2.5",
     "readline-sync": "^1.4.10",
-    "strip-bom-stream": "^5.0.0"
+    "strip-bom-stream": "^5.0.0",
+    "xlsx-extract": "^0.1.3"
   }
 }
