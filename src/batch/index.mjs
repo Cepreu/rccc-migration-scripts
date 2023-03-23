@@ -20,8 +20,10 @@ switch (userResp) {
     break;
   case 2:
     batchName = batchChooser();
-    console.log(`Are you sure you want to delete "${batchName}"?`);
-    if (1 === consMenu(["No", "Yes"], false)) deleteBatch(batchName);
+    if (batchName) {
+      console.log(`Are you sure you want to delete "${batchName}"?`);
+      if (1 === consMenu(["No", "Yes"], false)) deleteBatch(batchName);
+    }
     break;
   default:
     break;

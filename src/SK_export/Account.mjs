@@ -9,6 +9,7 @@ import { Invoice } from "./Invoice.mjs";
 
 export class Account {
   static statExport;
+  static errStatExport;
   static icbExport;
 
   constructor(account, ents, nics, cases, raw_ents, batchName, billingMonth) {
@@ -77,14 +78,22 @@ export class Account {
 
     const errors = this.logger.errsAndWars();
     this.info.Error = this.logger.worstProblem();
-    Account.statExport.appendData([this.info], errors);
-
-    Account.icbExport.appendData(
-      [this.info],
-      this.icb_ents,
-      this.nicEntsC2C.wrkColl,
-      this.nicEntsMRS.wrkColl
-    );
+    if (this.info.VALID) {
+      Account.statExport.appendData([this.info], errors);
+      Account.icbExport.appendData(
+        [this.info],
+        this.icb_ents,
+        this.nicEntsC2C.wrkColl,
+        this.nicEntsMRS.wrkColl
+      );
+    } else {
+      //      Account.errStatExport.appendData([this.info], errors);
+      // db.prepare("UPDATE BatchAccounts SET batchID=? WHERE batchID=?").run([
+      //   `___${this.info.ENTERPRISE_ACCOUNT_ID}`,
+      //   this.info.ENTERPRISE_ACCOUNT_ID,
+      //      ]);
+      Account.statExport.appendData([this.info], errors);
+    }
 
     this.nicEntsC2C = null;
     this.ngbsEnts = null;
@@ -92,6 +101,15 @@ export class Account {
   }
 
   #export2sk() {
+    const pathArr = [];
+    let fileName = `${this.info.ENTERPRISE_ACCOUNT_ID}(${this.info.INCONTACT_BUID})`;
+    if (this.info.VALID) {
+      pathArr.push(this.batchName, "Account Analytics");
+      this.logger.hasAlarm() && (fileName += "_ALARM");
+    } else {
+      pathArr.push(this.batchName, "Accounts with Errors");
+      fileName += "_FAILED";
+    }
     write2excel(
       [
         { tab: "Account", data: [this.info] },
@@ -155,10 +173,8 @@ export class Account {
           ],
         },
       ],
-      [this.batchName, "Account Analytics"],
-      `${this.info.ENTERPRISE_ACCOUNT_ID}(${this.info.INCONTACT_BUID})${
-        this.info.VALID ? (this.logger.hasAlarm() ? "_ALARM" : "") : "_FAILED"
-      }`
+      pathArr,
+      fileName
     );
   }
 }

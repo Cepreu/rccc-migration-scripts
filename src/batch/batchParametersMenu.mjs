@@ -83,8 +83,8 @@ export function batchParametersMenu(batchName) {
   return new BatchDescription(
     batchName,
     description,
-    accSizeMin,
-    accSizeMax,
+    parseInt(accSizeMin) || 0,
+    parseInt(accSizeMax) || 0,
     brand === "1"
       ? "RingCentral"
       : brand === "2"

@@ -1,4 +1,3 @@
-import configuration from "../../configuration.mjs";
 import { db } from "../utils/DBSingleton.mjs";
 
 export class Invoice {

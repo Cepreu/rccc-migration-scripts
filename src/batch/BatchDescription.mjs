@@ -96,32 +96,32 @@ export class BatchDescription {
   #saveToDB() {
     BatchDescription.createTable();
 
-    const stmt = db.prepare(
-      `INSERT OR REPLACE INTO BatchDescription 
+    const info = db
+      .prepare(
+        `INSERT OR REPLACE INTO BatchDescription 
             (name, description, accSizeMin, accSizeMax, brand, telcoProvider, seatEdition, accountList, 
                 casesMin, casesMax, casesNBU, 
                 maxSize, ContactCenterMRR, totalMRR, PaymentPlan,
                 timestamp)
             VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?, strftime('%Y-%m-%d %H:%M:%S','now'))`
-    );
-
-    const info = stmt.run(
-      this.name,
-      this.description,
-      this.accSizeMin,
-      this.accSizeMax,
-      this.brand,
-      this.telcoProvider,
-      this.seatEdition,
-      JSON.stringify(this.accountList),
-      this.casesMin,
-      this.casesMax,
-      this.casesNBU.toString(),
-      this.maxSize,
-      this.maxContactCenterMRR,
-      this.maxTotalMRR,
-      this.PaymentPlan
-    );
+      )
+      .run(
+        this.name,
+        this.description,
+        this.accSizeMin,
+        this.accSizeMax,
+        this.brand,
+        this.telcoProvider,
+        this.seatEdition,
+        JSON.stringify(this.accountList),
+        this.casesMin,
+        this.casesMax,
+        this.casesNBU.toString(),
+        this.maxSize,
+        this.maxContactCenterMRR,
+        this.maxTotalMRR,
+        this.PaymentPlan
+      );
     console.log(`Number of rows inserted: ${info.changes}`);
   }
 }

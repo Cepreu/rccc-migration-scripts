@@ -8,16 +8,18 @@ const batchName = batchChooser();
 if (batchName) {
   console.log(batchName);
 
-  const billingMonth = consMenu(Invoice.invoiceDates);
-  console.log(billingMonth);
-
-  const userResp = consMenu(["Renew Entitlements + Export", "Export only"]);
-  switch (userResp) {
-    case 0:
-      createBatchEntitlements(batchName, billingMonth);
-    case 1:
-      prepareBatchFiles(batchName, billingMonth);
-      break;
+  const bmi = consMenu(Invoice.invoiceDates);
+  if (bmi !== undefined) {
+    const billingMonth = Invoice.invoiceDates[bmi].BILLING_MONTH;
+    console.log(billingMonth);
+    const userResp = consMenu(["Renew Entitlements + Export", "Export only"]);
+    switch (userResp) {
+      case 0:
+        createBatchEntitlements(batchName, billingMonth);
+      case 1:
+        prepareBatchFiles(batchName, billingMonth);
+        break;
+    }
   }
 }
 console.log("G'buy");

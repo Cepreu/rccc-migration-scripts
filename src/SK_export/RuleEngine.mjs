@@ -139,6 +139,7 @@ export class Rule {
     LRCCCBASEATO: ["LAPRTBESWAO"],
     LRCCCBCSEATO: ["LAPRTABECO"],
     LRCCCBSEATO: ["LAPRTBESO"],
+    LRCCCSEAT: ["LRCCCSEATUNCO"],
     LRCCCSEATECNO: ["LADTLPORTO"],
     LRCCCSEATESSO: ["LADTLPORTO"],
     LRCCCSEATPESO: ["LADTLPORTO"],
@@ -269,7 +270,7 @@ class RCCheckSeats extends Rule {
   }
   action(acct) {
     const isReccurentSeat = (ent) => {
-      const seatPattern = /^307-(?!6-603).*$|^1265.-.*$/; // 307-6-603 is exclusion: the digital add-on; 1265* - new gen seats
+      const seatPattern = /^307-(?!6-60[2,3]).*$|^1265.-.*$/; // 307-6-602, 307-6-603 are exclusions: the digital add-on; 1265* - new gen seats
       return (
         seatPattern.test(ent.EXT_PRODUCT_ID) &&
         ent.ITEM_NAME !== "Seat Overage" &&
@@ -829,7 +830,6 @@ class RC25kBundles extends Rule {
         bundle.PRICE =
           bundle.CURRENCY === "USD" ? Rule.BUNDLE25K.USD : Rule.BUNDLE25K.CAD;
         bundle.DISCOUNT = bundle.PRICE - bundle.OldPrice / qtty25k;
-        //        bundle.ProductFamily = OVERAGE;
       });
     return true;
   }
@@ -1118,9 +1118,9 @@ class RCCMapping extends Rule {
     bad.forEach((ent) => {
       acct.logError(
         this.name,
-        `${ent.EXT_PRODUCT_ID !== null ? ent.EXT_PRODUCT_ID : ""} "${
-          ent.ITBS_NAME
-        }" - is not mapped to NGBS catalog`
+        `INTERNAL ERROR: ${
+          ent.EXT_PRODUCT_ID !== null ? ent.EXT_PRODUCT_ID : ""
+        } "${ent.ITBS_NAME}" - is not mapped to NGBS catalog`
       );
     });
     return !bad.length;
@@ -1181,6 +1181,11 @@ class EntsVsCases extends Rule {
             this.name,
             `${re.EXT_PRODUCT_ID} ${re.ITBS_NAME} - Recurring port entitlement was not found in NiC`
           );
+        } else if (re.EXT_PRODUCT_ID === "309-11-171") {
+          acct.logAlarm(
+            this.name,
+            `${re.EXT_PRODUCT_ID} ${re.ITBS_NAME} - Recurring entitlement is not found in NiC`
+          );
         } else if (acct.facts.NBU) {
           acct.logError(
             this.name,
@@ -1215,7 +1220,12 @@ class QntyVsCases extends Rule {
             r.EXT_PRODUCT_ID != acct.facts.entPortLic.EXT_PRODUCT_ID
         );
         if (c2c) {
-          if (acct.facts.NBU) {
+          if (r.EXT_PRODUCT_ID === "309-11-171") {
+            acct.logWarning(
+              this.name,
+              `${r.EXT_PRODUCT_ID} ${r.ITBS_NAME} - Recurring qnty (${r.QNTY_THRESHOLD}) is not equal to NiC (${c2c.qtty})`
+            );
+          } else if (acct.facts.NBU) {
             acct.logError(
               this.name,
               `${r.EXT_PRODUCT_ID} ${r.ITBS_NAME} - Recurring qnty (${r.QNTY_THRESHOLD}) is not equal to NiC (${c2c.qtty}) while NBU was found`

@@ -20,18 +20,26 @@ const Exc = [
   "1032-573-000", // Contact Center: Outbound SMS Application Fee [(-)- Canada][(+) Canada (per BU)]
   "1032-574-000", // Contact Center: Inbound SMS Application Fee [(-)- Canada][(+) Canada (per BU)]
   "1270-136-000", // Contact Center: Service: [(-)Additional][(+)US] Toll Free Number
+  "1440-1341-000", // "Contact Center: Attendant Plus (per User)
+  "1445-1885-000", //
   "1500-000-000", // Contact Center: [(-)inContact ]Social Media[(+) Channel]
   "1503-693-000",
   "1503-694-000",
   "1561-50-000", // Contact Center: Care [(+)Plus ]Monthly Success Package[(-) (99 users)]
   "1561-55-000", // Contact Center: Premier Monthly Success Package [(-)(250 users)][+(up to 249 users)]
   "3347-21-000", // Contact Center: [(+)inContact ]Agent for Salesforce
+  "3347-517-256", // Contact Center: Agent for Oracle Service Cloud (Per Named-User)
+  "3347-714-000", // Contact Center: Agent Adapter for Zendesk Frontline (per [(-)named-user][(+)Configured User])
   "3399-1116-000", // Contact Center: Feedback [(+)Mgt][(-)Management] SMS Channel (per Agent)
+  "3400-1445-000", // Contact Center: Feedback [(+)Mgt][(-)Management] SMS Long Code
   "3465-22-000", // Contact Center: [(-)inView ]Performance Management (per Named-User)
   "3465-521-000", // Contact Center: [(+)Performance Management -][(-)InView] Gamification (per Named-User)
   "3465-523-000", // Contact Center: [(+)inView ][(-)Performance Management -] Coaching and Learning Management[(-) (per Named-User)]
   "3465-1227-000",
+  "3596-000-000", // Contact Center: (+)[CXone ]Direct Data Access (per BU)
   "3613-38-208", // Contact Center: Personal Connection (per (+)[configured user](-)[Named-User])
+  "3615-000-000", // Contact Center: Automated Speech Recognition (per Minute) [(-)Overage]
+  "3864-408-000", // Contact Center: iBenchmark Lite (per (+)[configured user](-)[Named-User])
   "3875-1296-000", // Contact Center: Textel(+) (-) - Additional Line  <<invisible symbol
   "4058-000-000", // Contact Center[(-) ]: inContact Screen Recording
   "4100-533-000", // Contact Center: [(-)NICE ]Workforce Management Essentials

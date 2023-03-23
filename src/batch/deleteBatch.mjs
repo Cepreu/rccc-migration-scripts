@@ -1,13 +1,17 @@
+import { db } from "../utils/DBSingleton.mjs";
+
 export default (batchName) => {
   let stmt = db.prepare(`DELETE FROM BatchDescription WHERE name=?`);
-  info = stmt.run(batchName);
-  console.log(`BatchDescription. Number of rows deleted: ${info.changes}`);
+  const info1 = stmt.run(batchName);
+  console.log(`BatchDescription. Number of rows deleted: ${info1.changes}`);
 
   stmt = db.prepare(`DELETE FROM BatchAccounts WHERE batchID=?`);
-  info = stmt.run(batchName);
-  console.log(`BatchAccounts. Number of rows deleted: ${info.changes}`);
+  const info2 = stmt.run(batchName);
+  console.log(`BatchAccounts. Number of rows deleted: ${info2.changes}`);
 
   stmt = db.prepare(`DELETE FROM BatchEntitlements WHERE batchID=?`);
-  info = stmt.run(batchName);
-  console.log(`BatchEntitlements. Number of rows deleted: ${info.changes}`);
+  const info3 = stmt.run(batchName);
+  console.log(`BatchEntitlements. Number of rows deleted: ${info3.changes}`);
+
+  // Delete directory == TBD
 };

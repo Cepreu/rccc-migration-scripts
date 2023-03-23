@@ -13,6 +13,7 @@ const ruleEngine = new RuleEngine();
 //////////////////////
 export function prepareBatchFiles(batchName, billingMonth) {
   Account.statExport = new StatExport([batchName], batchName);
+  //  Account.errStatExport = new StatExport([batchName], `${batchName}`);
   Account.icbExport = new ICBExport([batchName], `ICB_${batchName}`);
 
   const stmtBatchAccounts = db.prepare(

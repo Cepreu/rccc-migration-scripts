@@ -139,7 +139,7 @@ export class NiCEntitlements extends EntCollection {
         CASE WHEN FeatureID='' OR  FeatureID IS NULL THEN '000' ELSE FeatureID END || '-' || 
         CASE WHEN FeatureDetailID='' OR  FeatureDetailID IS NULL THEN '000' ELSE FeatureDetailID END 
         AS SKU,
-        Amount/Quantity AS Price
+        CAST(Amount AS REAL)/Quantity AS Price
     FROM RCMRCSummary
     WHERE Account=?
         AND BillingPeriodStart=?
@@ -192,7 +192,10 @@ export class CaseEntitlements extends EntCollection {
   }
 
   get consColl() {
-    const replacements = { RC_PREM: "307-6-217" };
+    const replacements = {
+      RC_STAN: "307-6-216",
+      RC_PREM: "307-6-217",
+    };
 
     return this.originalColl.reduce((acc, obj) => {
       const theLic =

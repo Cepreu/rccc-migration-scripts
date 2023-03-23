@@ -18,6 +18,7 @@ export class BatchAccounts {
       wheres.push(`sf."No.ofInContactSeats" >= ${this.bd.accSizeMin}`);
     }
     if (this.bd.accSizeMax) {
+      console.log(this.bd.accSizeMax, typeof this.bd.accSizeMax);
       wheres.push(`sf."No.ofInContactSeats" < ${this.bd.accSizeMax}`);
     }
     wheres.push(
@@ -91,17 +92,17 @@ export class BatchAccounts {
                 AND NOT EXISTS (
                     SELECT * FROM BatchAccounts bi WHERE sf.EnterpriseAccountID=bi.EID
                 )
-                AND EXISTS (
-                  SELECT * FROM invoiceLines WHERE BILLING_MONTH='${
-                    configuration.BILLING_MONTH
-                  }' AND USERID=sf.EnterpriseAccountID
-                )
                 ${group_by_having}
-            LIMIT ${this.bd.maxSize}
-            `
+                LIMIT ${this.bd.maxSize}
+                `
       .replace(/\s+/g, " ")
       .trim();
 
+    // AND EXISTS (
+    //   SELECT * FROM invoiceLines WHERE BILLING_MONTH='${
+    //     configuration.BILLING_MONTH
+    //   }' AND USERID=sf.EnterpriseAccountID
+    // )
     return sql;
   }
   ///////////////
