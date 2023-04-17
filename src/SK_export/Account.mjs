@@ -6,6 +6,7 @@ import {
 import { write2excel } from "../utils/write2file.mjs";
 import { Logger } from "./Logger.mjs";
 import { Invoice } from "./Invoice.mjs";
+import { BatchAccounts } from "../batch/BatchAccounts.mjs";
 
 export class Account {
   static statExport;
@@ -87,12 +88,11 @@ export class Account {
         this.nicEntsMRS.wrkColl
       );
     } else {
-      //      Account.errStatExport.appendData([this.info], errors);
-      // db.prepare("UPDATE BatchAccounts SET batchID=? WHERE batchID=?").run([
-      //   `___${this.info.ENTERPRISE_ACCOUNT_ID}`,
-      //   this.info.ENTERPRISE_ACCOUNT_ID,
-      //      ]);
-      Account.statExport.appendData([this.info], errors);
+      // BatchAccounts.deleteProblematic(
+      //   this.batchName,
+      //   this.info.ENTERPRISE_ACCOUNT_ID
+      // );
+      //Account.statExport.appendData([this.info], errors);
     }
 
     this.nicEntsC2C = null;

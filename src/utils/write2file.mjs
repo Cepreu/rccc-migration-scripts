@@ -2,7 +2,7 @@ import path from "path";
 import fs1 from "fs-extra";
 import excel from "excel4node";
 import configuration from "../../configuration.mjs";
-import { SummaryTempl } from "../utils/tabTemplates.mjs";
+//import { SummaryTempl } from "../utils/tabTemplates.mjs";
 
 const defaultHeaderStyle = {
   font: {
@@ -38,7 +38,7 @@ export class Export2Excel {
     const dir = getDir(pathArr);
     this.fileName = path.resolve(dir, `${fileName}.xlsx`);
     this.workbook = new excel.Workbook();
-    SummaryTempl(this.workbook);
+    //   SummaryTempl(this.workbook);
 
     this.styleForData = this.workbook.createStyle(defaultDataStyle);
     this.tabs = tabsDescrArr.map((t) => {
@@ -46,7 +46,7 @@ export class Export2Excel {
         name: t.tab,
         worksheet: this.workbook.addWorksheet(t.tab),
         columns: t.columns,
-        cursor: 2,
+        cursor: t.gap || 1,
       };
       const styleForHeaders = this.workbook.createStyle(defaultHeaderStyle);
       this.#addExcelSheetHeader(theTab, styleForHeaders);
@@ -69,10 +69,13 @@ export class Export2Excel {
 
   #addExcelSheetHeader(tab, style) {
     let excl_col = 1;
+
     tab.columns.forEach((col) => {
       tab.worksheet.column(excl_col).setWidth(col.length + 2);
-      tab.worksheet.cell(1, excl_col++).string(col).style(style);
+      tab.worksheet.cell(tab.cursor, excl_col++).string(col).style(style);
     });
+
+    tab.cursor++;
   }
 
   #setWidths(array, ws) {

@@ -1,3 +1,4 @@
+import { db } from "../utils/DBSingleton.mjs";
 const RECURRING = "Recurring";
 const OVERAGE = "Overage";
 
@@ -14,219 +15,85 @@ export class Rule {
     return this.Registered;
   }
 
-  static seatOverageMap = [
-    {
-      Category: "LRCCCA1SEATO",
-      PARENT: "Contact Center: Advanced Edition Seat",
-      PRICE_USD: 139.99,
-      PRICE_CAD: 179.99,
-      EXT_PRODUCT_ID: "307-6-216",
-    },
-    {
-      Category: "LRCCCA2SEATO",
-      PARENT: "Contact Center: Advanced Edition Seat (2 ports)",
-      PRICE_USD: 179.99,
-      PRICE_CAD: 229.99,
-      EXT_PRODUCT_ID: "307-6-291",
-    },
-    {
-      Category: "LRCCCACSEATO",
-      PARENT: "Contact Center: Advanced Edition Concurrent Seat",
-      PRICE_USD: 259.99,
-      PRICE_CAD: 334.99,
-      EXT_PRODUCT_ID: "307-6-289",
-    },
-    {
-      Category: "LRCCCAPSEATO",
-      PARENT: "Contact Center: Advanced-Plus Edition Seat",
-      PRICE_USD: 169.99,
-      PRICE_CAD: 209.99,
-      EXT_PRODUCT_ID: "307-6-270",
-    },
-    {
-      Category: "LRCCCBASEATO",
-      PARENT: "Contact Center: Basic Edition Seat with Advanced IVR (2 ports)",
-      PRICE_USD: 179.99,
-      PRICE_CAD: 231.19,
-      EXT_PRODUCT_ID: "307-6-287",
-    },
-    {
-      Category: "LRCCCBCSEATO",
-      PARENT: "Contact Center: Basic Edition Concurrent Seat",
-      PRICE_USD: 214.99,
-      PRICE_CAD: 274.99,
-      EXT_PRODUCT_ID: "307-6-284",
-    },
-    {
-      Category: "LRCCCBCWASEATO",
-      PARENT: "Contact Center: Basic Edition Concurrent Seat with Advanced IVR",
-      PRICE_USD: 259.99,
-      PRICE_CAD: 336.78,
-      EXT_PRODUCT_ID: "307-6-288",
-    },
-    {
-      Category: "LRCCCBSEATO",
-      PARENT: "Contact Center: Basic Edition Seat",
-      PRICE_USD: 149.99,
-      PRICE_CAD: 169.99,
-      EXT_PRODUCT_ID: "307-6-216",
-    },
-    {
-      Category: "LRCCCPCINUSEATO",
-      PARENT: "Contact Center: PCI Level 1 Edition Seat (per Named-User)",
-      PRICE_USD: 187,
-      PRICE_CAD: 250,
-      EXT_PRODUCT_ID: "307-6-218",
-    },
-    {
-      Category: "LRCCCPCISEATO",
-      PARENT:
-        "Contact Center: PCI Level 1 Edition Seat (per Configured Station)",
-      PRICE_USD: 230,
-      PRICE_CAD: 300,
-      EXT_PRODUCT_ID: "307-4-220",
-    },
-    {
-      Category: "LRCCCSSEATO",
-      PARENT: "Contact Center: Configured Station License",
-      PRICE_USD: 195,
-      PRICE_CAD: 254,
-      EXT_PRODUCT_ID: "307-4-178",
-    },
-    {
-      Category: "LRCCCU2SEATO",
-      PARENT: "Contact Center: Ultimate Edition Seat (2.5 ports)",
-      PRICE_USD: 219.99,
-      PRICE_CAD: 279.99,
-      EXT_PRODUCT_ID: "307-6-292",
-    },
-    {
-      Category: "LRCCCUCSEATO",
-      PARENT: "Contact Center: Ultimate Edition Concurrent Seat",
-      PRICE_USD: 319.99,
-      PRICE_CAD: 409.99,
-      EXT_PRODUCT_ID: "307-6-290",
-    },
-    {
-      Category: "LRCCCUPSEATO",
-      PARENT: "Contact Center: Ultimate-Plus Edition Seat",
-      PRICE_USD: 199.99,
-      PRICE_CAD: 259.99,
-      EXT_PRODUCT_ID: "307-6-271",
-    },
-    {
-      Category: "LRCCCUSEATO",
-      PARENT: "Contact Center: Ultimate Edition Seat",
-      PRICE_USD: 199.99,
-      PRICE_CAD: 259.99,
-      EXT_PRODUCT_ID: "307-6-217",
-    },
-    {
-      Category: "LRCCSEATUESO",
-      PARENT: "Contact Center: Ultimate Edition Seat (3 ports)",
-      PRICE_USD: 190,
-      PRICE_CAD: 235,
-      EXT_PRODUCT_ID: "12658-1727-001",
-    },
-  ];
+  static seatOverageMap = [];
+  static RCOTelecomLicenses = [];
+  static ASR_OVERAGE;
+  static BUNDLE25K;
+
+  static {
+    const catalog = db.prepare(`SELECT * FROM catalogSFDC`).all();
+    this.seatOverageMap = catalog
+      .filter((lic) => lic.PRODUCT_NAME === "Seat Overage")
+      .map((lic) => {
+        return {
+          Category: `CCL_${lic.L_CATEGORY}_${lic.No}`,
+          PARENT: lic.PARENT,
+          PRICE_USD: lic.PRICE_USD,
+          PRICE_CAD: lic.PRICE_CAD,
+          EXT_PRODUCT_ID: lic.SKU,
+        };
+      });
+
+    const telcoms = [
+      "LICIBL",
+      "LICIBTF",
+      "LICIBINT",
+      "LICOBLC",
+      "LICOBIC",
+      "LICOBDL",
+      "LICOBDINT",
+      "LICOBLTF",
+    ];
+    const assign = (l) => {
+      return {
+        Category: `CCL_${l.L_CATEGORY}_${l.No}`,
+        ITEM_NAME: l.PRODUCT_NAME,
+        USD: l.PRICE_USD,
+        CAD: l.PRICE_CAD,
+        NiCPrice: l.NIC_PRICE,
+      };
+    };
+    this.RCOTelecomLicenses = catalog
+      .filter((l) => telcoms.includes(l.L_CATEGORY))
+      .map((l) => assign(l));
+
+    const asr = catalog.find(
+      (l) =>
+        l.PRODUCT_NAME ===
+        "Contact Center: Automated Speech Recognition (per minute)"
+    );
+    this.ASR_OVERAGE = assign(asr);
+
+    const b25k = catalog.find(
+      (l) => l.PRODUCT_NAME === "Inbound Toll Free 25K Bundle"
+    );
+    this.BUNDLE25K = assign(b25k);
+  }
 
   ////////////
   static portMap = {
-    LRCCCA1SEATO: ["LAPRTBESO"],
-    LRCCCA2SEATO: ["LAPRTAAE2O", "LAPRTAAPEO"],
-    LRCCCACSEATO: ["LAPRTAAECO"],
-    LRCCCAPSEATO: ["LAPRTAAPEO"],
-    LRCCCBASEATO: ["LAPRTBESWAO"],
-    LRCCCBCSEATO: ["LAPRTABECO"],
-    LRCCCBSEATO: ["LAPRTBESO"],
-    LRCCCSEAT: ["LRCCCSEATUNCO"],
-    LRCCCSEATECNO: ["LADTLPORTO"],
-    LRCCCSEATESSO: ["LADTLPORTO"],
-    LRCCCSEATPESO: ["LADTLPORTO"],
-    LRCCCSEATPSETO: ["LADTLPORTO"],
-    LRCCCSEATSCESO: ["LADTLPORTO"],
-    LRCCCSEATSESO: ["LADTLPORTO"],
-    LRCCCSEATUCESO: ["LADTLPORTO"],
-    LRCCCSEATUNLO: ["LADTLPORTO"],
-    LRCCCU2SEATO: ["LAPRTUESO", "LAPRTUPESO"],
-    LRCCCUCSEATO: ["LAPRTUPESO", "LAPRTAUECO"],
-    LRCCCUPSEATO: ["LAPRTUPESO"],
-    LRCCCUSEATO: ["LAPRTAUEO"],
-    LRCCSEATUESO: ["APRTO"],
-    RCCCUCC3PSEATO: ["APRTO"],
-    RCCCE3PSEATO: ["APRTO"],
-    RCCCP3PSEATO: ["APRTO"],
-    RCCCS3PSEATO: ["APRTO"],
-    RCCCSC3PSEATO: ["APRTO"],
-    RCCCU3PSEATO: ["APRTO"],
-    RCCCEC3PSEATO: ["APRTO"],
-    RCCCPC3PSEATO: ["APRTO"],
-  };
-
-  static RCOTelecomLicenses = [
-    {
-      Category: "LICIBL",
-      ITEM_NAME: "Inbound Local, per 10 min",
-      USD: 0.0,
-      CAD: 0,
-    },
-    {
-      Category: "LICIBTF",
-      ITEM_NAME: "Inbound Toll Free, per 10 min",
-      USD: 0.14,
-      CAD: 0.14,
-    },
-    {
-      Category: "LICIBINT",
-      ITEM_NAME: "Inbound International",
-      USD: 0.01,
-      CAD: 0.01,
-    },
-    {
-      Category: "LICOBLC",
-      ITEM_NAME: "Outbound Local Conversational, per 10 min",
-      USD: 0.0,
-      CAD: 0.0,
-    },
-    {
-      Category: "LICOBIC",
-      ITEM_NAME: "Outbound International Conversational",
-      USD: 0.01,
-      CAD: 0.01,
-    },
-    {
-      Category: "LICOBDL",
-      ITEM_NAME: "Outbound Dialer Local, per 10 min",
-      USD: 0.16,
-      CAD: 0.16,
-    },
-    {
-      Category: "LICOBDINT",
-      ITEM_NAME: "Outbound Dialer International",
-      USD: 0.01,
-      CAD: 0.01,
-    },
-    {
-      Category: "LICOBLTF",
-      ITEM_NAME: "Outbound local Toll Free",
-      USD: 0.0,
-      CAD: 0.0,
-    },
-  ];
-
-  static ASR_OVERAGE = {
-    Category: "LASRO",
-    ITEM_NAME: "Contact Center: Automated Speech Recognition (per minute)",
-    USD: 0.06,
-    CAD: 0.08,
-    NiCPrice: 0.05,
-  };
-
-  static BUNDLE25K = {
-    Category: "LICIBTF25KB",
-    ITEM_NAME: "Inbound Toll Free 25K Bundle",
-    USD: 350.0,
-    CAD: 455.0,
+    CCL_LRCCCA1SEATO_14: ["CCL_LAPRTBESO_409"],
+    CCL_LRCCCA2SEATO_67: ["CCL_LAPRTAAE2O_405", "CCL_LAPRTAAPEO_404"],
+    CCL_LRCCCACSEATO_56: ["CCL_LAPRTAAECO_403"],
+    CCL_LRCCCAPSEATO_26: ["CCL_LAPRTAAPEO_404"],
+    CCL_LRCCCBASEATO_44: ["CCL_LAPRTBESWAO_411"],
+    CCL_LRCCCBCSEATO_38: ["CCL_LAPRTABECO_400"],
+    CCL_LRCCCBSEATO_8: ["CCL_LAPRTBESO_409"],
+    CCL_LRCCCPCINUSEATO_77: ["CCL_LAPRTUPESO_413"],
+    CCL_LRCCCSEATECNO_689: ["CCL_LADTLPORTO_705"],
+    CCL_LRCCCSEATESSO_687: ["CCL_LADTLPORTO_705"],
+    CCL_LRCCCSEATPESO_695: ["CCL_LADTLPORTO_705"],
+    CCL_LRCCCSEATPSETO_697: ["CCL_LADTLPORTO_705"],
+    CCL_LRCCCSEATSCESO_693: ["CCL_LADTLPORTO_705"],
+    CCL_LRCCCSEATSESO_691: ["CCL_LADTLPORTO_705"],
+    CCL_LRCCCSEATUCESO_699: ["CCL_LADTLPORTO_705"],
+    CCL_LRCCCSEATUNCO_703: ["CCL_LADTLPORTO_705"],
+    CCL_LRCCCSEATUNLO_701: ["CCL_LADTLPORTO_705"],
+    CCL_LRCCCU2SEATO_73: ["CCL_LAPRTUESO", "CCL_LAPRTUPESO_413"],
+    CCL_LRCCCUCSEATO_61: ["CCL_LAPRTUPESO_413", "CCL_LAPRTAUECO_406"],
+    CCL_LRCCCUPSEATO_32: ["CCL_LAPRTUPESO_413"],
+    CCL_LRCCCUSEATO_20: ["CCL_LAPRTAUEO_402"],
+    CCL_LRCCSEATUESO_679: ["CCL_LADTLPORTO_705"],
   };
 
   static IsException(nl) {
@@ -432,49 +299,6 @@ class RCFixPorts extends Rule {
     return true;
   }
 }
-
-// /////////////
-// class RecurringPorts extends Rule {
-//   static {
-//     super.Register("Syncs Port Overages with Recurring Ports");
-//   }
-//   action(acct) {
-//     const RecurringPort = acct.ents.find(
-//       (ent) =>
-//         /^308-/.test(ent.EXT_PRODUCT_ID) && ent.ProductFamily === "Recurring"
-//     );
-//     if (
-//       !!RecurringPort &&
-//       !!acct.facts.entPortLic &&
-//       RecurringPort.EXT_PRODUCT_ID !== acct.facts.entPortLic.EXT_PRODUCT_ID
-//     ) {
-//       acct.logAlarm(
-//         this.name,
-//         `Recurring Port license ${RecurringPort.EXT_PRODUCT_ID} doesn't match Overage: ${acct.facts.entPortLic.EXT_PRODUCT_ID}. Overage replaced by ${RecurringPort.EXT_PRODUCT_ID}`
-//       );
-
-//       const icb_port_ovr = acct.icb_ents.find(
-//         (re) => re.EXT_PRODUCT_ID === acct.facts.entPortLic.EXT_PRODUCT_ID
-//       );
-//       icb_port_ovr.EXT_PRODUCT_ID = RecurringPort.EXT_PRODUCT_ID;
-
-//       acct.facts.entPortLic.EXT_PRODUCT_ID = RecurringPort.EXT_PRODUCT_ID;
-//       const mapping = {
-//         "308-8-167": { rec: "LAPRTA", ovr: "LAPRTACSO" },
-//         "308-8-214": { rec: "LAPRTBA", ovr: "LAPRTAAEO" },
-//         "308-8-215": { rec: "LAPRTBAU", ovr: "LAPRTAUEO" },
-//       };
-//       acct.facts.entPortLic.Category =
-//         mapping[RecurringPort.EXT_PRODUCT_ID].ovr;
-
-//       const nicPort = acct.nics.find((nic) => /^308-/.test(nic.SKU));
-//       if (!!nicPort && nicPort.SKU !== acct.facts.entPortLic.EXT_PRODUCT_ID) {
-//         nicPort.SKU = acct.facts.entPortLic.EXT_PRODUCT_ID;
-//       }
-//     }
-//     return true;
-//   }
-// }
 
 /////////////
 class NiCPorts extends Rule {
@@ -1181,7 +1005,8 @@ class EntsVsCases extends Rule {
             this.name,
             `${re.EXT_PRODUCT_ID} ${re.ITBS_NAME} - Recurring port entitlement was not found in NiC`
           );
-        } else if (re.EXT_PRODUCT_ID === "309-11-171") {
+        } else if (["309-11-171", "309-11-172"].includes(re.EXT_PRODUCT_ID)) {
+          // Term Storage (per GB)
           acct.logAlarm(
             this.name,
             `${re.EXT_PRODUCT_ID} ${re.ITBS_NAME} - Recurring entitlement is not found in NiC`
@@ -1209,6 +1034,8 @@ class QntyVsCases extends Rule {
     super.Register("Checks recurring QNTYs vs NiCs");
   }
   action(acct) {
+    const ACTIVE_STORAGE_SKU = "309-11-171";
+
     let isOK = true;
     acct.ents
       .filter((ent) => ent.ProductFamily === RECURRING && !!ent.EXT_PRODUCT_ID)
@@ -1220,7 +1047,7 @@ class QntyVsCases extends Rule {
             r.EXT_PRODUCT_ID != acct.facts.entPortLic.EXT_PRODUCT_ID
         );
         if (c2c) {
-          if (r.EXT_PRODUCT_ID === "309-11-171") {
+          if (r.EXT_PRODUCT_ID === ACTIVE_STORAGE_SKU) {
             acct.logWarning(
               this.name,
               `${r.EXT_PRODUCT_ID} ${r.ITBS_NAME} - Recurring qnty (${r.QNTY_THRESHOLD}) is not equal to NiC (${c2c.qtty})`

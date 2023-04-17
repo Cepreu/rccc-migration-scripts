@@ -43,7 +43,7 @@ export class Export2Excel {
     const dir = getDir(pathArr);
     this.fileName = path.resolve(dir, `${fileName}.xlsx`);
     this.workbook = new excel.Workbook();
-    SummaryTempl(this.workbook);
+    //SummaryTempl(this.workbook);
 
     this.styleForData = this.workbook.createStyle(defaultDataStyle);
     this.tabs = tabsDescrArr.map((t) => {

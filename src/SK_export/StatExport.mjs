@@ -7,31 +7,25 @@ export class StatExport extends Export2Excel {
     super(
       [
         {
-          tab: "Batch Selectors",
-          columns: ["Parameter", "Value"],
-        },
-        {
           tab: "Accounts",
           columns: [
             "ENTERPRISE_ACCOUNT_ID",
             "INCONTACT_BUID",
             "BILLING_ACCOUNT_ID",
             "AccountName",
-            "PaymentMethod",
             "BRANDNAME",
             "CURRENCY",
             "BILLING_TERM",
-            "DefaultTimeZone",
             "No.ofInContactSeats",
             "ContactCenterMRR",
             "totalMRR",
-            "BILLING_ADDRESS",
-            "CCStartDate",
-            "CCEndDate",
-            "SalesAgreementStartDate",
-            "SalesAgreementEndDate",
             "Error",
           ],
+          gap: 25, //header lines to be inserted manually
+        },
+        {
+          tab: "Batch Selectors",
+          columns: ["Parameter", "Value"],
         },
         {
           tab: "ErrsAndWarns",

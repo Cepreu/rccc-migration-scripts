@@ -1,10 +1,14 @@
 import { db } from "../utils/DBSingleton.mjs";
-import configuration from "../../configuration.mjs";
 
 export class BatchAccounts {
   constructor(batchDescription) {
     this.bd = batchDescription;
     console.log(JSON.stringify(this.bd));
+  }
+  static deleteProblematic(batchID, accountID) {
+    db.prepare(
+      `UPDATE BatchAccounts SET batchID='___${batchID}' WHERE batchID='${batchID}' AND EID=${accountID}`
+    ).run();
   }
 
   /////////
@@ -18,7 +22,6 @@ export class BatchAccounts {
       wheres.push(`sf."No.ofInContactSeats" >= ${this.bd.accSizeMin}`);
     }
     if (this.bd.accSizeMax) {
-      console.log(this.bd.accSizeMax, typeof this.bd.accSizeMax);
       wheres.push(`sf."No.ofInContactSeats" < ${this.bd.accSizeMax}`);
     }
     wheres.push(
@@ -59,10 +62,10 @@ export class BatchAccounts {
       );
     }
     if (this.bd.maxContactCenterMRR) {
-      wheres.push(`sf.ContactCenterMRR >= ${this.bd.maxContactCenterMRR}`);
+      wheres.push(`sf.ContactCenterMRR <= ${this.bd.maxContactCenterMRR}`);
     }
     if (this.bd.maxTotalMRR) {
-      wheres.push(`sf.totalMRR >= ${this.bd.maxTotalMRR}`);
+      wheres.push(`sf.totalMRR <= ${this.bd.maxTotalMRR}`);
     }
 
     let inner_join = "";

@@ -95,6 +95,7 @@ export function prepareBatchFiles(batchName, billingMonth) {
       `.replace(/\s+/g, " ")
   );
 
+  const problematicAccs = [];
   for (const account of stmtBatchAccounts.iterate(batchName)) {
     console.log(
       account.ENTERPRISE_ACCOUNT_ID,
@@ -122,7 +123,16 @@ export function prepareBatchFiles(batchName, billingMonth) {
       billingMonth
     );
     currAccount.validateAndExport(ruleEngine);
+    if (!currAccount.info.VALID) {
+      problematicAccs.push(account.ENTERPRISE_ACCOUNT_ID);
+    }
   }
+
+  db.prepare(
+    `UPDATE BatchAccounts SET batchID='___${batchName}' WHERE batchID='${batchName}' AND EID IN (${problematicAccs.join(
+      ","
+    )})`
+  ).run();
 
   Account.statExport.close();
   Account.icbExport.close();

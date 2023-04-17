@@ -30,27 +30,25 @@ export const csv2sql = (
 
   const fldNames = fieldDescs.map((x) => x.dbcolumn).join(",");
   const qtnMarks = fieldDescs.map((x) => "?").join(",");
-  const stmt = db.prepare(
-    `INSERT OR IGNORE INTO ${table} (${fldNames}) VALUES (${qtnMarks})`
-  );
+  const req = `INSERT OR IGNORE INTO ${table} (${fldNames}) VALUES (${qtnMarks})`;
+  const stmt = db.prepare(req);
 
   fs.createReadStream(csv_file)
     .pipe(stripBom())
     .pipe(csv({ separator: separator }))
     .on("data", (row) => {
+      const reqParams = fieldDescs.map((fd) => {
+        if ("field" in fd) {
+          return row[fd.field]
+            ? "func" in fd
+              ? fd.func(row[fd.field])
+              : row[fd.field]
+            : null;
+        }
+        return "rowfunc" in fd ? fd.rowfunc(row) : null;
+      });
       if (guardFunc === undefined || guardFunc(row)) {
-        stmt.run(
-          ...fieldDescs.map((fd) => {
-            if ("field" in fd) {
-              return row[fd.field]
-                ? "func" in fd
-                  ? fd.func(row[fd.field])
-                  : row[fd.field]
-                : null;
-            }
-            return "rowfunc" in fd ? fd.rowfunc(row) : null;
-          })
-        );
+        stmt.run(...reqParams);
       }
     })
     .on("end", () => {
