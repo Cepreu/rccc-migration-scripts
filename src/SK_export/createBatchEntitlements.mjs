@@ -12,6 +12,7 @@ const flds = [
   { name: "MDURATION", type: "INTEGER" },
   { name: "CURRENCY_CODE", type: "TEXT" },
   { name: "OldPrice", type: "NUMBER" },
+  { name: "OldQntyThreshold", type: "INTEGER" },
   { name: "QNTY_THRESHOLD", type: "INTEGER" },
   { name: "PriceUSD", type: "NUMBER" },
   { name: "Price", type: "NUMBER" },
@@ -21,6 +22,7 @@ const flds = [
   { name: "Category", type: "TEXT" },
   { name: "PARENT", type: "TEXT" },
   { name: "ProductFamily", type: "TEXT" },
+  { name: "Ratio", type: "NUMBER" },
   { name: "batchID", type: "TEXT" },
 ];
 
@@ -34,7 +36,9 @@ function prepareTable(batchName) {
     .run();
 
   info = db
-    .prepare(`DELETE FROM BatchEntitlements WHERE batchID='${batchName}'`)
+    .prepare(
+      `DELETE FROM BatchEntitlements WHERE batchID='${batchName}' OR batchID='___${batchName}'`
+    )
     .run();
 
   console.log(`Deleted from BatchEntitlements.`);
@@ -71,14 +75,16 @@ function selectEntitlements(batchName) {
                 e.CURRENCY_CODE,
                 (e.RETAIL_PRICE-e.DISCOUNT_VALUE) / CASE WHEN e.ProductFamily!='Overage' THEN e.MDURATION ELSE 1 END,
                 e.QNTY_THRESHOLD,
+                e.QNTY_THRESHOLD * ratio,
                 lc.PRICE_USD,
                 lc.PRICE_CAD,
-                lc.PRICE_USD - (e.RETAIL_PRICE - e.DISCOUNT_VALUE) / CASE WHEN e.ProductFamily!='Overage' THEN e.MDURATION ELSE 1 END,
-                lc.PRICE_CAD - (e.RETAIL_PRICE - e.DISCOUNT_VALUE) / CASE WHEN e.ProductFamily!='Overage' THEN e.MDURATION ELSE 1 END,
+                lc.PRICE_USD - (e.RETAIL_PRICE - e.DISCOUNT_VALUE) / CASE WHEN e.ProductFamily!='Overage' THEN (e.MDURATION * ratio) ELSE 1 END AS discountUSD,
+                lc.PRICE_CAD - (e.RETAIL_PRICE - e.DISCOUNT_VALUE) / CASE WHEN e.ProductFamily!='Overage' THEN (e.MDURATION * ratio) ELSE 1 END AS discountCA,
                 lc.NIC_PRICE,
                 lc.ngbs_license_id,
                 lc.PARENT,
                 e.ProductFamily,
+                ratio,
                '${batchName}'
         FROM 
           Entitlements_DWH e
@@ -87,12 +93,12 @@ function selectEntitlements(batchName) {
           LEFT JOIN mapping lc 
               ON (
                 UPPER(e.ITEM_NAME)=UPPER(lc.itbs_license_name)
-                AND e.EXT_PRODUCT_ID=lc.SKU 
+                AND (e.EXT_PRODUCT_ID=lc.SKU OR e.EXT_PRODUCT_ID is null and lc.SKU is null)
                 AND e.ProductFamily=lc.itbs_license_type
               )
         WHERE
           STATUS_NAME='Active'
-        AND (END_DATE = '' OR END_DATE IS NULL OR END_DATE > date('now')) 
+          AND (END_DATE = '' OR END_DATE IS NULL OR END_DATE > date('now')) 
         ORDER BY b.EID, e.EXT_PRODUCT_ID     
     `.replace(/\s+/g, " "); /// COLLATE NOCASE
   const info = db.prepare(insertSql).run();

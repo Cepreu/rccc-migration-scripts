@@ -98,25 +98,26 @@ class EntCollection {
 
 ////////////////////
 export class NgbsEntitlements extends EntCollection {
-  static SQL = `
-    SELECT 
-        EXT_PRODUCT_ID,
-        Category,
-        ITEM_NAME,
-        ITBS_NAME,
-        QNTY_THRESHOLD,
-        OldPrice,
-        CASE CURRENCY_CODE WHEN 'USD' THEN round(PRICEUSD,2) WHEN 'CAD' THEN round(PRICE,2) END PRICE,
-        CASE CURRENCY_CODE WHEN 'USD' THEN round(DiscountUSD,2) WHEN 'CAD' THEN round(Discount,2) END DISCOUNT,
-        CURRENCY_CODE AS CURRENCY,
-        round(NiCPrice,2) NiCPrice,
-        ProductFamily,
-        Parent,
-        ? AS batchID
-    FROM ?
-    WHERE eid=?
-    ORDER BY AccountName, QNTY_THRESHOLD DESC, cast(EXT_PRODUCT_ID AS INTEGER), EXT_PRODUCT_ID, Category
-    `.replace(/\s+/g, " ");
+  // static SQL = `
+  //   SELECT
+  //       EXT_PRODUCT_ID,
+  //       Category,
+  //       ITEM_NAME,
+  //       ITBS_NAME,
+  //       QNTY_THRESHOLD,
+  //       OldQntyThreshold,
+  //       OldPrice,
+  //       CASE CURRENCY_CODE WHEN 'USD' THEN round(PRICEUSD,2) WHEN 'CAD' THEN round(PRICE,2) END PRICE,
+  //       CASE CURRENCY_CODE WHEN 'USD' THEN round(DiscountUSD,2) WHEN 'CAD' THEN round(Discount,2) END DISCOUNT,
+  //       CURRENCY_CODE AS CURRENCY,
+  //       round(NiCPrice,2) NiCPrice,
+  //       ProductFamily,
+  //       Parent,
+  //       ? AS batchID
+  //   FROM ?
+  //   WHERE eid=?
+  //   ORDER BY AccountName, QNTY_THRESHOLD DESC, cast(EXT_PRODUCT_ID AS INTEGER), EXT_PRODUCT_ID, Category
+  //   `.replace(/\s+/g, " ");
 
   constructor(coll) {
     super(coll);

@@ -78,7 +78,7 @@ export function batchParametersMenu(batchName) {
     batchDB.maxTotalMRR;
   let PaymentPlan = readLineSync.question(
     `Payment Plan: 1=Monthly, 2=Annual, 3=1+2 [${
-      batchDB.PaymentPlan || "Any"
+      batchDB.PaymentPlan || 3
     }]: ` || batchDB.PaymentPlan
   );
 

@@ -107,10 +107,18 @@ export class Export2Excel {
               .style(this.styleForData);
             break;
           case "number":
-            ws.worksheet
-              .cell(excl_row, excl_col++)
-              .number(element)
-              .style(this.styleForData);
+            if (isNaN(element)) {
+              ws.worksheet
+                .cell(excl_row, excl_col++)
+                .string("NaN")
+                .style(this.styleForData);
+              console.log("====>", data_row);
+            } else {
+              ws.worksheet
+                .cell(excl_row, excl_col++)
+                .number(element)
+                .style(this.styleForData);
+            }
             break;
           case "boolean":
             ws.worksheet

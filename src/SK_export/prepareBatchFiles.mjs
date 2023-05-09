@@ -52,22 +52,24 @@ export function prepareBatchFiles(batchName, billingMonth) {
 
   const stmtAccntEntitlements = db.prepare(
     `SELECT 
-        b.EXT_PRODUCT_ID,
-        b.Category,
-        b.ITEM_NAME,
-        b.ITBS_NAME,
-        b.QNTY_THRESHOLD,
-        b.OldPrice,
-        CASE b.CURRENCY_CODE WHEN 'USD' THEN round(PRICEUSD,2) WHEN 'CAD' THEN round(PRICE,2) END PRICE,
-        CASE b.CURRENCY_CODE WHEN 'USD' THEN round(DiscountUSD,2) WHEN 'CAD' THEN round(Discount,2) END DISCOUNT,
-        b.CURRENCY_CODE AS CURRENCY,
+        EXT_PRODUCT_ID,
+        Category,
+        ITEM_NAME,
+        ITBS_NAME,
+        QNTY_THRESHOLD,
+        OldPrice,
+        OldQntyThreshold,
+        CASE CURRENCY_CODE WHEN 'USD' THEN round(PRICEUSD,2) WHEN 'CAD' THEN round(PRICE,2) END PRICE,
+        CASE CURRENCY_CODE WHEN 'USD' THEN round(DiscountUSD,2) WHEN 'CAD' THEN round(Discount,2) END DISCOUNT,
+        CURRENCY_CODE AS CURRENCY,
         round(NiCPrice,2) NiCPrice,
-        b.PARENT,
-        b.ProductFamily,
-        b.batchID
-    FROM BatchEntitlements b
-    WHERE eid=?
-    ORDER BY b.AccountName, b.QNTY_THRESHOLD DESC, cast(b.EXT_PRODUCT_ID AS INTEGER), b.EXT_PRODUCT_ID, b.Category
+        PARENT,
+        ProductFamily,
+        batchID
+    FROM BatchEntitlements
+    WHERE eid=? 
+      AND batchID='${batchName}'
+    ORDER BY AccountName, QNTY_THRESHOLD DESC, cast(EXT_PRODUCT_ID AS INTEGER), EXT_PRODUCT_ID, Category
   `.replace(/\s+/g, " ")
   );
 

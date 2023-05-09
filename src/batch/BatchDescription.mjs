@@ -42,7 +42,7 @@ export class BatchDescription {
     maxSize = 2000,
     maxContactCenterMRR = 0.0,
     maxTotalMRR = 0.0,
-    PaymentPlan
+    PaymentPlan = "Monthly"
   ) {
     this.name = name;
     this.description = description;

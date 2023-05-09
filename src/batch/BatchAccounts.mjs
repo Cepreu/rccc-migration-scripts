@@ -17,7 +17,7 @@ export class BatchAccounts {
       console.log("ERROR: batchSQLBuilder: batchName is undefined");
       return null;
     }
-    const wheres = ["1=1"];
+    const wheres = ["sf.InContactBUID IS NOT NULL"];
     if (this.bd.accSizeMin) {
       wheres.push(`sf."No.ofInContactSeats" >= ${this.bd.accSizeMin}`);
     }
@@ -132,6 +132,7 @@ export class BatchAccounts {
     // info = stmt.run(this.bd.name);
     // console.log(`BatchEntitlements. Number of rows deleted: ${info.changes}`);
 
+    console.log(this.#batchSQL);
     stmt = db.prepare(this.#batchSQL);
     info = stmt.run();
     console.log(`Number of rows inserted: ${info.changes}`);

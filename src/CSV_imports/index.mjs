@@ -3,7 +3,7 @@ import fileChooser from "../utils/fileChooser.mjs";
 import { Entitlements_DWH } from "./Entitlements_DWH.mjs";
 import { Invoices, InvoiceLines } from "./invoices.mjs";
 import { RCMRCSummary } from "./RCMRCSummary.mjs";
-import { CatalogNGBS, CatalogSFDC } from "./Catalog.mjs";
+import { CatalogNGBS, CatalogSFDC } from "./catalog.mjs";
 import { importAccountReport } from "./Accounts_SFDC.mjs";
 import { importCaseReport } from "./case2cases_SFDC.mjs";
 import configuration from "../../configuration.mjs";

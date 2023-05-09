@@ -18,7 +18,8 @@ export class Rule {
   static seatOverageMap = [];
   static RCOTelecomLicenses = [];
   static ASR_OVERAGE;
-  static BUNDLE25K;
+  //static BUNDLE25K;
+  static seatPattern = /^307-(?!6-60[2,3]).*$|^1265.-.*$/; // 307-6-602, 307-6-603 are exclusions: the digital add-on; 1265* - new gen seats
 
   static {
     const catalog = db.prepare(`SELECT * FROM catalogSFDC`).all();
@@ -57,17 +58,17 @@ export class Rule {
       .filter((l) => telcoms.includes(l.L_CATEGORY))
       .map((l) => assign(l));
 
-    const asr = catalog.find(
+    const ASR = catalog.find(
       (l) =>
         l.PRODUCT_NAME ===
         "Contact Center: Automated Speech Recognition (per minute)"
     );
-    this.ASR_OVERAGE = assign(asr);
+    this.ASR_OVERAGE = assign(ASR);
 
-    const b25k = catalog.find(
-      (l) => l.PRODUCT_NAME === "Inbound Toll Free 25K Bundle"
-    );
-    this.BUNDLE25K = assign(b25k);
+    // const b25k = catalog.find(
+    //   (l) => l.PRODUCT_NAME === "Inbound Toll Free 25K Bundle"
+    // );
+    // this.BUNDLE25K = assign(b25k);
   }
 
   ////////////
@@ -106,6 +107,7 @@ export class Rule {
       "154-487-000", // SMS/MMS Setup
       "154-493-000", // SMS/MMS Setup
       "154-173-000", // SMS/MMS Setup
+      "141-000-000",
     ];
     return exceptions.includes(nl.SKU);
   }
@@ -137,11 +139,10 @@ class RCCheckSeats extends Rule {
   }
   action(acct) {
     const isReccurentSeat = (ent) => {
-      const seatPattern = /^307-(?!6-60[2,3]).*$|^1265.-.*$/; // 307-6-602, 307-6-603 are exclusions: the digital add-on; 1265* - new gen seats
       return (
-        seatPattern.test(ent.EXT_PRODUCT_ID) &&
+        Rule.seatPattern.test(ent.EXT_PRODUCT_ID) &&
         ent.ITEM_NAME !== "Seat Overage" &&
-        ent.QNTY_THRESHOLD > 0
+        ent.OldQntyThreshold > 0
       );
     };
     const seats = acct.ents.filter((ent) => isReccurentSeat(ent));
@@ -166,18 +167,20 @@ class RCCSeatOverage extends Rule {
   static {
     super.Register("Checks/Fixes Seat Overage license");
   }
-  action(acct) {
-    let strippedSeatName = acct.facts.seat.ITEM_NAME;
+  #stripName(strippedSeatName) {
     const x = strippedSeatName.match(/ \d+ \- \d+/);
-    if (x) strippedSeatName = strippedSeatName.replace(x[0], "");
-
+    return x ? strippedSeatName.replace(x[0], "") : strippedSeatName;
+  }
+  action(acct) {
+    const strippedSeatName = this.#stripName(acct.facts.seat.ITEM_NAME);
     acct.facts.seatOverage = acct.ents.find(
       (row) =>
         row.EXT_PRODUCT_ID === acct.facts.seat.EXT_PRODUCT_ID &&
         row.ITEM_NAME === "Seat Overage" &&
-        row.QNTY_THRESHOLD > 0 &&
+        row.OldQntyThreshold > 0 &&
         row.PARENT === strippedSeatName
     );
+
     if (acct.facts.seatOverage === undefined) {
       const SOLic = Rule.seatOverageMap.find(
         (l) => l.PARENT === strippedSeatName
@@ -194,7 +197,8 @@ class RCCSeatOverage extends Rule {
         EXT_PRODUCT_ID: SOLic.EXT_PRODUCT_ID,
         Category: SOLic.Category,
         ITEM_NAME: "Seat Overage",
-        QNTY_THRESHOLD: acct.facts.seat.QNTY_THRESHOLD,
+        QNTY_THRESHOLD: 0,
+        OldQntyThreshold: acct.facts.seat.OldQntyThreshold,
         PRICE: acct.facts.seat.CURRENCY ? SOLic.PRICE_USD : SOLic.PRICE_CAD,
         DISCOUNT: 0,
         NiCPrice: acct.facts.seat.NiCPrice,
@@ -215,13 +219,13 @@ class RCCSeatOverage extends Rule {
     acct.ents = acct.ents.filter(
       (e) =>
         !(
-          /^307-/.test(e.EXT_PRODUCT_ID) &&
+          Rule.seatPattern.test(e.EXT_PRODUCT_ID) &&
           ((e.Category !== acct.facts.seatOverage.Category &&
             e.Category !== acct.facts.seat.Category) ||
-            e.QNTY_THRESHOLD == 0) &&
+            e.OldQntyThreshold == 0) &&
           acct.logInfo(
             this.name,
-            `Removed: ${e.EXT_PRODUCT_ID} ${e.ITEM_NAME}, parent "${e.PARENT}", qtty ${e.QNTY_THRESHOLD}`
+            `Removed: ${e.EXT_PRODUCT_ID} ${e.ITEM_NAME}, parent "${e.PARENT}", qtty ${e.OldQntyThreshold}`
           )
         )
     );
@@ -430,40 +434,11 @@ class RCFixTextelOvs extends Rule {
       textelOverage.PRICE = 0.04;
       textelOverage.DISCOUNT = 0.0;
       textelOverage.QNTY_THRESHOLD = 0;
+      textelOverage.OldQntyThreshold = 0;
     }
     return true;
   }
 }
-
-// /////////////
-// class RCEntAbsentOvs extends Rule {
-//   static {
-//     super.Register(
-//       "Checks if there are recurrent entitlements without corresponding overages"
-//     );
-//   }
-//   action(acct) {
-//     const withoutOvs = acct.ents.filter(
-//       (e) =>
-//         e.ProductFamily === RECURRING &&
-//         !/^307-(?!6-603).*$|^1265.-.*$/.test(e.EXT_PRODUCT_ID) &&
-//         !/^308-/.test(e.EXT_PRODUCT_ID) &&
-//         !acct.ents.find(
-//           (ov) =>
-//             ov.ProductFamily === OVERAGE &&
-//             ov.EXT_PRODUCT_ID === e.EXT_PRODUCT_ID
-//         ) &&
-//         /* && catalog.find(c=>c.CatID===ov.EXT_PRODUCT_ID) && c.Category=OVERAGE*/
-//         acct.logAlarm(
-//           this.name,
-//           `Overage missed for: ${e.EXT_PRODUCT_ID} ${e.ITBS_NAME} (NEEDS ATTENTION)`
-//         )
-//     );
-
-//     //   return !withoutOvs;
-//     return true;
-//   }
-// }
 
 /////////////
 class RCEntCheckDuplicates extends Rule {
@@ -620,44 +595,44 @@ class RCASROverage extends Rule {
 }
 
 //////////////////
-class RC25kBundles extends Rule {
-  static {
-    super.Register("Converts different-size toll-free bundles to 25K ones");
-  }
-  action(acct) {
-    const batchPattern =
-      /Contact Center: (?<Mega>\d+M )?(?<Kilo>\d+K )?(Domestic )?Minutes Bundle/;
+// class RC25kBundles extends Rule {
+//   static {
+//     super.Register("Converts different-size toll-free bundles to 25K ones");
+//   }
+//   action(acct) {
+//     const bundlePattern =
+//       /Contact Center: (?<Mega>\d+M )?(?<Kilo>\d+K )?(Domestic )?Minutes Bundle/;
 
-    acct.ents = acct.ents.filter(
-      (e) =>
-        !("ITBS_NAME" in e && e.ITBS_NAME.match(batchPattern)) ||
-        e.QNTY_THRESHOLD > 0 ||
-        !acct.logInfo(this.name, `Deleted: "${e.ITBS_NAME}" with zero quantity`)
-    );
+//     acct.ents = acct.ents.filter(
+//       (e) =>
+//         !("ITBS_NAME" in e && e.ITBS_NAME.match(bundlePattern)) ||
+//         e.QNTY_THRESHOLD > 0 ||
+//         !acct.logInfo(this.name, `Deleted: "${e.ITBS_NAME}" with zero quantity`)
+//     );
 
-    acct.ents
-      .filter((e) => "ITBS_NAME" in e && e.ITBS_NAME.match(batchPattern))
-      .forEach((bundle) => {
-        acct.logInfo(
-          this.name,
-          `Replaced: "${bundle.ITBS_NAME}" with 25K bundles`
-        );
+//     acct.ents
+//       .filter((e) => "ITBS_NAME" in e && e.ITBS_NAME.match(bundlePattern))
+//       .forEach((bundle) => {
+//         acct.logInfo(
+//           this.name,
+//           `Replaced: "${bundle.ITBS_NAME}" with 25K bundles`
+//         );
 
-        const { Mega, Kilo } = bundle.ITBS_NAME.match(batchPattern).groups;
-        const qtty25k =
-          (Mega ? 40 * Mega.slice(0, -2) : 0) +
-          (Kilo ? 0.04 * Kilo.slice(0, -2) : 0);
+//         const { Mega, Kilo } = bundle.ITBS_NAME.match(bundlePattern).groups;
+//         const qtty25k =
+//           (Mega ? 40 * Mega.slice(0, -2) : 0) +
+//           (Kilo ? 0.04 * Kilo.slice(0, -2) : 0);
 
-        bundle.Category = Rule.BUNDLE25K.Category;
-        bundle.ITEM_NAME = Rule.BUNDLE25K.ITEM_NAME;
-        bundle.QNTY_THRESHOLD = qtty25k * bundle.QNTY_THRESHOLD;
-        bundle.PRICE =
-          bundle.CURRENCY === "USD" ? Rule.BUNDLE25K.USD : Rule.BUNDLE25K.CAD;
-        bundle.DISCOUNT = bundle.PRICE - bundle.OldPrice / qtty25k;
-      });
-    return true;
-  }
-}
+//         bundle.Category = Rule.BUNDLE25K.Category;
+//         bundle.ITEM_NAME = Rule.BUNDLE25K.ITEM_NAME;
+//         bundle.QNTY_THRESHOLD = qtty25k * bundle.QNTY_THRESHOLD;
+//         bundle.PRICE =
+//           bundle.CURRENCY === "USD" ? Rule.BUNDLE25K.USD : Rule.BUNDLE25K.CAD;
+//         bundle.DISCOUNT = bundle.PRICE - bundle.OldPrice / qtty25k;
+//       });
+//     return true;
+//   }
+// }
 
 //////////////////
 class RCFixSocMedia extends Rule {
@@ -794,7 +769,7 @@ class C2CvsMRC extends Rule {
       const nicLic = acct.nics.find((nl) => nl.SKU === c2c.skuid);
       const entLic = acct.ents.find((ent) => ent.EXT_PRODUCT_ID === c2c.skuid);
       if (nicLic === undefined) {
-        acct.logWarning(
+        acct.logInfo(
           this.name,
           `${c2c.skuid} was not found in Monthly file but is presented in case2case`
         );
@@ -812,17 +787,6 @@ class C2CvsMRC extends Rule {
             Amount: 0,
             SKU: c2c.skuid,
           });
-
-          // Address1
-          // Address2
-          // City
-          // State
-          // ZipCode
-          // Invoice
-          // BillingPeriodStart
-          // BillingPeriodEnd
-          // InvoiceDate
-          // DueDate
 
           acct.logWarning(
             this.name,
@@ -907,7 +871,7 @@ class MRCvsC2C extends Rule {
             BUID: acct.info.INCONTACT_BUID,
             skuid: nl.SKU,
             sku: nl.Product,
-            qtty: entLic.QNTY_THRESHOLD,
+            qtty: entLic.OldQntyThreshold,
             price: nl.Amount / nl.Quantity,
           });
           const theIssue = `${nl.SKU} was not found in case2case but is presented in Monthly file`;
@@ -918,7 +882,7 @@ class MRCvsC2C extends Rule {
             BUID: acct.info.INCONTACT_BUID,
             skuid: nl.SKU,
             sku: nl.Product,
-            qtty: entLic.QNTY_THRESHOLD,
+            qtty: entLic.OldQntyThreshold,
             price: entLic.NiCPrice,
           });
           const theIssue = `${nl.SKU} was not found in case2case but is presented in MRC. Price was added from the entitlement`;
@@ -958,7 +922,7 @@ class QntyVsThrsh extends Rule {
   }
   action(acct) {
     let isOK = true;
-    const LicensesByBU = ["1301-994-000", "1032-173-000"];
+    const LicsByBusinessUnit = ["1301-994-000", "1032-173-000"];
     acct.ents
       .filter(
         (row) => row.ProductFamily === RECURRING && row.EXT_PRODUCT_ID !== null
@@ -968,11 +932,11 @@ class QntyVsThrsh extends Rule {
           (o) =>
             o.ProductFamily === OVERAGE &&
             o.EXT_PRODUCT_ID === r.EXT_PRODUCT_ID &&
-            o.QNTY_THRESHOLD !== r.QNTY_THRESHOLD
+            o.OldQntyThreshold !== r.OldQntyThreshold
         );
         if (overage) {
-          const msg = `${r.EXT_PRODUCT_ID} ${r.ITBS_NAME} - Recurring qnty (${r.QNTY_THRESHOLD}) is not equal to overage (${overage.QNTY_THRESHOLD}) - NEEDS ATTENTION!`;
-          if (LicensesByBU.includes(r.EXT_PRODUCT_ID)) {
+          const msg = `${r.EXT_PRODUCT_ID} ${r.ITBS_NAME} - Recurring qnty (${r.OldQntyThreshold}) is not equal to overage (${overage.OldQntyThreshold}) - NEEDS ATTENTION!`;
+          if (LicsByBusinessUnit.includes(r.EXT_PRODUCT_ID)) {
             acct.logWarning(this.name, msg);
           } else {
             acct.logAlarm(this.name, msg);
@@ -1043,27 +1007,27 @@ class QntyVsCases extends Rule {
         const c2c = acct.cases.find(
           (c) =>
             c.skuid === r.EXT_PRODUCT_ID &&
-            c.qtty !== r.QNTY_THRESHOLD &&
+            c.qtty !== r.OldQntyThreshold &&
             r.EXT_PRODUCT_ID != acct.facts.entPortLic.EXT_PRODUCT_ID
         );
         if (c2c) {
           if (r.EXT_PRODUCT_ID === ACTIVE_STORAGE_SKU) {
             acct.logWarning(
               this.name,
-              `${r.EXT_PRODUCT_ID} ${r.ITBS_NAME} - Recurring qnty (${r.QNTY_THRESHOLD}) is not equal to NiC (${c2c.qtty})`
+              `${r.EXT_PRODUCT_ID} ${r.ITBS_NAME} - Recurring qnty (${r.OldQntyThreshold}) is not equal to NiC (${c2c.qtty})`
             );
           } else if (acct.facts.NBU) {
             acct.logError(
               this.name,
-              `${r.EXT_PRODUCT_ID} ${r.ITBS_NAME} - Recurring qnty (${r.QNTY_THRESHOLD}) is not equal to NiC (${c2c.qtty}) while NBU was found`
+              `${r.EXT_PRODUCT_ID} ${r.ITBS_NAME} - Recurring qnty (${r.OldQntyThreshold}) is not equal to NiC (${c2c.qtty}) while NBU was found`
             );
             isOK = false;
           } else {
             acct.logWarning(
               this.name,
-              `${r.EXT_PRODUCT_ID} ${r.ITBS_NAME} - NiC case qnty (${c2c.qtty}) is corrected to Recurring qnty (${r.QNTY_THRESHOLD}) - no NBU case found`
+              `${r.EXT_PRODUCT_ID} ${r.ITBS_NAME} - NiC case qnty (${c2c.qtty}) is corrected to Recurring qnty (${r.OldQntyThreshold}) - no NBU case found`
             );
-            c2c.qtty = r.QNTY_THRESHOLD;
+            c2c.qtty = r.OldQntyThreshold;
           }
         }
       });
@@ -1087,11 +1051,11 @@ class C2CtoVendCat extends Rule {
             c2c.qtty === 0 &&
             acct.logInfo(
               this.name,
-              `${c2c.skuid} was removed from Vendor catalog as obsolete`
+              `${c2c.skuid} was removed from Vendor Order as obsolete`
             )) ||
             acct.logWarning(
               this.name,
-              `${c2c.skuid} was removed from Vendor catalog: Qnty: ${c2c.qtty}`
+              `${c2c.skuid} was removed from Vendor Order: Qnty: ${c2c.qtty}`
             ))
         )
     );
