@@ -28,7 +28,7 @@ export function prepareBatchFiles(batchName, billingMonth) {
       a.inContactBUID AS INCONTACT_BUID,
       '' AS PACKAGE_ID,
       PaymentPlan AS BILLING_TERM,
-      '' AS SPENDING_LIMIT,
+      b.SpendingLimit,
       a."No.ofInContactSeats",
       nic.ContactCenterNumber,
       DefaultTimeZone,

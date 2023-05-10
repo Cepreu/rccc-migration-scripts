@@ -20,6 +20,12 @@ export class StatExport extends Export2Excel {
             "ContactCenterMRR",
             "totalMRR",
             "Error",
+            "SpendingLimit",
+            "Revenue Team",
+            "Revenue Comments",
+            "Billing Team",
+            "Billing  Comments",
+            "Overall Migration Approval",
           ],
           gap: 25, //header lines to be inserted manually
         },

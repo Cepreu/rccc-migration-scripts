@@ -1,4 +1,3 @@
-import path from "path";
 import date from "date-and-time";
 import { csv2sql } from "../utils/csv2sql.mjs";
 

@@ -6,12 +6,19 @@ import {
 import { write2excel } from "../utils/write2file.mjs";
 import { Logger } from "./Logger.mjs";
 import { Invoice } from "./Invoice.mjs";
-import { BatchAccounts } from "../batch/BatchAccounts.mjs";
+//import { BatchAccounts } from "../batch/BatchAccounts.mjs";
 
 export class Account {
   static statExport;
   static errStatExport;
   static icbExport;
+  static wrkAccFields = {
+    "Revenue Team": "Yes",
+    "Revenue Comments": "",
+    "Billing Team": "Yes",
+    "Billing  Comments": "",
+    "Overall Migration Approval": "Yes",
+  };
 
   constructor(account, ents, nics, cases, raw_ents, batchName, billingMonth) {
     this.info = account;
@@ -80,7 +87,10 @@ export class Account {
     const errors = this.logger.errsAndWars();
     this.info.Error = this.logger.worstProblem();
     if (this.info.VALID) {
-      Account.statExport.appendData([this.info], errors);
+      Account.statExport.appendData(
+        [{ ...this.info, ...Account.wrkAccFields }],
+        errors
+      );
       Account.icbExport.appendData(
         [this.info],
         this.icb_ents,

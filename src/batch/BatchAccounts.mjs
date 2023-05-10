@@ -1,6 +1,7 @@
 import { db } from "../utils/DBSingleton.mjs";
 
 export class BatchAccounts {
+  static defaultSpendingLimit = 1.5;
   constructor(batchDescription) {
     this.bd = batchDescription;
     console.log(JSON.stringify(this.bd));
@@ -82,11 +83,12 @@ export class BatchAccounts {
     const sql = `
             INSERT OR REPLACE 
             INTO BatchAccounts
-                (batchID, EID, BID, UID, AccountName, brand, currency)
+                (batchID, EID, BID, UID, AccountName, brand, currency, SpendingLimit)
             SELECT 
                 '${
                   this.bd.name
-                }', sf.EnterpriseAccountID, sf.BillingID, sf.inContactBUID, sf.AccountName, sf.brand, sf.PriceperseatCurrency
+                }', sf.EnterpriseAccountID, sf.BillingID, sf.inContactBUID, sf.AccountName, sf.brand, sf.PriceperseatCurrency, 
+                ${BatchAccounts.defaultSpendingLimit}
             FROM 
                 accounts_sfdc sf
                 ${inner_join}

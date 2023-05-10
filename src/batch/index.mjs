@@ -29,7 +29,7 @@ switch (userResp) {
   case 3:
     batchName = batchChooser();
     if (batchName) {
-      batchUpdator();
+      batchUpdator(batchName);
     }
     break;
   default:
