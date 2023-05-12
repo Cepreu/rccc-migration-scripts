@@ -23,7 +23,8 @@ export function batchParametersMenu(batchName) {
       2000,
       0,
       0,
-      "Monthly"
+      "Monthly",
+      "Invoice"
     );
   }
 
@@ -81,6 +82,11 @@ export function batchParametersMenu(batchName) {
       batchDB.PaymentPlan || 3
     }]: ` || batchDB.PaymentPlan
   );
+  let AccountPaymentMethod = readLineSync.question(
+    `Payment Method: 1=Invoice, 2=Credit Card, 3=1+2 [${
+      batchDB.AccountPaymentMethod || 1
+    }]: ` || batchDB.AccountPaymentMethod
+  );
 
   return new BatchDescription(
     batchName,
@@ -122,10 +128,17 @@ export function batchParametersMenu(batchName) {
     totalMRR,
     PaymentPlan === "1"
       ? "Monthly"
-      : seatEdition === "2"
+      : PaymentPlan === "2"
       ? "Annual"
-      : seatEdition === "3"
+      : PaymentPlan === "3"
       ? undefined
-      : batchDB.PaymentPlan
+      : batchDB.PaymentPlan,
+    AccountPaymentMethod === "1"
+      ? "Invoice"
+      : AccountPaymentMethod === "2"
+      ? "Credit Card"
+      : AccountPaymentMethod === "3"
+      ? undefined
+      : batchDB.AccountPaymentMethod
   );
 }

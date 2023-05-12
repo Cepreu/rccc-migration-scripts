@@ -72,6 +72,10 @@ export class StatExport extends Export2Excel {
       },
       { Parameter: "Max Total MRR", Value: batchObj.maxTotalMRR },
       { Parameter: "Payment Plan", Value: batchObj.PaymentPlan },
+      // {
+      //   Parameter: "Account Payment Method",
+      //   Value: batchObj.AccountPaymentMethod,
+      // },
     ];
     super.appendData([{ tab: "Batch Selectors", data: batchInfo }]);
     super.appendData([{ tab: "Rules", data: Rule.GetDescriptions() }]);

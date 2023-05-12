@@ -33,6 +33,9 @@ export class BatchAccounts {
     if (this.bd.PaymentPlan) {
       wheres.push(`sf.PaymentPlan='${this.bd.PaymentPlan}'`);
     }
+    if (this.bd.AccountPaymentMethod) {
+      wheres.push(`sf.AccountPaymentMethod='${this.bd.AccountPaymentMethod}'`);
+    }
     if (this.bd.telcoProvider) {
       if (this.bd.telcoProvider === "RC") {
         wheres.push(`sf.OutboundTransport LIKE 'RC Ad-Hoc%'`);

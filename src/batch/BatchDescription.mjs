@@ -20,7 +20,8 @@ export class BatchDescription {
             ContactCenterMRR NUMBER,
             totalMRR NUMBER,
             timestamp TEXT,
-            PaymentPlan TEXT
+            PaymentPlan TEXT,
+            AccountPaymentMethod TEXT
         )
         `.replace(/\s+/g, " ")
     ).run();
@@ -42,7 +43,8 @@ export class BatchDescription {
     maxSize = 2000,
     maxContactCenterMRR = 0.0,
     maxTotalMRR = 0.0,
-    PaymentPlan = "Monthly"
+    PaymentPlan = "Monthly",
+    AccountPaymentMethod = "Invoice"
   ) {
     this.name = name;
     this.description = description;
@@ -59,6 +61,7 @@ export class BatchDescription {
     this.maxContactCenterMRR = maxContactCenterMRR;
     this.maxTotalMRR = maxTotalMRR;
     this.PaymentPlan = PaymentPlan;
+    this.AccountPaymentMethod = AccountPaymentMethod;
 
     if (saveFlag) {
       this.#saveToDB();
@@ -87,7 +90,8 @@ export class BatchDescription {
         row.maxSize,
         row.ContactCenterMRR,
         row.totalMRR,
-        row.PaymentPlan
+        row.PaymentPlan,
+        row.AccountPaymentMethod
       );
     }
     return undefined;
@@ -101,9 +105,9 @@ export class BatchDescription {
         `INSERT OR REPLACE INTO BatchDescription 
             (name, description, accSizeMin, accSizeMax, brand, telcoProvider, seatEdition, accountList, 
                 casesMin, casesMax, casesNBU, 
-                maxSize, ContactCenterMRR, totalMRR, PaymentPlan,
+                maxSize, ContactCenterMRR, totalMRR, PaymentPlan,AccountPaymentMethod,
                 timestamp)
-            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?, strftime('%Y-%m-%d %H:%M:%S','now'))`
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?, strftime('%Y-%m-%d %H:%M:%S','now'))`
       )
       .run(
         this.name,
@@ -120,7 +124,8 @@ export class BatchDescription {
         this.maxSize,
         this.maxContactCenterMRR,
         this.maxTotalMRR,
-        this.PaymentPlan
+        this.PaymentPlan,
+        this.AccountPaymentMethod
       );
     console.log(`Number of rows inserted: ${info.changes}`);
   }
