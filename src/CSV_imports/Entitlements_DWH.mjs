@@ -1,7 +1,7 @@
 import { csv2sql } from "../utils/csv2sql.mjs";
 
-export const Entitlements_DWH = (file) => {
-  const fields = [
+export const Entitlements_DWH = (csv_file) => {
+  const fieldDescs = [
     { field: "USERID", dbcolumn: "USERID" },
     { field: "ID", dbcolumn: "ID", type: "INTEGER", pkey: true },
     { field: "START_DATE", dbcolumn: "START_DATE" },
@@ -30,5 +30,5 @@ export const Entitlements_DWH = (file) => {
     { field: "RAMPUP_START", dbcolumn: "RAMPUP_START" },
     { field: "RAMPUP_END", dbcolumn: "RAMPUP_END" },
   ];
-  csv2sql("Entitlements_DWH", fields, file);
+  csv2sql({ table: "Entitlements_DWH", fieldDescs, csv_file });
 };

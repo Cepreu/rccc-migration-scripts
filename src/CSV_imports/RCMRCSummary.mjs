@@ -2,8 +2,8 @@ import { csv2sql } from "../utils/csv2sql.mjs";
 import configuration from "../../configuration.mjs";
 import { yyyymmdd } from "../utils/conversions.mjs";
 
-export const RCMRCSummary = (file) => {
-  const fields = [
+export const RCMRCSummary = (csv_file) => {
+  const fieldDescs = [
     {
       field: "Account",
       dbcolumn: "Account",
@@ -88,10 +88,10 @@ export const RCMRCSummary = (file) => {
       dbcolumn: "Amount",
     },
   ];
-  csv2sql(
-    "RCMRCSummary",
-    fields,
-    file,
-    configuration.NIC_RCMRCSUMMARY_SEP || "|"
-  );
+  csv2sql({
+    table: "RCMRCSummary",
+    fieldDescs,
+    csv_file,
+    separator: configuration.NIC_RCMRCSUMMARY_SEP || "|",
+  });
 };

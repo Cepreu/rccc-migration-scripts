@@ -2,7 +2,7 @@ import { csv2sql } from "../utils/csv2sql.mjs";
 import configuration from "../../configuration.mjs";
 
 export const CatalogNGBS = () => {
-  const fields = [
+  const fieldDescs = [
     {
       field: "L Category",
       dbcolumn: "L_CATEGORY",
@@ -36,18 +36,17 @@ export const CatalogNGBS = () => {
     { field: "Parent", dbcolumn: "PARENT_FEATURE_ID", type: "TEXT" },
   ];
   const guardFunc = (row) => row["L Category"] !== "";
-  csv2sql(
-    "CatalogNGBS",
-    fields,
-    configuration.NGBS_CATALOG,
-    ",",
+  csv2sql({
+    table: "CatalogNGBS",
+    fieldDescs,
+    csv_file: configuration.NGBS_CATALOG,
     guardFunc,
-    true
-  );
+    dropTable: true,
+  });
 };
 
 export const CatalogSFDC = () => {
-  const fields = [
+  const fieldDescs = [
     {
       field: "License Category",
       dbcolumn: "L_CATEGORY",
@@ -82,12 +81,11 @@ export const CatalogSFDC = () => {
     },
   ];
   const guardFunc = (row) => row["License Category"] !== "";
-  csv2sql(
-    "CatalogSFDC",
-    fields,
-    configuration.SFDC_CATALOG,
-    ",",
+  csv2sql({
+    table: "CatalogSFDC",
+    fieldDescs,
+    csv_file: configuration.SFDC_CATALOG,
     guardFunc,
-    true
-  );
+    dropTable: true,
+  });
 };

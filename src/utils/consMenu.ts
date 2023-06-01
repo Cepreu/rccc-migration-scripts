@@ -1,20 +1,15 @@
 import readLineSync from "readline-sync";
-
 import chalk from "chalk";
 import clear from "clear";
 import figlet from "figlet";
 
-export default function (optArr: string[], upper = false): number {
+export default function (optArr: string[], upper = false): number | undefined {
   if (upper) {
     clear();
     console.log(
       chalk.yellow(figlet.textSync("Migra-2", { horizontalLayout: "full" }))
     );
   }
-  // let prompt = optArr.map((opt, ind) => `${ind + 1}) ${opt}`).join("\n");
-  let re = new RegExp(
-    "^(" + optArr.map((opt, ind) => `${ind + 1}`).join("|") + ")$"
-  );
   let wrn = "";
   let r: string;
   do {
@@ -22,6 +17,7 @@ export default function (optArr: string[], upper = false): number {
     console.table(["(Exit)", ...optArr]);
     r = readLineSync.question("Pick an option: ");
     wrn = `ATTENTION: "${r}" is incorrect input\n`;
-  } while (r !== "0" && !re.test(r));
-  return parseInt(r) - 1;
+  } while (isNaN(r as any) || parseInt(r) > optArr.length);
+  const R = parseInt(r);
+  return R > 0 ? R - 1 : undefined;
 }

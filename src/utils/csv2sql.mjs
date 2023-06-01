@@ -4,14 +4,14 @@ import fs from "fs";
 
 import { db } from "./DBSingleton.mjs";
 
-export const csv2sql = (
+export const csv2sql = ({
   table,
   fieldDescs,
   csv_file,
   separator = ",",
   guardFunc,
-  dropTable = false
-) => {
+  dropTable = false,
+}) => {
   const crtTblFlds = fieldDescs.map(
     (x) => x.dbcolumn + " " + (x.type || "TEXT")
   );
@@ -22,7 +22,8 @@ export const csv2sql = (
   if (crtTblPKeys) crtTblFlds.push(`PRIMARY KEY(${crtTblPKeys})`);
 
   if (dropTable) {
-    db.prepare(`DROP TABLE IF EXISTS ${table}`).run();
+    db.prepare(`DROP TABLE IF EXISTS ${table}_backup`).run();
+    db.prepare(`ALTER TABLE ${table} RENAME TO ${table}_backup;`).run();
   }
   db.prepare(
     `CREATE TABLE IF NOT EXISTS ${table} (${crtTblFlds.join(",")})`

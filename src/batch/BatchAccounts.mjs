@@ -19,6 +19,13 @@ export class BatchAccounts {
       return null;
     }
     const wheres = ["sf.InContactBUID IS NOT NULL"];
+
+    // if (true) {
+    //   wheres.push(
+    //     `EXISTS (SELECT inContact_account_ID__c FROM accounts_no_orders WHERE inContact_account_ID__c=sf.EnterpriseAccountID`
+    //   );
+    // }
+
     if (this.bd.accSizeMin) {
       wheres.push(`sf."No.ofInContactSeats" >= ${this.bd.accSizeMin}`);
     }
@@ -26,17 +33,17 @@ export class BatchAccounts {
       wheres.push(`sf."No.ofInContactSeats" < ${this.bd.accSizeMax}`);
     }
     wheres.push(
-      this.bd.brand
+      this.bd.brand !== "Any"
         ? `sf.brand='${this.bd.brand}'`
         : `(sf.brand='RingCentral' OR sf.brand='RingCentral Canada')`
     );
-    if (this.bd.PaymentPlan) {
+    if (this.bd.PaymentPlan !== "Any") {
       wheres.push(`sf.PaymentPlan='${this.bd.PaymentPlan}'`);
     }
-    if (this.bd.AccountPaymentMethod) {
+    if (this.bd.AccountPaymentMethod !== "Any") {
       wheres.push(`sf.AccountPaymentMethod='${this.bd.AccountPaymentMethod}'`);
     }
-    if (this.bd.telcoProvider) {
+    if (this.bd.telcoProvider !== "Any") {
       if (this.bd.telcoProvider === "RC") {
         wheres.push(`sf.OutboundTransport LIKE 'RC Ad-Hoc%'`);
       } else if (this.bd.telcoProvider === "NiC") {
@@ -48,7 +55,7 @@ export class BatchAccounts {
         return null;
       }
     }
-    if (this.bd.seatEdition) {
+    if (this.bd.seatEdition !== "Any") {
       const inOrNot = this.bd.seatEdition === "Legacy" ? "NOT IN" : "IN";
       wheres.push(
         `sf.EnterpriseAccountID ${inOrNot} (
@@ -101,7 +108,7 @@ export class BatchAccounts {
                     SELECT * FROM BatchAccounts bi WHERE sf.EnterpriseAccountID=bi.EID
                 )
                 ${group_by_having}
-                LIMIT ${this.bd.maxSize}
+                ${this.bd.maxSize > 0 ? "LIMIT " + this.bd.maxSize : ""}
                 `
       .replace(/\s+/g, " ")
       .trim();
@@ -124,7 +131,8 @@ export class BatchAccounts {
             UID TEXT UNIQUE,
             AccountName TEXT,
             brand TEXT,
-            currency TEXT
+            currency TEXT,
+            SpendingLimit NUMBER
         )`.replace(/\s+/g, " ")
     );
     let info = stmt.run();

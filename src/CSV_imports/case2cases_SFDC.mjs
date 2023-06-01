@@ -1,8 +1,8 @@
 import date from "date-and-time";
 import { csv2sql } from "../utils/csv2sql.mjs";
 
-export const importCaseReport = (csvfile) => {
-  const fields = [
+export const importCaseReport = (csv_file) => {
+  const fieldDescs = [
     {
       field: "IC Case Number",
       dbcolumn: "ICCaseNumber",
@@ -83,5 +83,10 @@ export const importCaseReport = (csvfile) => {
     },
   ];
   const guardFunc = (row) => row["IC Case Number"] !== "";
-  csv2sql("nic_cases", fields, csvfile, ",", guardFunc);
+  csv2sql({
+    table: "nic_cases",
+    fieldDescs,
+    csv_file,
+    guardFunc,
+  });
 };

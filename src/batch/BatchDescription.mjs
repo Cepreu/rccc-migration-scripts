@@ -27,25 +27,25 @@ export class BatchDescription {
     ).run();
   }
 
-  constructor(
+  constructor({
     name,
-    description,
-    accSizeMin,
-    accSizeMax,
-    brand,
-    telcoProvider,
-    seatEdition,
+    description = "",
+    accSizeMin = 0,
+    accSizeMax = 0,
+    brand = "Any",
+    telcoProvider = "Any",
+    seatEdition = "Any",
     accountList = [],
     saveFlag = true,
     casesMin = 0,
     casesMax = 0,
     casesNBU = false,
-    maxSize = 2000,
+    maxSize = 0,
     maxContactCenterMRR = 0.0,
     maxTotalMRR = 0.0,
     PaymentPlan = "Monthly",
-    AccountPaymentMethod = "Invoice"
-  ) {
+    AccountPaymentMethod = "Invoice",
+  }) {
     this.name = name;
     this.description = description;
     this.accSizeMin = accSizeMin;
@@ -73,28 +73,26 @@ export class BatchDescription {
     const row = db
       .prepare(`SELECT * from BatchDescription WHERE name=?`)
       .get(batchName);
-    if (row) {
-      return new BatchDescription(
-        row.name,
-        row.description,
-        row.accSizeMin,
-        row.accSizeMax,
-        row.brand,
-        row.telcoProvider,
-        row.seatEdition,
-        row.accountList ? JSON.parse(row.accountList) : [],
-        false,
-        row.casesMin,
-        row.casesMax,
-        row.casesNBU === "true",
-        row.maxSize,
-        row.ContactCenterMRR,
-        row.totalMRR,
-        row.PaymentPlan,
-        row.AccountPaymentMethod
-      );
-    }
-    return undefined;
+    return row
+      ? new BatchDescription({
+          name: row.name,
+          description: row.description,
+          accSizeMin: row.accSizeMin,
+          accSizeMax: row.accSizeMax,
+          brand: row.brand,
+          telcoProvider: row.telcoProvider,
+          seatEdition: row.seatEdition,
+          accountList: row.accountList ? JSON.parse(row.accountList) : [],
+          casesMin: row.casesMin,
+          casesMax: row.casesMax,
+          casesNBU: row.casesNBU === "true",
+          maxSize: row.maxSize,
+          maxContactCenterMRR: row.ContactCenterMRR,
+          maxTotalMRR: row.totalMRR,
+          PaymentPlan: row.PaymentPlan,
+          AccountPaymentMethod: row.AccountPaymentMethod,
+        })
+      : undefined;
   }
   /////////
   #saveToDB() {
