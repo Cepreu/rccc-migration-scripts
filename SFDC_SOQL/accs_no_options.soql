@@ -1,0 +1,13 @@
+SELECT inContact_account_ID__c, RC_User_ID__c, Billing_ID__c, Id, Name, RC_Service_name__c, Account_Payment_Method__c, Payment_Plan__c, RC_Brand__c, inContact_Cluster__c, 
+    Contact_Center_Numbers_Location__c, Agent_leg_SIP_config__c, Outbound_Transport__c, Implementation_Complete_Date__c,  
+    Provision_Date__c, Bill_As_Of_Date__c, Implementation_Contact__c, No_of_InContact_Seats__c, Current_Owner__c, Current_Owner_Email__c, Current_Owner_Manager_Email__c,
+    CSM__c, InContact_Service__c, Price_per_Seat__c,  
+    BillingStreet, BillingCity, BillingState, BillingPostalCode, BillingCountry, Timezone__c, Contact_Center_Start_Date__c, Contact_Center_End_Date__c, 
+    Sales_Agreement_Start_Date__c, Sales_Agreement_End_Date__c,  
+    Total_MRR__c, MRR__c, Payment_Method__c, 
+    (SELECT Id, Type, CloseDate FROM Opportunities WHERE Type IN ('Existing Business', 'New Business') AND StageName != '0. Downgraded' ORDER BY CloseDate DESC LIMIT 1)  
+FROM Account  
+WHERE No_of_InContact_Seats__c != null AND No_of_InContact_Seats__c != 0 AND IsMultiProductTechnicalAccount__c = false  
+    AND Id NOT IN (SELECT AccountId FROM Opportunity WHERE StageName NOT IN ('0. Downgraded', '7.1. Closed Won for ProServ', '7. Closed Won'))  
+    AND Id NOT IN (SELECT AccountId FROM Order WHERE Status NOT IN ('Activated', 'Completed2', 'Project Completed', 'Completed', 'Locked', 'Revised')
+    AND RecordType.Name = 'Contact_Center')

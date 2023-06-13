@@ -13,7 +13,7 @@ export function batchParametersMenu(batchName) {
   if (batchName) {
     batchDB = BatchDescription.restoreFromDB(batchName);
   } else {
-    batchName = readLineSync.question("Batch name: ");
+    batchName = textReader("Batch name", "New batch");
     batchDB = new BatchDescription({
       name: batchName,
       saveFlag: true,
@@ -57,6 +57,15 @@ export function batchParametersMenu(batchName) {
     ["Monthly", "Annual", "Any"],
     batchDB.PaymentPlan
   );
+  let AnnualMonth = 0;
+  if (PaymentPlan === "Annual") {
+    AnnualMonth = intReader(
+      "Billing Month (1..12, or 0 for any)",
+      batchDB.AnnualMonth,
+      0,
+      12
+    );
+  }
   let AccountPaymentMethod = optioner(
     "Payment Method",
     ["Invoice", "Credit Card", "Any"],
@@ -80,5 +89,6 @@ export function batchParametersMenu(batchName) {
     maxTotalMRR,
     PaymentPlan,
     AccountPaymentMethod,
+    AnnualMonth,
   });
 }

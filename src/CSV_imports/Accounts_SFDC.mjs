@@ -100,6 +100,10 @@ export const importAccountReport = (csv_file) => {
       field: "Sales Agreement End Date",
       dbcolumn: "SalesAgreementEndDate",
     },
+    {
+      field: "Next Bill Date",
+      dbcolumn: "NextBillDate",
+    },
   ];
   //const guardFunc = (row) => row["IC Case Number"] !== "";
   csv2sql({

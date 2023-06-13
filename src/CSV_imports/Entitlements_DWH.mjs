@@ -16,11 +16,11 @@ export const Entitlements_DWH = (csv_file) => {
       dbcolumn: "DISCOUNT_VALUE",
       type: "NUMERIC",
       rowfunc: (row) =>
-        row["DISCOUNT_TYPE"] === "Currency"
-          ? row["DISCOUNT_VALUE"]
-          : Number.parseFloat(
+        row["DISCOUNT_TYPE"] === "Percentage"
+          ? Number.parseFloat(
               ((row["RETAIL_PRICE"] * row["DISCOUNT_VALUE"]) / 100).toFixed(2)
-            ),
+            )
+          : row["DISCOUNT_VALUE"],
     },
     { field: "QNTY_THRESHOLD", dbcolumn: "QNTY_THRESHOLD", type: "NUMERIC" },
     { field: "PRODUCTFAMILY", dbcolumn: "ProductFamily" },
@@ -30,5 +30,5 @@ export const Entitlements_DWH = (csv_file) => {
     { field: "RAMPUP_START", dbcolumn: "RAMPUP_START" },
     { field: "RAMPUP_END", dbcolumn: "RAMPUP_END" },
   ];
-  csv2sql({ table: "Entitlements_DWH", fieldDescs, csv_file });
+  csv2sql({ table: "Entitlements_DWH", fieldDescs, csv_file, dropTable: true });
 };
