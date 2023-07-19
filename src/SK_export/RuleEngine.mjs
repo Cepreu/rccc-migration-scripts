@@ -1,4 +1,4 @@
-import { db } from "../utils/DBSingleton.mjs";
+import { Legacy } from "./LegacyCatalog.mjs";
 const RECURRING = "Recurring";
 const OVERAGE = "Overage";
 
@@ -15,101 +15,52 @@ export class Rule {
     return this.Registered;
   }
 
-  static seatOverageMap = [];
-  static RCOTelecomLicenses = [];
-  static ASR_OVERAGE;
-  //static BUNDLE25K;
-  static seatPattern = /^307-(?!6-60[2,3]).*$|^1265.-.*$/; // 307-6-602, 307-6-603 are exclusions: the digital add-on; 1265* - new gen seats
-
-  static {
-    const catalog = db.prepare(`SELECT * FROM catalogSFDC`).all();
-    this.seatOverageMap = catalog
-      .filter((lic) => lic.PRODUCT_NAME === "Seat Overage")
-      .map((lic) => {
-        return {
-          Category: `CCL_${lic.L_CATEGORY}_${lic.No}`,
-          PARENT: lic.PARENT,
-          PRICE_USD: lic.PRICE_USD,
-          PRICE_CAD: lic.PRICE_CAD,
-          EXT_PRODUCT_ID: lic.SKU,
-        };
-      });
-
-    const telcoms = [
-      "LICIBL",
-      "LICIBTF",
-      "LICIBINT",
-      "LICOBLC",
-      "LICOBIC",
-      "LICOBDL",
-      "LICOBDINT",
-      "LICOBLTF",
-    ];
-    const assign = (l) => {
-      return {
-        Category: `CCL_${l.L_CATEGORY}_${l.No}`,
-        ITEM_NAME: l.PRODUCT_NAME,
-        USD: l.PRICE_USD,
-        CAD: l.PRICE_CAD,
-        NiCPrice: l.NIC_PRICE,
-      };
-    };
-    this.RCOTelecomLicenses = catalog
-      .filter((l) => telcoms.includes(l.L_CATEGORY))
-      .map((l) => assign(l));
-
-    const ASR = catalog.find(
+  static AddEntitlement({
+    acct,
+    sku,
+    qtty,
+    productFamily = RECURRING,
+    batchID = "",
+    correctICB = false,
+  }) {
+    const tl = Legacy.catalog.find(
       (l) =>
-        l.PRODUCT_NAME ===
-        "Contact Center: Automated Speech Recognition (per minute)"
+        l.SKU === sku &&
+        (productFamily === RECURRING
+          ? l.ProductFamily != "Overage"
+          : (l.ProductFamily = "Overage"))
     );
-    this.ASR_OVERAGE = assign(ASR);
+    if (!tl)
+      throw new Error(`${sku} - ${productFamily} was not found in the catalog`);
+    acct.ents.push({
+      ENTERPRISE_ACCOUNT_ID: acct.info.ENTERPRISE_ACCOUNT_ID,
+      EXT_PRODUCT_ID: sku,
+      Category: `CCL_${tl.L_CATEGORY}_${tl.No}`,
+      ITEM_NAME: tl.PRODUCT_NAME,
+      QNTY_THRESHOLD: qtty,
+      PRICE: acct.CURRENCY === "USD" ? tl.PRICE_USD : tl.PRICE_CAD,
+      DISCOUNT: 0,
+      NiCPrice: 0,
+      CURRENCY: acct.CURRENCY,
+      ProductFamily: productFamily,
+      batchID: batchID,
+    });
 
-    // const b25k = catalog.find(
-    //   (l) => l.PRODUCT_NAME === "Inbound Toll Free 25K Bundle"
-    // );
-    // this.BUNDLE25K = assign(b25k);
-  }
-
-  ////////////
-  static portMap = {
-    CCL_LRCCCA1SEATO_14: ["CCL_LAPRTBESO_409"],
-    CCL_LRCCCA2SEATO_67: ["CCL_LAPRTAAE2O_405", "CCL_LAPRTAAPEO_404"],
-    CCL_LRCCCACSEATO_56: ["CCL_LAPRTAAECO_403"],
-    CCL_LRCCCAPSEATO_26: ["CCL_LAPRTAAPEO_404"],
-    CCL_LRCCCBASEATO_44: ["CCL_LAPRTBESWAO_411"],
-    CCL_LRCCCBCSEATO_38: ["CCL_LAPRTABECO_400"],
-    CCL_LRCCCBSEATO_8: ["CCL_LAPRTBESO_409"],
-    CCL_LRCCCPCINUSEATO_77: ["CCL_LAPRTUPESO_413"],
-    CCL_LRCCCSEATECNO_689: ["CCL_LADTLPORTO_705"],
-    CCL_LRCCCSEATESSO_687: ["CCL_LADTLPORTO_705"],
-    CCL_LRCCCSEATPESO_695: ["CCL_LADTLPORTO_705"],
-    CCL_LRCCCSEATPSETO_697: ["CCL_LADTLPORTO_705"],
-    CCL_LRCCCSEATSCESO_693: ["CCL_LADTLPORTO_705"],
-    CCL_LRCCCSEATSESO_691: ["CCL_LADTLPORTO_705"],
-    CCL_LRCCCSEATUCESO_699: ["CCL_LADTLPORTO_705"],
-    CCL_LRCCCSEATUNCO_703: ["CCL_LADTLPORTO_705"],
-    CCL_LRCCCSEATUNLO_701: ["CCL_LADTLPORTO_705"],
-    CCL_LRCCCU2SEATO_73: ["CCL_LAPRTUESO", "CCL_LAPRTUPESO_413"],
-    CCL_LRCCCUCSEATO_61: ["CCL_LAPRTUPESO_413", "CCL_LAPRTAUECO_406"],
-    CCL_LRCCCUPSEATO_32: ["CCL_LAPRTUPESO_413"],
-    CCL_LRCCCUSEATO_20: ["CCL_LAPRTAUEO_402"],
-    CCL_LRCCSEATUESO_679: ["CCL_LADTLPORTO_705"],
-  };
-
-  static IsException(nl) {
-    const exceptions = [
-      "1561-49-000", // Service Package - CXsuccess Care Package
-      "3157-18-204", // Chat  and Email Channel - CXone Chat & Email (per Configured User)
-      "1028-171-000", // SIP Trunking Service - CXone SIP Connectivity over Internet
-      "610148-597-000", // NICE Training - IEX WFM Integrated Training
-      "610060-296-000", // "Contact Center: Instructor-Led Interactive Training (At Customer Facility; min 2"
-      "154-487-000", // SMS/MMS Setup
-      "154-493-000", // SMS/MMS Setup
-      "154-173-000", // SMS/MMS Setup
-      "141-000-000",
-    ];
-    return exceptions.includes(nl.SKU);
+    if (correctICB) {
+      acct.icb_ents.push({
+        ENTERPRISE_ACCOUNT_ID: acct.info.ENTERPRISE_ACCOUNT_ID,
+        EXT_PRODUCT_ID: sku,
+        ITEM_NAME: tl.PRODUCT_NAME,
+        QNTY_THRESHOLD: qtty,
+        RETAIL_PRICE: acct.CURRENCY === "USD" ? tl.PRICE_USD : tl.PRICE_CAD,
+        DISCOUNT_VALUE: 0,
+        NiCPrice: 0,
+        CURRENCY: acct.CURRENCY,
+        TYPE_NAME: productFamily,
+        STATUS_NAME: "Active",
+        START_DATE: "2022-06-24 10:43",
+      });
+    }
   }
 
   get name() {
@@ -140,7 +91,7 @@ class RCCheckSeats extends Rule {
   action(acct) {
     const isReccurentSeat = (ent) => {
       return (
-        Rule.seatPattern.test(ent.EXT_PRODUCT_ID) &&
+        Legacy.IsSeat(ent.EXT_PRODUCT_ID) &&
         ent.ITEM_NAME !== "Seat Overage" &&
         ent.OldQntyThreshold > 0
       );
@@ -182,7 +133,7 @@ class RCCSeatOverage extends Rule {
     );
 
     if (acct.facts.seatOverage === undefined) {
-      const SOLic = Rule.seatOverageMap.find(
+      const SOLic = Legacy.seatOverageMap.find(
         (l) => l.PARENT === strippedSeatName
       );
       if (!SOLic) {
@@ -219,7 +170,7 @@ class RCCSeatOverage extends Rule {
     acct.ents = acct.ents.filter(
       (e) =>
         !(
-          Rule.seatPattern.test(e.EXT_PRODUCT_ID) &&
+          Legacy.IsSeat(e.EXT_PRODUCT_ID) &&
           ((e.Category !== acct.facts.seatOverage.Category &&
             e.Category !== acct.facts.seat.Category) ||
             e.OldQntyThreshold == 0) &&
@@ -242,7 +193,7 @@ class RCPorts4Seats extends Rule {
   }
   action(acct) {
     return (
-      Rule.portMap.hasOwnProperty(acct.facts.seatOverage.Category) ||
+      Legacy.portMap.hasOwnProperty(acct.facts.seatOverage.Category) ||
       !acct.logError(
         this.name,
         `Unknown port2seat mapping: ${acct.facts.seatOverage.Category}`
@@ -272,7 +223,7 @@ class RCFixPorts extends Rule {
 
     const port = entPorts.find(
       (e) =>
-        !!Rule.portMap[acct.facts.seatOverage.Category].find(
+        !!Legacy.portMap[acct.facts.seatOverage.Category].find(
           (p) => p === e.Category
         )
     ); // Expected port by seat type
@@ -330,8 +281,8 @@ class C2CPorts extends Rule {
   }
   action(acct) {
     if (acct.facts.entPortLic) {
-      const casePort = acct.cases.find((c) => /^308-/.test(c.skuid));
-      if (casePort === undefined) {
+      const casePorts = acct.cases.filter((c) => /^308-/.test(c.skuid));
+      if (casePorts === undefined) {
         acct.cases.push({
           ENTERPRISE_ACCOUNT_ID: acct.info.ENTERPRISE_ACCOUNT_ID,
           accountID: acct.info.ENTERPRISE_ACCOUNT_ID,
@@ -345,15 +296,26 @@ class C2CPorts extends Rule {
           this.name,
           `C2C Port Overage license was not found. Added ${acct.facts.entPortLic.EXT_PRODUCT_ID} from Entitlements`
         );
-      } else if (casePort.skuid !== acct.facts.entPortLic.EXT_PRODUCT_ID) {
-        acct.logWarning(
-          this.name,
-          `NiC Port license ${casePort.skuid} doesn't match RC entitlements: ${acct.facts.entPortLic.EXT_PRODUCT_ID}. Action: Replaced by RC`
-        );
-        casePort.skuid = acct.facts.entPortLic.EXT_PRODUCT_ID;
+      } else {
+        casePorts.forEach((casePort) => {
+          if (
+            casePort.skuid !== acct.facts.entPortLic.EXT_PRODUCT_ID &&
+            !acct.ents.find(
+              (row) =>
+                row.EXT_PRODUCT_ID === casePort.skuid &&
+                row.ProductFamily === RECURRING
+            )
+          ) {
+            acct.logWarning(
+              this.name,
+              `NiC Port license ${casePort.skuid} doesn't match RC entitlements: ${acct.facts.entPortLic.EXT_PRODUCT_ID}. Action: Replaced by RC`
+            );
+            casePort.skuid = acct.facts.entPortLic.EXT_PRODUCT_ID;
+          }
+        });
       }
+      return true;
     }
-    return true;
   }
 }
 
@@ -410,6 +372,34 @@ class RCExtraOverages extends Rule {
               `Removed: ${e.EXT_PRODUCT_ID} ${e.ITBS_NAME} (NEEDS ATTENTION)`
             ))
         )
+    );
+    return true;
+  }
+}
+
+//////////////////
+class RCPerBUOverages extends Rule {
+  static {
+    super.Register(
+      "Remome overages  for licenses ordered per BU (as they are meaningless)"
+    );
+  }
+
+  action(acct) {
+    acct.ents = acct.ents.filter(
+      (ent) =>
+        !(
+          Legacy.IsPerBULicense(ent.EXT_PRODUCT_ID) &&
+          ent.Category === OVERAGE &&
+          acct.logWarning(
+            this.name,
+            `Removed overage of "per BU" license: ${ent.EXT_PRODUCT_ID} ${ent.ITEM_NAME}`
+          )
+        )
+    );
+    acct.icb_ents = acct.icb_ents.filter(
+      (ent) =>
+        !(Legacy.IsPerBULicense(ent.EXT_PRODUCT_ID) && ent.Category === OVERAGE)
     );
     return true;
   }
@@ -542,7 +532,7 @@ class RCNewTelco extends Rule {
     super.Register("Adds Free Domestic Telephony Licenses");
   }
   action(acct) {
-    Rule.RCOTelecomLicenses.forEach((tl) => {
+    Legacy.RCOTelecomLicenses.forEach((tl) => {
       if (acct.ents.find((e) => e.Category === tl.Category) === undefined) {
         acct.ents.push({
           ENTERPRISE_ACCOUNT_ID: acct.info.ENTERPRISE_ACCOUNT_ID,
@@ -570,69 +560,24 @@ class RCASROverage extends Rule {
     super.Register(
       "Adds the ASR Overage License - if it was originally omitted"
     );
+    this.ASR_SKU = "3615-000-000"; //Contact Center: Automated Speech Recognition (per minute)
   }
   action(acct) {
-    if (!acct.ents.find((e) => e.Category === Rule.ASR_OVERAGE.Category)) {
-      acct.ents.push({
-        ENTERPRISE_ACCOUNT_ID: acct.info.ENTERPRISE_ACCOUNT_ID,
-        EXT_PRODUCT_ID: null,
-        Category: Rule.ASR_OVERAGE.Category,
-        ITEM_NAME: Rule.ASR_OVERAGE.ITEM_NAME,
-        QNTY_THRESHOLD: 0,
-        PRICE:
-          acct.CURRENCY === "USD" ? Rule.ASR_OVERAGE.USD : Rule.ASR_OVERAGE.CAD,
-        DISCOUNT: 0,
-        NiCPrice: Rule.ASR_OVERAGE.NiCPrice,
-        CURRENCY: acct.CURRENCY,
-        ProductFamily: OVERAGE,
-        batchID: "",
+    if (!acct.ents.find((e) => e.EXT_PRODUCT_ID === RCASROverage.ASR_SKU)) {
+      Rule.AddEntitlement({
+        acct,
+        sku: RCASROverage.ASR_SKU,
+        qtty: 0,
+        productFamily: OVERAGE,
       });
-      const theIssue = `Added: ${Rule.ASR_OVERAGE.Category} ${Rule.ASR_OVERAGE.ITEM_NAME}`;
-      acct.logInfo(this.name, theIssue);
+      acct.logInfo(
+        this.name,
+        `Added: [3615-000-000] Contact Center: Automated Speech Recognition (per minute)`
+      );
     }
     return true;
   }
 }
-
-//////////////////
-// class RC25kBundles extends Rule {
-//   static {
-//     super.Register("Converts different-size toll-free bundles to 25K ones");
-//   }
-//   action(acct) {
-//     const bundlePattern =
-//       /Contact Center: (?<Mega>\d+M )?(?<Kilo>\d+K )?(Domestic )?Minutes Bundle/;
-
-//     acct.ents = acct.ents.filter(
-//       (e) =>
-//         !("ITBS_NAME" in e && e.ITBS_NAME.match(bundlePattern)) ||
-//         e.QNTY_THRESHOLD > 0 ||
-//         !acct.logInfo(this.name, `Deleted: "${e.ITBS_NAME}" with zero quantity`)
-//     );
-
-//     acct.ents
-//       .filter((e) => "ITBS_NAME" in e && e.ITBS_NAME.match(bundlePattern))
-//       .forEach((bundle) => {
-//         acct.logInfo(
-//           this.name,
-//           `Replaced: "${bundle.ITBS_NAME}" with 25K bundles`
-//         );
-
-//         const { Mega, Kilo } = bundle.ITBS_NAME.match(bundlePattern).groups;
-//         const qtty25k =
-//           (Mega ? 40 * Mega.slice(0, -2) : 0) +
-//           (Kilo ? 0.04 * Kilo.slice(0, -2) : 0);
-
-//         bundle.Category = Rule.BUNDLE25K.Category;
-//         bundle.ITEM_NAME = Rule.BUNDLE25K.ITEM_NAME;
-//         bundle.QNTY_THRESHOLD = qtty25k * bundle.QNTY_THRESHOLD;
-//         bundle.PRICE =
-//           bundle.CURRENCY === "USD" ? Rule.BUNDLE25K.USD : Rule.BUNDLE25K.CAD;
-//         bundle.DISCOUNT = bundle.PRICE - bundle.OldPrice / qtty25k;
-//       });
-//     return true;
-//   }
-// }
 
 //////////////////
 class RCFixSocMedia extends Rule {
@@ -674,13 +619,53 @@ class RCFixPrices extends Rule {
 }
 
 //////////////////
+class RCNiCDirOrdrs extends Rule {
+  static {
+    super.Register(
+      "Checks if there are licenses directly ordered from NiC - and adds them"
+    );
+  }
+
+  action(acct) {
+    acct.nics
+      .filter((nic) => Legacy.CanBeOrderedDirectly(nic.SKU))
+      .forEach((cbod) => {
+        const ent = acct.ents.find(
+          (e) => e.EXT_PRODUCT_ID === cbod.SKU && e.ProductFamily === RECURRING
+        );
+        if (ent) {
+          if (ent.QNTY_THRESHOLD < cbod.Quantity) {
+            acct.logWarning(
+              this.name,
+              `${e.EXT_PRODUCT_ID} amount increased from ${ent.QNTY_THRESHOLD} to ${cbod.Quantity} to match Monthly`
+            );
+            ent.QNTY_THRESHOLD = cbod.Quantity;
+          }
+        } else {
+          Rule.AddEntitlement({
+            acct,
+            sku: cbod.SKU,
+            qtty: cbod.Quantity,
+            correctICB: true,
+          });
+          acct.logAlarm(
+            this.name,
+            `${cbod.SKU} was added from MRC report as recurring only`
+          );
+        }
+      });
+    return true;
+  }
+}
+
+//////////////////
 class NiC_NotFound extends Rule {
   static {
     super.Register("Checks if the account is represented in Monthly");
   }
   action(acct) {
     if (acct.nics.length === 0) {
-      acct.logWarning(
+      acct.logInfo(
         ////To do: Alarm if monthly file with all ents
         this.name,
         `No records were found for the account in the Monthly file`
@@ -818,7 +803,7 @@ class NiC_MRCvsDWH extends Rule {
     acct.nics.forEach((nl) => {
       const entLic = acct.ents.find((el) => nl.SKU === el.EXT_PRODUCT_ID);
       if (entLic === undefined) {
-        if (Rule.IsException(nl)) {
+        if (Legacy.IsException(nl)) {
           acct.logAlarm(
             this.name,
             `${nl.SKU} ($${
@@ -856,7 +841,7 @@ class MRCvsC2C extends Rule {
     let rule_res = true;
     acct.nics.forEach((nl) => {
       const caseLic = acct.cases.find((cl) => nl.SKU === cl.skuid);
-      if (caseLic === undefined && Rule.IsException(nl)) {
+      if (caseLic === undefined && Legacy.IsException(nl)) {
         const entLic = acct.ents.find((el) => nl.SKU === el.EXT_PRODUCT_ID);
         if (entLic === undefined) {
           acct.logAlarm(

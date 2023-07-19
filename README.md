@@ -33,7 +33,17 @@ Most data operations are performed by scripts in this repository. However, some 
 The installed SQLite package includes a command line utility for manipulating the data in the database file. However, it is recommended to install _DB Browser for SQLite_, a free application with a user interface that greatly simplifies manual data manipulation. Please follow the link to learn more about the tool:
 https://sqlitebrowser.org/
 
-## Installation of the Scripts
+### Installation
+
+#### Clone this repo
+
+#### Install npm dependencies
+
+```
+$ npm install
+```
+
+### Config Setup
 
 Clone the directory to an appropriate directory on your computer. The package consists of the following directories:
 

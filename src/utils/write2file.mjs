@@ -112,7 +112,6 @@ export class Export2Excel {
                 .cell(excl_row, excl_col++)
                 .string("NaN")
                 .style(this.styleForData);
-              console.log("====>", data_row);
             } else {
               ws.worksheet
                 .cell(excl_row, excl_col++)

@@ -202,8 +202,8 @@ export class CaseEntitlements extends EntCollection {
       const theLic =
         obj.skuid in replacements ? replacements[obj.skuid] : obj.skuid;
 
-      const findObj = acc.find((alreadyIn) => alreadyIn.skuid === theLic);
-      if (findObj === undefined) {
+      const findInd = acc.findIndex((alreadyIn) => alreadyIn.skuid === theLic);
+      if (findInd == -1) {
         acc.push({
           accountID: obj.accountID,
           BUID: obj.BUID,
@@ -214,8 +214,12 @@ export class CaseEntitlements extends EntCollection {
           oper: obj.oper,
         });
       } else {
-        findObj.qtty += obj.qtty;
-        findObj.oper = obj.oper; // last oparation
+        acc[findInd].qtty += obj.qtty;
+        acc[findInd].oper = obj.oper; // last oparation
+        if (acc[findInd].qtty == 0) {
+          acc.splice(findInd, 1); // remove 0-qtty record if the license was removed
+          console.log("Removed ", obj.skuid);
+        }
       }
       return acc;
     }, []);
