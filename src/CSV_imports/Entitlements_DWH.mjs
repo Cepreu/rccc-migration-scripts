@@ -13,7 +13,7 @@ export const Entitlements_DWH = (csv_file) => {
     { field: "ITEM_NAME", dbcolumn: "ITEM_NAME" },
     { field: "RETAIL_PRICE", dbcolumn: "RETAIL_PRICE", type: "NUMERIC" },
     {
-      dbcolumn: "DISCOUNT_VALUE",
+      dbcolumn: "DISCOUNT",
       type: "NUMERIC",
       rowfunc: (row) =>
         row["DISCOUNT_TYPE"] === "Percentage"
@@ -22,6 +22,8 @@ export const Entitlements_DWH = (csv_file) => {
             )
           : row["DISCOUNT_VALUE"],
     },
+    { field: "DISCOUNT_TYPE", dbcolumn: "DISCOUNT_TYPE" },
+    { field: "DISCOUNT_VALUE", dbcolumn: "DISCOUNT_VALUE", type: "NUMERIC" },
     { field: "QNTY_THRESHOLD", dbcolumn: "QNTY_THRESHOLD", type: "NUMERIC" },
     { field: "PRODUCTFAMILY", dbcolumn: "ProductFamily" },
     { field: "STATUS_NAME", dbcolumn: "STATUS_NAME" },

@@ -86,7 +86,9 @@ export function prepareBatchFiles(batchName, billingMonth) {
       e.EXT_PRODUCT_ID,
       e.ITEM_NAME,
       e.RETAIL_PRICE,
+      e.DISCOUNT_TYPE,
       e.DISCOUNT_VALUE,
+      e.DISCOUNT,
       e.QNTY_THRESHOLD,
       e.ProductFamily AS TYPE_NAME,
       e.STATUS_NAME

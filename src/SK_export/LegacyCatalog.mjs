@@ -14,6 +14,8 @@ export class Legacy {
     "LICOBLTF",
   ];
 
+  static ASR_SKU = "3615-000-000"; //Contact Center: Automated Speech Recognition (per minute)
+
   static portMap = {
     CCL_LRCCCA1SEATO_14: ["CCL_LAPRTBESO_409"],
     CCL_LRCCCA2SEATO_67: ["CCL_LAPRTAAE2O_405", "CCL_LAPRTAAPEO_404"],
@@ -39,6 +41,13 @@ export class Legacy {
     CCL_LRCCSEATUESO_679: ["CCL_LADTLPORTO_705"],
   };
 
+  static IsProServOnDemand(sku) {
+    const ProServOnDemand = [
+      "610064-000-000", //PS OnDemand
+      "610064-302-000", //PS OnDemand - Professional Services On Demand
+    ];
+    return ProServOnDemand.includes(sku);
+  }
   static IsException(nl) {
     const exceptions = [
       "1561-49-000", // Service Package - CXsuccess Care Package
@@ -83,6 +92,15 @@ export class Legacy {
   static IsSeat(skuID) {
     const seatPattern = /^307-(?!6-60[2,3]).*$|^1265.-.*$/; // 307-6-602, 307-6-603 are exclusions: the digital add-on; 1265* - new gen seats
     return seatPattern.test(skuID);
+  }
+
+  static IsByBusinessUnit(sku) {
+    const ByBusinesUnitLics = ["1301-994-000", "1032-173-000"];
+    return ByBusinesUnitLics.includes(sku);
+  }
+  static IsTelcoLic(sku) {
+    const TelcoLics = ["3875-1292-000", "3875-1290-000", "3875-1289-000"];
+    return TelcoLics.includes(sku);
   }
 
   static {

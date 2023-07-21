@@ -53,7 +53,9 @@ export class Rule {
         ITEM_NAME: tl.PRODUCT_NAME,
         QNTY_THRESHOLD: qtty,
         RETAIL_PRICE: acct.CURRENCY === "USD" ? tl.PRICE_USD : tl.PRICE_CAD,
+        DISCOUNT: 0,
         DISCOUNT_VALUE: 0,
+        DISCOUNT_TYPE: "Percentage",
         NiCPrice: 0,
         CURRENCY: acct.CURRENCY,
         TYPE_NAME: productFamily,
@@ -350,8 +352,7 @@ class RCExtraOverages extends Rule {
             (!acct.facts.entPortLic ||
               e.Category !== acct.facts.entPortLic.Category) &&
             e.Category !== "LASRO" &&
-            e.EXT_PRODUCT_ID !== "610064-000-000" && //PS OnDemand
-            e.EXT_PRODUCT_ID !== "610064-302-000" && //PS OnDemand - Professional Services On Demand
+            !Legacy.IsProServOnDemand(e.EXT_PRODUCT_ID) &&
             !acct.cases.find(
               (c) =>
                 c.skuid === e.EXT_PRODUCT_ID && (c.qtty > 0 || c.oper === "ADD")
@@ -364,9 +365,7 @@ class RCExtraOverages extends Rule {
               } ${e.ITBS_NAME}`
             )) ||
           (e.ProductFamily === OVERAGE &&
-            ["3875-1292-000", "3875-1290-000", "3875-1289-000"].includes(
-              e.EXT_PRODUCT_ID
-            ) &&
+            Legacy.IsTelcoLic(e.EXT_PRODUCT_ID) &&
             acct.logAlarm(
               this.name,
               `Removed: ${e.EXT_PRODUCT_ID} ${e.ITBS_NAME} (NEEDS ATTENTION)`
@@ -560,13 +559,12 @@ class RCASROverage extends Rule {
     super.Register(
       "Adds the ASR Overage License - if it was originally omitted"
     );
-    this.ASR_SKU = "3615-000-000"; //Contact Center: Automated Speech Recognition (per minute)
   }
   action(acct) {
-    if (!acct.ents.find((e) => e.EXT_PRODUCT_ID === RCASROverage.ASR_SKU)) {
+    if (!acct.ents.find((e) => e.EXT_PRODUCT_ID === Legacy.ASR_SKU)) {
       Rule.AddEntitlement({
         acct,
-        sku: RCASROverage.ASR_SKU,
+        sku: Legacy.ASR_SKU,
         qtty: 0,
         productFamily: OVERAGE,
       });
@@ -907,7 +905,7 @@ class QntyVsThrsh extends Rule {
   }
   action(acct) {
     let isOK = true;
-    const LicsByBusinessUnit = ["1301-994-000", "1032-173-000"];
+
     acct.ents
       .filter(
         (row) => row.ProductFamily === RECURRING && row.EXT_PRODUCT_ID !== null
@@ -921,7 +919,7 @@ class QntyVsThrsh extends Rule {
         );
         if (overage) {
           const msg = `${r.EXT_PRODUCT_ID} ${r.ITBS_NAME} - Recurring qnty (${r.OldQntyThreshold}) is not equal to overage (${overage.OldQntyThreshold}) - NEEDS ATTENTION!`;
-          if (LicsByBusinessUnit.includes(r.EXT_PRODUCT_ID)) {
+          if (Legacy.IsByBusinessUnit(r.EXT_PRODUCT_ID)) {
             acct.logWarning(this.name, msg);
           } else {
             acct.logAlarm(this.name, msg);
