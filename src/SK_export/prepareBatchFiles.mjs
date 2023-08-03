@@ -90,6 +90,7 @@ export function prepareBatchFiles(batchName, billingMonth) {
       e.DISCOUNT_VALUE,
       e.DISCOUNT,
       e.QNTY_THRESHOLD,
+      e.MDURATION,
       e.ProductFamily AS TYPE_NAME,
       e.STATUS_NAME
     FROM Entitlements_DWH e	

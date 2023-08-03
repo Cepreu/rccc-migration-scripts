@@ -1,21 +1,33 @@
-<?xml version="1.0" encoding="UTF-8"?><sqlb_project><db path="/Users/sergiy.krupnov/WORK/DATA/E2E.db" readonly="0" foreign_keys="" case_sensitive_like="" temp_store="" wal_autocheckpoint="" synchronous=""/><attached/><window><main_tabs open="structure browser pragmas query" current="3"/></window><tab_structure><column_width id="0" width="300"/><column_width id="1" width="0"/><column_width id="2" width="100"/><column_width id="3" width="4758"/><column_width id="4" width="0"/></tab_structure><tab_browse><current_table name="0,0:"/><default_encoding codec=""/><browse_table_settings/></tab_browse><tab_sql><sql name="SQL 1">DELETE from invoiceLines;</sql><sql name="SQL 1">select distinct EnterpriseAccountID 
-from accounts_sfdc,nic_cases,Entitlements_DWH 
-where accounts_sfdc.EnterpriseAccountID =  nic_cases.UID
-and Entitlements_DWH.USERID=accounts_sfdc.EnterpriseAccountID
-and accounts_sfdc.inContactBUID is not null
-order by EnterpriseAccountID
+<?xml version="1.0" encoding="UTF-8"?><sqlb_project><db path="/Users/sergiy.krupnov/WORK/DATA/migra.db" readonly="0" foreign_keys="1" case_sensitive_like="0" temp_store="0" wal_autocheckpoint="1000" synchronous="2"/><attached/><window><main_tabs open="structure browser pragmas query" current="1"/></window><tab_structure><column_width id="0" width="300"/><column_width id="1" width="0"/><column_width id="2" width="100"/><column_width id="3" width="5299"/><column_width id="4" width="0"/><expanded_item id="0" parent="1"/><expanded_item id="1" parent="1"/><expanded_item id="2" parent="1"/><expanded_item id="3" parent="1"/></tab_structure><tab_browse><current_table name="4,13:mainBatchAccounts"/><default_encoding codec=""/><browse_table_settings><table schema="main" name="BatchAccounts" show_row_id="0" encoding="" plot_x_axis="" unlock_view_pk="_rowid_"><sort/><column_widths><column index="1" value="109"/><column index="2" value="84"/><column index="3" value="77"/><column index="4" value="58"/><column index="5" value="300"/><column index="6" value="107"/><column index="7" value="54"/><column index="8" value="83"/></column_widths><filter_values><column index="2" value="63140297028"/></filter_values><conditional_formats/><row_id_formats/><display_formats/><hidden_columns/><plot_y_axes/><global_filter/></table><table schema="main" name="BatchDescription" show_row_id="0" encoding="" plot_x_axis="" unlock_view_pk="_rowid_"><sort/><column_widths><column index="1" value="109"/><column index="2" value="230"/><column index="3" value="68"/><column index="4" value="70"/><column index="5" value="39"/><column index="6" value="78"/><column index="7" value="66"/><column index="8" value="300"/><column index="9" value="57"/><column index="10" value="59"/><column index="11" value="61"/><column index="12" value="53"/><column index="13" value="107"/><column index="14" value="55"/><column index="15" value="118"/><column index="16" value="76"/><column index="17" value="135"/><column index="18" value="77"/></column_widths><filter_values/><conditional_formats/><row_id_formats/><display_formats/><hidden_columns/><plot_y_axes/><global_filter/></table><table schema="main" name="CatalogSFDC" show_row_id="0" encoding="" plot_x_axis="" unlock_view_pk="_rowid_"><sort/><column_widths><column index="1" value="32"/><column index="2" value="117"/><column index="3" value="355"/><column index="4" value="128"/><column index="5" value="300"/><column index="6" value="69"/><column index="7" value="69"/><column index="8" value="97"/><column index="9" value="404"/><column index="10" value="65"/><column index="11" value="73"/></column_widths><filter_values><column index="8" value="510-1337-000"/></filter_values><conditional_formats/><row_id_formats/><display_formats/><hidden_columns/><plot_y_axes/><global_filter/></table><table schema="main" name="Entitlements_DWH" show_row_id="0" encoding="" plot_x_axis="" unlock_view_pk="_rowid_"><sort><column index="8" mode="0"/></sort><column_widths><column index="1" value="82"/><column index="2" value="56"/><column index="3" value="105"/><column index="4" value="65"/><column index="5" value="77"/><column index="6" value="97"/><column index="8" value="104"/><column index="9" value="358"/><column index="10" value="82"/><column index="11" value="64"/><column index="12" value="97"/><column index="13" value="103"/><column index="14" value="108"/><column index="15" value="84"/><column index="16" value="85"/><column index="17" value="72"/><column index="18" value="104"/><column index="19" value="103"/><column index="20" value="103"/></column_widths><filter_values><column index="1" value="63140297028"/><column index="8" value="510-1337-000"/></filter_values><conditional_formats/><row_id_formats/><display_formats/><hidden_columns/><plot_y_axes/><global_filter/></table><table schema="main" name="nic_case_items" show_row_id="0" encoding="" plot_x_axis="" unlock_view_pk="_rowid_"><sort><column index="5" mode="0"/></sort><column_widths><column index="1" value="82"/><column index="2" value="57"/><column index="3" value="96"/><column index="4" value="58"/><column index="5" value="177"/><column index="6" value="392"/><column index="7" value="45"/><column index="8" value="47"/></column_widths><filter_values><column index="6" value="NICE inContact CXone PCI Level 1 ACD / IVR (per Configured Station)"/></filter_values><conditional_formats/><row_id_formats/><display_formats/><hidden_columns/><plot_y_axes/><global_filter/></table><table schema="main" name="nic_cases" show_row_id="0" encoding="" plot_x_axis="" unlock_view_pk="_rowid_"><sort/><column_widths><column index="1" value="85"/><column index="2" value="84"/><column index="3" value="83"/><column index="4" value="128"/><column index="5" value="300"/><column index="6" value="79"/><column index="7" value="113"/><column index="8" value="75"/><column index="9" value="300"/><column index="10" value="114"/><column index="11" value="80"/><column index="12" value="83"/><column index="14" value="300"/><column index="15" value="107"/><column index="16" value="115"/><column index="17" value="118"/><column index="18" value="125"/><column index="19" value="64"/><column index="20" value="300"/><column index="21" value="73"/><column index="22" value="118"/></column_widths><filter_values><column index="8" value="14366286"/></filter_values><conditional_formats/><row_id_formats/><display_formats/><hidden_columns/><plot_y_axes/><global_filter/></table></browse_table_settings></tab_browse><tab_sql><sql name="SQL 1">SELECT accountID, BUID, SUBSTR(nic_cases.Subject, 1, 16) AS subject, nic_cases.ProvisionDate, sfdcCase, operation AS oper, skuid, sku, qtty, price 
+FROM nic_cases, nic_case_items WHERE nic_cases.UID='2300160005' AND nic_cases.CaseNumber=sfdcCase ORDER BY ProvisionDate DESC, cast(skuid as INTEGER) 
 ;
--- 66211251004
--- 66428196004
--- 66843468004
--- 66853797004
--- 66856519004
--- 66872579004
--- 66877031004
--- 66880880004
--- 67850722004
--- 67850963004
--- 67934606004
+INSERT INTO &quot;main&quot;.&quot;nic_cases&quot; (&quot;ICCaseNumber&quot;, &quot;inContactBUID&quot;, &quot;UID&quot;, &quot;AccountName&quot;, &quot;Subject&quot;, &quot;OrderNumber&quot;, &quot;OrderID&quot;, &quot;CaseNumber&quot;, &quot;Description&quot;, &quot;SubmittedDate&quot;, &quot;ProvisionDate&quot;, &quot;OrderType&quot;, &quot;Status&quot;, &quot;OpportunityName&quot;, &quot;Brand&quot;, &quot;NoOfInContactSeats&quot;, &quot;ImplementationTeam&quot;, &quot;ContactCenterNumber&quot;, &quot;GeoRegion&quot;, &quot;DefaultTimeZone&quot;, &quot;CreatedDate&quot;, &quot;DBInserted&quot;) VALUES ('68776385004', '68776385004', '68776385004', 'UAT_68776385004', 'NBU SITQTC227SC38', '68776385004', '68776385004', '68776385004', 'ADD PRODUCTS: 
+24.00[307-6-271] CXone Advanced Edition seat  $48.00
+34.00[12657-1726-000] CXone Premium-Concurrent Edition Seat (3 ports) $45.00
 
+SERVICES:
+1.00[1561-49-000] - CXsuccess Care Package $0.00
 
-delete from nic_case_items;</sql><current_tab id="0"/></tab_sql></sqlb_project>
+NOTES:
+Platform - UserHub
+Manual Outbound Transport - RingCentral
+Implementation ACD/IVR - RingCentral
+
+Test order only.
+
+TELECOM CHARGES:
+12619-328-000-XX Domestic Toll-Free Number - Setup $0.50
+1051-371-000-XX Domestic Toll-Free Number - Account Activation $0.00
+1270-136-000 Domestic Toll-Free Number - Monthly Recurring Charge $0.40
+DOM_TF_FLAT_48INTRA_MIN Domestic Toll-Free Number - Flat Per-minute (Intrastate for 48 States) $0.008
+DOM_TF_FLAT_INTER_MIN Domestic Toll-Free Number - Flat Per-minute (Interstate) $0.008
+12619-333-000 Domestic Local Number - Setup $0.00
+1051-372-000-XX Domestic Local Number - Account Activation $0.00
+1012-150-000 Domestic Local Number - Monthly Recurring Charge $0.40
+DOM_LN_MIN Domestic Local Number - Per-minute Charge $0.008
+DOM_TERM_FLAT_INTER_MIN Domestic Termination - Flat Per-minute (Interstate) $0.008
+DOM_TERM_FLAT_48INTRA_MIN Domestic Termination - Flat Standard Per-minute (Intrastate for 48 States) $0.008', '7/26/2023 3:23 AM', '', 'Up-sell', 'Submitted', 'SIT_68776385004', 'RingCentral', '', 'RingCentral', '12024658236', 'US', '(GMT-08:00) Pacific Time (US &amp; Canada)', '2023-07-31', '2023-07-31');
+
+INSERT INTO nic_case_items ( accountID, BUID, sfdcCase, operation, skuid, sku, qtty, price ) VALUES 
+	( &quot;68776385004&quot;, &quot;68776385004&quot;, &quot;68776385004&quot;, &quot;ADD&quot;, &quot;307-6-271&quot;, &quot;CXone Advanced Edition seat&quot;, 24.00, 48.00 ),
+	( &quot;68776385004&quot;, &quot;68776385004&quot;, &quot;68776385004&quot;, &quot;ADD&quot;, &quot;12657-1726-000&quot;, &quot;CXone Premium-Concurrent Edition Seat (3 ports)&quot;, 34.00, 45.00 );</sql><current_tab id="0"/></tab_sql></sqlb_project>

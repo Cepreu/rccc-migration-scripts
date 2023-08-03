@@ -6,7 +6,6 @@ import {
 import { write2excel } from "../utils/write2file.mjs";
 import { Logger } from "./Logger.mjs";
 import { Invoice } from "./Invoice.mjs";
-//import { BatchAccounts } from "../batch/BatchAccounts.mjs";
 
 export class Account {
   static statExport;
@@ -27,7 +26,19 @@ export class Account {
     this.nicEntsMRS = new NiCEntitlements(nics);
     this.batchName = batchName;
     this.raw_ents = raw_ents;
+
     this.icb_ents = JSON.parse(JSON.stringify(raw_ents));
+    if (this.info.BILLING_TERM === "Monthly") {
+      this.icb_ents.forEach((ent) => {
+        if (ent.MDURATION == 12 && ent.TYPE_NAME === "Recurring") {
+          ent.RETAIL_PRICE /= 12.0;
+          ent.DISCOUNT /= 12.0;
+          if (ent.DISCOUNT_TYPE === "Currency") {
+            ent.DISCOUNT_VALUE /= 12.0;
+          }
+        }
+      });
+    }
 
     this.info.VALID = true;
     this.logger = new Logger(this.info.ENTERPRISE_ACCOUNT_ID);

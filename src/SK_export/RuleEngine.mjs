@@ -635,7 +635,7 @@ class RCNiCDirOrdrs extends Rule {
           if (ent.QNTY_THRESHOLD < cbod.Quantity) {
             acct.logWarning(
               this.name,
-              `${e.EXT_PRODUCT_ID} amount increased from ${ent.QNTY_THRESHOLD} to ${cbod.Quantity} to match Monthly`
+              `${ent.EXT_PRODUCT_ID} amount increased from ${ent.QNTY_THRESHOLD} to ${cbod.Quantity} to match Monthly`
             );
             ent.QNTY_THRESHOLD = cbod.Quantity;
           }
@@ -944,6 +944,7 @@ class EntsVsCases extends Rule {
         (ent) =>
           !!ent.EXT_PRODUCT_ID &&
           ent.ProductFamily === RECURRING &&
+          !Legacy.CanBeOrderedDirectly(ent.EXT_PRODUCT_ID) &&
           !acct.cases.find((c) => c.skuid === ent.EXT_PRODUCT_ID)
       )
       .forEach((re) => {

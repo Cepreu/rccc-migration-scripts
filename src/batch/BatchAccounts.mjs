@@ -137,8 +137,8 @@ export class BatchAccounts {
     );
     let info = stmt.run();
 
-    stmt = db.prepare(`DELETE FROM BatchAccounts WHERE batchID=?`);
-    info = stmt.run(this.bd.name);
+    stmt = db.prepare(`DELETE FROM BatchAccounts WHERE batchID=? OR batchID=?`);
+    info = stmt.run(this.bd.name, `___${this.bd.name}`);
     console.log(`BatchAccounts. Number of rows deleted: ${info.changes}`);
 
     // stmt = db.prepare(`DELETE FROM BatchEntitlements WHERE batchID=?`);
