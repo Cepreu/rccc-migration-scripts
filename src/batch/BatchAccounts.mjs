@@ -97,7 +97,8 @@ export class BatchAccounts {
             SELECT 
                 '${
                   this.bd.name
-                }', sf.EnterpriseAccountID, sf.BillingID, sf.inContactBUID, sf.AccountName, sf.brand, sf.PriceperseatCurrency, 
+                }', sf.EnterpriseAccountID, sf.BillingID, sf.inContactBUID, sf.AccountName, sf.brand, 
+                CASE sf.brand WHEN 'RingCentral' THEN 'USD' WHEN 'RingCentral Canada' THEN 'CAD' ELSE sf.PriceperseatCurrency END,
                 ${BatchAccounts.defaultSpendingLimit}
             FROM 
                 accounts_sfdc sf

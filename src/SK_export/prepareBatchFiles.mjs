@@ -24,7 +24,7 @@ export function prepareBatchFiles(batchName, billingMonth) {
       b.batchID, 
       1210 AS ACCT_BRANDID,
       a.Brand AS BRANDNAME,
-      PriceperSeatCurrency AS CURRENCY,
+      CASE a.brand WHEN 'RingCentral' THEN 'USD' WHEN 'RingCentral Canada' THEN 'CAD' ELSE PriceperSeatCurrency END AS CURRENCY,
       a.inContactBUID AS INCONTACT_BUID,
       '' AS PACKAGE_ID,
       PaymentPlan AS BILLING_TERM,
