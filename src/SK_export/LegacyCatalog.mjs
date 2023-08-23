@@ -79,15 +79,25 @@ export class Legacy {
 
   static CanBeOrderedDirectly(skuID) {
     return [
-      //     please make sure these items do not have any usage or overages:
+      //During migration all such items should be added from MRC report as recurring only to NGBS
+      "1010-000-000", // Contact Center: Int'l Local Number Call Path Bundle
+      "1012-150-000", // Contact Center: US Local Number
       "1036-000-000", // Contact Center: TollFree Number Call Path Bundle
       "1268-000-000", // Contact Center: International Toll Free
       "1268-133-000", // Contact Center: International Toll Free - Global Toll Free Select
       "1270-136-000", // Contact Center: US Toll Free Number
       "1290-000-000", // Contact Center: Calling Name (CNAM) per US Local Number
-      //During migration all such items should be added from MRC report as recurring only to NGBS
+      "3875-1296-000", // Contact Center: Textel - Long Code
+      "1301-994-000", //  Contact Center: Messaging Application (per BU)
     ].includes(skuID);
   }
+
+  static PriceExceptions = [
+    "307-6-271", //Seat Overage
+    "309-1499-000", //Contact Center: Active Storage (per GB) Overage
+    "309-565-000", //Contact Center: Monthly Long-term Storage (per GB)
+    "309-566-000", //Contact Center: Monthly Long-term Storage Retrieval (per GB)
+  ];
 
   static IsSeat(skuID) {
     const seatPattern = /^307-(?!6-60[2,3]).*$|^1265.-.*$/; // 307-6-602, 307-6-603 are exclusions: the digital add-on; 1265* - new gen seats

@@ -86,8 +86,12 @@ export function prepareBatchFiles(batchName, billingMonth) {
       e.EXT_PRODUCT_ID,
       e.ITEM_NAME,
       e.RETAIL_PRICE,
-      e.DISCOUNT_TYPE,
-      e.DISCOUNT_VALUE,
+      ${
+        configuration.PERCENTAGE_TO_CURRENCY ? "'Currency'" : "e.DISCOUNT_TYPE"
+      } AS DISCOUNT_TYPE,
+      ${
+        configuration.PERCENTAGE_TO_CURRENCY ? "e.DISCOUNT" : "e.DISCOUNT_VALUE"
+      } AS DISCOUNT_VALUE,
       e.DISCOUNT,
       e.QNTY_THRESHOLD,
       e.MDURATION,

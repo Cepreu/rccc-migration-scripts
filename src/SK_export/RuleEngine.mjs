@@ -55,13 +55,40 @@ export class Rule {
         RETAIL_PRICE: acct.CURRENCY === "USD" ? tl.PRICE_USD : tl.PRICE_CAD,
         DISCOUNT: 0,
         DISCOUNT_VALUE: 0,
-        DISCOUNT_TYPE: "Percentage",
+        DISCOUNT_TYPE: "Currency",
         NiCPrice: 0,
         CURRENCY: acct.CURRENCY,
         TYPE_NAME: productFamily,
         STATUS_NAME: "Active",
         START_DATE: "2022-06-24 10:43",
       });
+    }
+  }
+
+  static FixPrice(acct, ent) {
+    const tl = Legacy.catalog.find(
+      (l) =>
+        l.SKU === ent.EXT_PRODUCT_ID &&
+        (ent.productFamily === RECURRING
+          ? l.ProductFamily != "Overage"
+          : (l.ProductFamily = "Overage"))
+    );
+    if (!tl)
+      throw new Error(
+        `${ent.EXT_PRODUCT_ID} - ${ent.productFamily} was not found in the catalog`
+      );
+
+    ent.PRICE = acct.CURRENCY === "USD" ? tl.PRICE_USD : tl.PRICE_CAD;
+    ent.DISCOUNT = 0;
+
+    const icb_ent = acct.icb_ents.find(
+      (icb) =>
+        icb.EXT_PRODUCT_ID === ent.EXT_PRODUCT_ID &&
+        icb.productFamily === ent.productFamily
+    );
+    if (icb_ent) {
+      icb_ent.RETAIL_PRICE = ent.PRICE;
+      icb_ent.DISCOUNT = ent.DISCOUNT;
     }
   }
 
@@ -389,7 +416,7 @@ class RCPerBUOverages extends Rule {
       (ent) =>
         !(
           Legacy.IsPerBULicense(ent.EXT_PRODUCT_ID) &&
-          ent.Category === OVERAGE &&
+          ent.ProductFamily === OVERAGE &&
           acct.logWarning(
             this.name,
             `Removed overage of "per BU" license: ${ent.EXT_PRODUCT_ID} ${ent.ITEM_NAME}`
@@ -398,7 +425,10 @@ class RCPerBUOverages extends Rule {
     );
     acct.icb_ents = acct.icb_ents.filter(
       (ent) =>
-        !(Legacy.IsPerBULicense(ent.EXT_PRODUCT_ID) && ent.Category === OVERAGE)
+        !(
+          Legacy.IsPerBULicense(ent.EXT_PRODUCT_ID) &&
+          ent.ProductFamily === OVERAGE
+        )
     );
     return true;
   }
@@ -646,7 +676,7 @@ class RCNiCDirOrdrs extends Rule {
             qtty: cbod.Quantity,
             correctICB: true,
           });
-          acct.logAlarm(
+          acct.logWarning(
             this.name,
             `${cbod.SKU} was added from MRC report as recurring only`
           );
@@ -681,14 +711,25 @@ class RCNegDiscounts extends Rule {
     );
   }
   action(acct) {
+    let ok = true;
     const negs = acct.ents.filter((e) => e.DISCOUNT < 0);
     negs.forEach((neg) => {
-      acct.logError(
-        this.name,
-        `Negative discount ${neg.DISCOUNT} for: ${neg.EXT_PRODUCT_ID} ${neg.ITEM_NAME}`
-      );
+      if (Legacy.PriceExceptions.includes(neg.EXT_PRODUCT_ID)) {
+        acct.logAlarm(
+          this.name,
+          `Negative discount ${neg.DISCOUNT} for: ${neg.EXT_PRODUCT_ID} ${neg.ITEM_NAME} => Known issue, Replaced by Catalog price`
+        );
+        Rule.FixPrice(acct, neg);
+      } else {
+        ok = false;
+        acct.logError(
+          this.name,
+          `Negative discount ${neg.DISCOUNT} for: ${neg.EXT_PRODUCT_ID} ${neg.ITEM_NAME}`
+        );
+      }
     });
-    return negs.length === 0;
+
+    return ok;
   }
 }
 
@@ -919,7 +960,10 @@ class QntyVsThrsh extends Rule {
         );
         if (overage) {
           const msg = `${r.EXT_PRODUCT_ID} ${r.ITBS_NAME} - Recurring qnty (${r.OldQntyThreshold}) is not equal to overage (${overage.OldQntyThreshold}) - NEEDS ATTENTION!`;
-          if (Legacy.IsByBusinessUnit(r.EXT_PRODUCT_ID)) {
+          if (
+            Legacy.IsByBusinessUnit(r.EXT_PRODUCT_ID) ||
+            Legacy.CanBeOrderedDirectly(r.EXT_PRODUCT_ID)
+          ) {
             acct.logWarning(this.name, msg);
           } else {
             acct.logAlarm(this.name, msg);
