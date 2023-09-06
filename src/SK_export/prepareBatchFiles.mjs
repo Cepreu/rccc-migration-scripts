@@ -3,7 +3,8 @@ import { db } from "../utils/DBSingleton.mjs";
 import { StatExport } from "./StatExport.mjs";
 import { ICBExport } from "./ICBExport.mjs";
 import { Account } from "./Account.mjs";
-import { NiCEntitlements, CaseEntitlements } from "./entitlements.mjs";
+import { NiCEntitlements } from "./entitlements.mjs";
+import { CaseEntitlements } from "./entC2C.mjs";
 import { RuleEngine } from "./RuleEngine.mjs";
 
 const ruleEngine = new RuleEngine();
@@ -41,10 +42,13 @@ export function prepareBatchFiles(batchName, billingMonth) {
       a.CCStartDate,
       a.CCEndDate,
       a.SalesAgreementStartDate,
-      a.SalesAgreementEndDate
+      a.SalesAgreementEndDate,
+      c.email,
+      c.phone
   FROM accounts_sfdc a
     INNER JOIN BatchAccounts b ON b.EID = EnterpriseAccountID
     INNER JOIN nic_cases nic ON nic.UID = EnterpriseAccountID
+    LEFT JOIN account_contact_info c ON c.EID=EnterpriseAccountID
   WHERE b.batchID=?
   GROUP BY EnterpriseAccountID  
   `.replace(/\s+/g, " ")

@@ -1,8 +1,5 @@
-import {
-  NgbsEntitlements,
-  NiCEntitlements,
-  CaseEntitlements,
-} from "./entitlements.mjs";
+import { NgbsEntitlements, NiCEntitlements } from "./entitlements.mjs";
+import { CaseEntitlements } from "./entC2C.mjs";
 import { write2excel } from "../utils/write2file.mjs";
 import { Logger } from "./Logger.mjs";
 import { Invoice } from "./Invoice.mjs";

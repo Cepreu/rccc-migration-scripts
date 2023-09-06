@@ -23,7 +23,13 @@ export const csv2sql = ({
 
   if (dropTable) {
     db.prepare(`DROP TABLE IF EXISTS ${table}_backup`).run();
-    db.prepare(`ALTER TABLE ${table} RENAME TO ${table}_backup;`).run();
+    if (
+      db
+        .prepare(`SELECT name FROM sqlite_master WHERE type='table' AND name=?`)
+        .all(table).length > 0
+    ) {
+      db.prepare(`ALTER TABLE ${table} RENAME TO ${table}_backup;`).run();
+    }
   }
   db.prepare(
     `CREATE TABLE IF NOT EXISTS ${table} (${crtTblFlds.join(",")})`

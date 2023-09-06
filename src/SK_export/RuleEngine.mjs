@@ -61,6 +61,7 @@ export class Rule {
         TYPE_NAME: productFamily,
         STATUS_NAME: "Active",
         START_DATE: "2022-06-24 10:43",
+        BILLING_ITEM_ID: "1",
       });
     }
   }
@@ -412,24 +413,20 @@ class RCPerBUOverages extends Rule {
   }
 
   action(acct) {
-    acct.ents = acct.ents.filter(
-      (ent) =>
-        !(
-          Legacy.IsPerBULicense(ent.EXT_PRODUCT_ID) &&
-          ent.ProductFamily === OVERAGE &&
-          acct.logWarning(
-            this.name,
-            `Removed overage of "per BU" license: ${ent.EXT_PRODUCT_ID} ${ent.ITEM_NAME}`
-          )
+    const cond = (ent) =>
+      !(
+        Legacy.IsPerBULicense(ent.EXT_PRODUCT_ID) &&
+        (ent.ProductFamily || ent.TYPE_NAME) === OVERAGE &&
+        acct.logWarning(
+          this.name,
+          `Removed overage of "per BU" license: ${ent.EXT_PRODUCT_ID} ${
+            ent.ITEM_NAME || ent.ITBS_NAME
+          }`
         )
-    );
-    acct.icb_ents = acct.icb_ents.filter(
-      (ent) =>
-        !(
-          Legacy.IsPerBULicense(ent.EXT_PRODUCT_ID) &&
-          ent.ProductFamily === OVERAGE
-        )
-    );
+      );
+
+    acct.ents = acct.ents.filter(cond);
+    acct.icb_ents = acct.icb_ents.filter(cond);
     return true;
   }
 }

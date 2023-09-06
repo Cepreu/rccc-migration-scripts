@@ -23,6 +23,8 @@ export class ICBExport extends Export2Excel {
             "ImplementationTeam",
             "ContactCenterMRR",
             "totalMRR",
+            "phone",
+            "email",
           ],
         },
         {
