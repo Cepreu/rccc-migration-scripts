@@ -15,6 +15,14 @@ export class Rule {
     return this.Registered;
   }
 
+  static ChoosePrice(acct, tl) {
+    let price = acct.CURRENCY === "USD" ? tl.PRICE_USD : tl.PRICE_CAD;
+    if (tl.productFamily !== OVERAGE && acct.info.BILLING_TERM === "Annual") {
+      price *= 12;
+    }
+    return price;
+  }
+
   static AddEntitlement({
     acct,
     sku,
@@ -38,7 +46,7 @@ export class Rule {
       Category: `CCL_${tl.L_CATEGORY}_${tl.No}`,
       ITEM_NAME: tl.PRODUCT_NAME,
       QNTY_THRESHOLD: qtty,
-      PRICE: acct.CURRENCY === "USD" ? tl.PRICE_USD : tl.PRICE_CAD,
+      PRICE: acct.CURRENCY === Rule.ChoosePrice(acct, tl),
       DISCOUNT: 0,
       NiCPrice: 0,
       CURRENCY: acct.CURRENCY,
@@ -52,7 +60,7 @@ export class Rule {
         EXT_PRODUCT_ID: sku,
         ITEM_NAME: tl.PRODUCT_NAME,
         QNTY_THRESHOLD: qtty,
-        RETAIL_PRICE: acct.CURRENCY === "USD" ? tl.PRICE_USD : tl.PRICE_CAD,
+        RETAIL_PRICE: Rule.ChoosePrice(acct, tl),
         DISCOUNT: 0,
         DISCOUNT_VALUE: 0,
         DISCOUNT_TYPE: "Currency",
@@ -79,7 +87,7 @@ export class Rule {
         `${ent.EXT_PRODUCT_ID} - ${ent.productFamily} was not found in the catalog`
       );
 
-    ent.PRICE = acct.CURRENCY === "USD" ? tl.PRICE_USD : tl.PRICE_CAD;
+    ent.PRICE = Rule.ChoosePrice(acct, tl);
     ent.DISCOUNT = 0;
 
     const icb_ent = acct.icb_ents.find(

@@ -88,7 +88,7 @@ export function prepareBatchFiles(batchName, billingMonth) {
       e.COUNTRY_NAME,
       e.BILLING_ITEM_ID,
       e.EXT_PRODUCT_ID,
-      e.ITEM_NAME,
+      REPLACE(e.ITEM_NAME,CHAR(160),' ') AS ITEM_NAME,
       e.RETAIL_PRICE,
       ${
         configuration.PERCENTAGE_TO_CURRENCY ? "'Currency'" : "e.DISCOUNT_TYPE"

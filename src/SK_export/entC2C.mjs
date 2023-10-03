@@ -57,13 +57,14 @@ export class CaseEntitlements {
       } else {
         acc[findInd].qtty += obj.qtty;
         acc[findInd].oper = obj.oper; // last oparation
-        if (acc[findInd].qtty == 0 || acc[findInd].qtty == -1) {
+        if (acc[findInd].qtty == 0) {
           acc.splice(findInd, 1); // remove 0-qtty record if the license was removed
           //          console.log("Removed ", obj.skuid);
         }
       }
       return acc;
     }, []);
-    return groupedCases;
+
+    return groupedCases.filter((cs) => cs.qtty != -1);
   }
 }
