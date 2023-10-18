@@ -46,7 +46,7 @@ export class Rule {
       Category: `CCL_${tl.L_CATEGORY}_${tl.No}`,
       ITEM_NAME: tl.PRODUCT_NAME,
       QNTY_THRESHOLD: qtty,
-      PRICE: acct.CURRENCY === Rule.ChoosePrice(acct, tl),
+      PRICE: Rule.ChoosePrice(acct, tl),
       DISCOUNT: 0,
       NiCPrice: 0,
       CURRENCY: acct.CURRENCY,
@@ -103,6 +103,23 @@ export class Rule {
 
   get name() {
     return this.constructor.name;
+  }
+}
+
+/////////////
+class CheckNiCAcc extends Rule {
+  static {
+    super.Register("Checks if NiC account # in Accounts matches Cases");
+  }
+  action(acct) {
+    const cs = acct.cases.find((c2c) => c2c.BUID != acct.info.INCONTACT_BUID);
+    return !(
+      !!cs &&
+      acct.logError(
+        this.name,
+        `The NiC account number in Accounts (${acct.info.INCONTACT_BUID} does not match the number in Cases (${cs.BUID})`
+      )
+    );
   }
 }
 
@@ -416,7 +433,7 @@ class RCExtraOverages extends Rule {
 class RCPerBUOverages extends Rule {
   static {
     super.Register(
-      "Remome overages  for licenses ordered per BU (as they are meaningless)"
+      "Removes overages  for licenses ordered per BU (as they are meaningless)"
     );
   }
 
@@ -673,6 +690,9 @@ class RCNiCDirOrdrs extends Rule {
               `${ent.EXT_PRODUCT_ID} amount increased from ${ent.QNTY_THRESHOLD} to ${cbod.Quantity} to match Monthly`
             );
             ent.QNTY_THRESHOLD = cbod.Quantity;
+            acct.icb_ents.find(
+              (ie) => ie.EXT_PRODUCT_ID === ent.EXT_PRODUCT_ID
+            )["QNTY_THRESHOLD"] = cbod.Quantity;
           }
         } else {
           Rule.AddEntitlement({
@@ -786,6 +806,53 @@ class C2CCorr extends Rule {
 }
 
 //////////////////
+class FixActiveStorage extends Rule {
+  static {
+    super.Register(
+      "Adds Active Storage to cases - to ignore the known exception"
+    );
+  }
+
+  action(acct) {
+    const activeStorage = {
+      "309-11-171": {
+        sku: "NICE inContact CXone Additional Active Storage (per GB)",
+        price: 0.3,
+      },
+      "309-11-172": {
+        sku: "Data Storage - NICE inContact CXone Additional Active Storage (per GB)",
+        price: 0.3,
+      },
+    };
+    acct.ents
+      .filter(
+        (ent) =>
+          ent.ProductFamily === RECURRING &&
+          activeStorage.hasOwnProperty(ent.EXT_PRODUCT_ID) &&
+          !acct.cases.find((c) => c.skuid === ent.EXT_PRODUCT_ID)
+      )
+      .forEach((re) => {
+        const c2c = {
+          accountID: acct.info.ENTERPRISE_ACCOUNT_ID,
+          BUID: acct.info.INCONTACT_BUID,
+          skuid: re.EXT_PRODUCT_ID,
+          sku: activeStorage[re.EXT_PRODUCT_ID].sku,
+          price: activeStorage[re.EXT_PRODUCT_ID].price,
+          qtty: re.QNTY_THRESHOLD,
+          oper: "ADD",
+        };
+        acct.cases.push(c2c);
+        acct.logWarning(
+          this.name,
+          `${c2c.skuid} "${c2c.sku}" was added to case2case to match Entitlements`
+        );
+        console.log("+++++++++++++++>");
+      });
+    return true;
+  }
+}
+
+//////////////////
 class C2CvsMRC extends Rule {
   static {
     super.Register(
@@ -816,7 +883,6 @@ class C2CvsMRC extends Rule {
             Amount: 0,
             SKU: c2c.skuid,
           });
-
           acct.logWarning(
             this.name,
             `${c2c.skuid} was not found in Monthly file but is presented in case2case. Added to Monthly.`
@@ -954,7 +1020,10 @@ class QntyVsThrsh extends Rule {
 
     acct.ents
       .filter(
-        (row) => row.ProductFamily === RECURRING && row.EXT_PRODUCT_ID !== null
+        (row) =>
+          row.ProductFamily === RECURRING &&
+          row.EXT_PRODUCT_ID !== null &&
+          !Legacy.CanBeOrderedDirectly(row.EXT_PRODUCT_ID)
       )
       .forEach((r) => {
         const overage = acct.ents.find(
@@ -1002,12 +1071,6 @@ class EntsVsCases extends Rule {
             this.name,
             `${re.EXT_PRODUCT_ID} ${re.ITBS_NAME} - Recurring port entitlement was not found in NiC`
           );
-        } else if (["309-11-171", "309-11-172"].includes(re.EXT_PRODUCT_ID)) {
-          // Term Storage (per GB)
-          acct.logAlarm(
-            this.name,
-            `${re.EXT_PRODUCT_ID} ${re.ITBS_NAME} - Recurring entitlement is not found in NiC`
-          );
         } else if (acct.facts.NBU) {
           acct.logError(
             this.name,
@@ -1054,6 +1117,7 @@ class QntyVsCases extends Rule {
               this.name,
               `${r.EXT_PRODUCT_ID} ${r.ITBS_NAME} - Recurring qnty (${r.OldQntyThreshold}) is not equal to NiC (${c2c.qtty}) while NBU was found`
             );
+            //            isOK = true;
             isOK = false;
           } else {
             acct.logWarning(
