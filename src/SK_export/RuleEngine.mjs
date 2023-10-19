@@ -112,14 +112,16 @@ class CheckNiCAcc extends Rule {
     super.Register("Checks if NiC account # in Accounts matches Cases");
   }
   action(acct) {
-    const cs = acct.cases.find((c2c) => c2c.BUID != acct.info.INCONTACT_BUID);
-    return !(
-      !!cs &&
-      acct.logError(
-        this.name,
-        `The NiC account number in Accounts (${acct.info.INCONTACT_BUID} does not match the number in Cases (${cs.BUID})`
-      )
-    );
+    acct.cases
+      .filter((c2c) => c2c.BUID != acct.info.INCONTACT_BUID)
+      .forEach((cs) => {
+        acct.logWarning(
+          this.name,
+          `Fixed NiC account id in Cases (${cs.BUID}) to match one in Accounts (${acct.info.INCONTACT_BUID})`
+        );
+        cs.BUID = acct.info.INCONTACT_BUID;
+      });
+    return true;
   }
 }
 
@@ -846,7 +848,6 @@ class FixActiveStorage extends Rule {
           this.name,
           `${c2c.skuid} "${c2c.sku}" was added to case2case to match Entitlements`
         );
-        console.log("+++++++++++++++>");
       });
     return true;
   }
