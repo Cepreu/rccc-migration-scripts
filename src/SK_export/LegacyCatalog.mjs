@@ -41,6 +41,13 @@ export class Legacy {
     CCL_LRCCSEATUESO_679: ["CCL_LADTLPORTO_705"],
   };
 
+  static IsActiveStorage(sku) {
+    return [
+      "309-11-171", // "NICE inContact CXone Additional Active Storage (per GB)"
+      "309-11-172", // "Data Storage - NICE inContact CXone Additional Active Storage (per GB)"
+    ].includes(sku);
+  }
+
   static IsProServOnDemand(sku) {
     const ProServOnDemand = [
       "610064-000-000", //PS OnDemand

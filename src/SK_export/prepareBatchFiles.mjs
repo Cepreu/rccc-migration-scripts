@@ -5,7 +5,7 @@ import { ICBExport } from "./ICBExport.mjs";
 import { Account } from "./Account.mjs";
 import { NiCEntitlements } from "./entitlements.mjs";
 import { CaseEntitlements } from "./entC2C.mjs";
-import { RuleEngine } from "./RuleEngine.mjs";
+import { RuleEngine } from "./Rules.mjs";
 
 const ruleEngine = new RuleEngine();
 
