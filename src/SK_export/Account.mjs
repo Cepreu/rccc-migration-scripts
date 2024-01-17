@@ -25,6 +25,12 @@ export class Account {
     this.raw_ents = raw_ents;
 
     this.icb_ents = JSON.parse(JSON.stringify(raw_ents));
+
+    this.info["Contract Term"] = "";
+    this.info["Contract Start date"] = "";
+    this.info["Renewal Term"] = "";
+    this.info["Auto Renewal"] = "";
+
     if (this.info.BILLING_TERM === "Monthly") {
       this.icb_ents.forEach((ent) => {
         if (ent.MDURATION == 12 && ent.TYPE_NAME === "Recurring") {

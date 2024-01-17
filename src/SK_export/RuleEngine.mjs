@@ -19,8 +19,8 @@ export class Rule {
     const price = acct.CURRENCY === "USD" ? tl.PRICE_USD : tl.PRICE_CAD;
 
     if (tl.productFamily === OVERAGE) months = 1;
-    else if (!months && acct.info.BILLING_TERM === "Annual") months = 12;
-
+    if (!months)
+      acct.info.BILLING_TERM === "Annual" ? (months = 12) : (months = 1);
     return price * months;
   }
 
@@ -38,8 +38,8 @@ export class Rule {
       accountID: account.info.ENTERPRISE_ACCOUNT_ID,
       BUID: account.info.INCONTACT_BUID,
       skuid: skuid,
-      sku: sku || tl.NIC_NAME,
-      price: price || tl.NIC_PRICE,
+      sku: sku || tl ? tl.NIC_NAME : "",
+      price: price || tl ? tl.NIC_PRICE : 0.0,
       qtty: qtty,
       oper: oper,
     };
@@ -94,6 +94,7 @@ export class Rule {
       Category: `CCL_${tl.L_CATEGORY}_${tl.No}`,
       ITEM_NAME: tl.PRODUCT_NAME,
       QNTY_THRESHOLD: qtty,
+      OldQntyThreshold: qtty,
       PRICE: Rule.ChoosePrice(acct, tl, 1),
       DISCOUNT: 0,
       NiCPrice: 0,
@@ -117,7 +118,7 @@ export class Rule {
         TYPE_NAME: productFamily,
         STATUS_NAME: "Active",
         START_DATE: "2022-06-24 10:43",
-        BILLING_ITEM_ID: "1",
+        BILLING_ITEM_ID: sku.split("-").join(""),
       });
     }
   }
@@ -135,7 +136,7 @@ export class Rule {
         `${ent.EXT_PRODUCT_ID} - ${ent.productFamily} was not found in the catalog`
       );
 
-    ent.PRICE = Rule.ChoosePrice(acct, tl);
+    ent.PRICE = Rule.ChoosePrice(acct, tl, 1);
     ent.DISCOUNT = 0;
 
     const icb_ent = acct.icb_ents.find(

@@ -58,7 +58,7 @@ function selectEntitlements(batchName) {
             ngbs_license_id,
             ratio
         FROM itbs_ngbs_maps
-        JOIN CatalogSFDC ON ngbs_license_id='CCL_'||L_CATEGORY||'_'||No
+        JOIN CatalogSFDC ON ngbs_license_id='CCL_'||L_CATEGORY||'_'||No OR ngbs_license_id='CC_'||L_CATEGORY||'_'||No
         WHERE ngbs_package_id=880
         )
         SELECT DISTINCT

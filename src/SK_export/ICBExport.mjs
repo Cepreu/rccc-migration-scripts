@@ -25,6 +25,10 @@ export class ICBExport extends Export2Excel {
             "totalMRR",
             "phone",
             "email",
+            "Contract Term",
+            "Contract Start date",
+            "Renewal Term",
+            "Auto Renewal",
           ],
         },
         {
