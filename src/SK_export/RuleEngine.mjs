@@ -34,11 +34,12 @@ export class Rule {
     addNiC = false,
   }) {
     const tl = Legacy.catalog.find((l) => l.SKU === skuid);
+    //console.log(skuid, "===", tl);
     const c2c = {
       accountID: account.info.ENTERPRISE_ACCOUNT_ID,
       BUID: account.info.INCONTACT_BUID,
       skuid: skuid,
-      sku: sku || tl ? tl.NIC_NAME : "",
+      sku: sku || (tl.NIC_NAME ? tl.NIC_NAME : tl.PRODUCT_NAME),
       price: price || tl ? tl.NIC_PRICE : 0.0,
       qtty: qtty,
       oper: oper,
@@ -81,14 +82,13 @@ export class Rule {
     const tl = Legacy.catalog.find(
       (l) =>
         l.SKU === sku &&
-        (productFamily === RECURRING
-          ? l.ProductFamily != "Overage"
-          : (l.ProductFamily = "Overage"))
+        ((l.PRODUCT_FAMILY !== OVERAGE && productFamily === RECURRING) ||
+          (l.PRODUCT_FAMILY === OVERAGE && productFamily === OVERAGE))
     );
-    if (!tl)
+    if (!tl) {
       throw new Error(`${sku} - ${productFamily} was not found in the catalog`);
-
-    acct.ents.push({
+    }
+    const newEnt = {
       ENTERPRISE_ACCOUNT_ID: acct.info.ENTERPRISE_ACCOUNT_ID,
       EXT_PRODUCT_ID: sku,
       Category: `CCL_${tl.L_CATEGORY}_${tl.No}`,
@@ -101,7 +101,8 @@ export class Rule {
       CURRENCY: acct.CURRENCY,
       ProductFamily: productFamily,
       batchID: batchID,
-    });
+    };
+    acct.ents.push(newEnt);
 
     if (correctICB) {
       acct.icb_ents.push({
@@ -118,9 +119,10 @@ export class Rule {
         TYPE_NAME: productFamily,
         STATUS_NAME: "Active",
         START_DATE: "2022-06-24 10:43",
-        BILLING_ITEM_ID: sku.split("-").join(""),
+        BILLING_ITEM_ID: sku.split("-").join(""), //meaningless number, just to have a unique id
       });
     }
+    return newEnt;
   }
 
   static FixPrice(acct, ent) {

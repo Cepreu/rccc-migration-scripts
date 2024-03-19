@@ -41,6 +41,15 @@ export class Legacy {
     CCL_LRCCSEATUESO_679: ["CCL_LADTLPORTO_705"],
   };
 
+  static SkipOverages(sku) {
+    return [
+      "4121-1702-000", // "Contact Center: IEX WFM Integrated - Export Report (Per BU)"
+      "1300-1912-000", // "Messaging Long Code - US Campaign Registration"
+      "3879-2214-731", //Contact Center: Textel - Short Code Random - US
+      "3879-2212-688", // "Contact Center: Textel - Long Code - Tier 2 International (DEU, BEL, ISR) Overage"
+    ].includes(sku);
+  }
+
   static IsActiveStorage(sku) {
     return [
       "309-11-171", // "NICE inContact CXone Additional Active Storage (per GB)"
@@ -93,6 +102,17 @@ export class Legacy {
     ].includes(skuID);
   }
 
+  static getTextelPackageOverage(skuID) {
+    const txtl = [
+      {
+        re: "3875-2198-000", // Contact Center: Textel (Up to 10,000 Messages) (per BU)
+        ov: "3875-2208-677", // Contact Center: Textel (Up to 10,000 Messages) (per BU) Overage
+      },
+    ].find((i) => i.re === skuID);
+
+    return txtl ? Legacy.catalog.find((l) => l.SKU === txtl.ov) : null;
+  }
+
   static CanBeOrderedDirectly(skuID) {
     return [
       //During migration all such items should be added from MRC report as recurring only to NGBS
@@ -114,6 +134,12 @@ export class Legacy {
     "309-565-000", //Contact Center: Monthly Long-term Storage (per GB)
     "309-566-000", //Contact Center: Monthly Long-term Storage Retrieval (per GB)
   ];
+
+  static getActiveStorageSkuID(seat) {
+    return seat && seat.ITEM_NAME.match(/(3 ports)/)
+      ? "309-1499-000"
+      : "309-11-172";
+  }
 
   static IsSeat(skuID) {
     const seatPattern = /^307-(?!6-60[2,3]).*$|^1265.-.*$/; // 307-6-602, 307-6-603 are exclusions: the digital add-on; 1265* - new gen seats

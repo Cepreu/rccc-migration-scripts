@@ -3,6 +3,28 @@ import { Legacy } from "./LegacyCatalog.mjs";
 const RECURRING = "Recurring";
 const OVERAGE = "Overage";
 
+//////////////////
+class C2CStripXX extends Rule {
+  static {
+    super.Register(
+      "RC: Removes the _XX suffix in C2C (to enable further matching)"
+    );
+  }
+  action(acct) {
+    const listXX = acct.cases
+      .filter((c) => c.skuid.slice(-3) === "-XX")
+      .map((x) => x.skuid);
+    if (listXX.length) {
+      acct.cases.forEach((c2c) => (c2c.skuid = c2c.skuid.replace(/\-XX$/, "")));
+      acct.logWarning(
+        this.name,
+        `Removed "-XX" suffix in the following c2c sku(s): ${listXX.join(", ")}`
+      );
+    }
+    return true;
+  }
+}
+
 /////////////
 class CheckAccInfo extends Rule {
   static {
@@ -192,21 +214,44 @@ class RCFixPorts extends Rule {
     );
 
     if (entPorts.length === 0) {
-      acct.logAlarm(
-        this.name,
-        "RC Port Overage license was not found. NEEDS ATTENTION!"
+      const supposedPort = (
+        acct.cases.find((c2c) => /^308-/.test(c2c.skuid)) || {
+          skuid: "308-8-215",
+        }
+      ).skuid;
+      entPorts.push(
+        Rule.AddEntitlement({
+          acct,
+          sku: supposedPort,
+          qtty: 0,
+          productFamily: OVERAGE,
+          correctICB: true,
+        })
       );
-      return true;
-    }
+      acct.logWarning(
+        this.name,
+        `${supposedPort} - missed port overage entitlement was added`
+      );
 
-    const port = entPorts.find(
+      Rule.AddCase({
+        account: acct,
+        skuid: supposedPort,
+        qtty: 0,
+        addNiC: true,
+      });
+      acct.logWarning(
+        this.name,
+        `${supposedPort} - missed port overage entitlement was added  to case2case`
+      );
+    }
+    const expectedPortBySeat = entPorts.find(
       (e) =>
         !!Legacy.portMap[acct.facts.seatOverage.Category].find(
           (p) => p === e.Category
         )
-    ); // Expected port by seat type
-    if (port !== undefined) {
-      acct.facts.entPortLic = port;
+    );
+    if (expectedPortBySeat !== undefined) {
+      acct.facts.entPortLic = expectedPortBySeat;
     } else {
       acct.logWarning(
         this.name,
@@ -260,11 +305,9 @@ class C2CPorts extends Rule {
   action(acct) {
     if (acct.facts.entPortLic) {
       const casePorts = acct.cases.filter((c) => /^308-/.test(c.skuid));
-      if (casePorts === undefined) {
+      if (!casePorts.length) {
         Rule.AddCase({
-          acct,
-          accountID: acct.info.ENTERPRISE_ACCOUNT_ID,
-          BUID: acct.info.INCONTACT_BUID,
+          account: acct,
           skuid: acct.facts.entPortLic.EXT_PRODUCT_ID,
           sku: "Additional Configured Universal Port",
           qtty: 0,
@@ -298,6 +341,32 @@ class C2CPorts extends Rule {
 }
 
 /////////////
+class C2CTextel extends Rule {
+  static {
+    super.Register("Checks if Textel Overages are missed");
+  }
+  action(acct) {
+    acct.ents.forEach((e) => {
+      const ov = Legacy.getTextelPackageOverage(e.EXT_PRODUCT_ID);
+      if (ov && !acct.cases.find((c) => c.skuid === ov.SKU)) {
+        Rule.AddCase({
+          account: acct,
+          skuid: ov.SKU,
+          sku: ov.NIC_NAME ? ov.NIC_NAME : ov.PRODUCT_NAME,
+          qtty: 0,
+          price: ov.NIC_PRICE,
+        });
+        acct.logWarning(
+          this.name,
+          `Textel Package Overage license was not found. Added ${ov.SKU} from Entitlements`
+        );
+      }
+    });
+    return true;
+  }
+}
+
+/////////////
 class RCBadPrice extends Rule {
   static {
     super.Register("Checks if Price minus Discount is not negative");
@@ -312,6 +381,120 @@ class RCBadPrice extends Rule {
         )
     );
     return withBadPrice.length === 0;
+  }
+}
+
+//////////////////
+class AddActiveStorage extends Rule {
+  static {
+    super.Register("Adds Active Storage to cases");
+  }
+
+  action(acct) {
+    acct.ents
+      .filter(
+        (ent) =>
+          ent.ProductFamily === RECURRING &&
+          Legacy.IsActiveStorage(ent.EXT_PRODUCT_ID) &&
+          !acct.cases.find((c) => c.skuid === ent.EXT_PRODUCT_ID)
+      )
+      .forEach((re) => {
+        Rule.AddCase({
+          account: acct,
+          skuid: re.EXT_PRODUCT_ID,
+          qtty: re.QNTY_THRESHOLD,
+        });
+        acct.logWarning(
+          this.name,
+          `${re.EXT_PRODUCT_ID} "${re.ITEM_NAME}" was added to case2case to match Entitlements`
+        );
+      });
+    return true;
+  }
+}
+
+//////////////////
+class AddActiveStorageOverage extends Rule {
+  static {
+    super.Register("Adds Active Storage to cases");
+  }
+
+  action(acct) {
+    if (
+      !acct.nics.find((n) => Legacy.IsActiveStorage(n.SKU)) &&
+      !acct.cases.find((c) => Legacy.IsActiveStorage(c.skuid))
+    ) {
+      const seat = acct.ents.find((ent) => Legacy.IsSeat(ent.EXT_PRODUCT_ID));
+      let ASOverageEnt = acct.ents
+        .filter(
+          (ent) =>
+            Legacy.IsActiveStorage(ent.EXT_PRODUCT_ID) &&
+            ent.ProductFamily === OVERAGE
+        )
+        .map((e) => e.EXT_PRODUCT_ID)
+        .sort()
+        .pop();
+      if (!ASOverageEnt) {
+        //addentitlement
+        ASOverageEnt = Legacy.getActiveStorageSkuID(acct.facts.seat);
+        Rule.AddEntitlement({
+          acct,
+          sku: ASOverageEnt,
+          qtty: 1,
+          productFamily: OVERAGE,
+          correctICB: true,
+        });
+        acct.logWarning(
+          this.name,
+          `${ASOverageEnt} - missed act storage entitlement was added`
+        );
+      }
+      Rule.AddCase({
+        account: acct,
+        skuid: ASOverageEnt,
+        qtty: 1,
+        addNiC: true,
+      });
+      acct.logWarning(
+        this.name,
+        `${ASOverageEnt} - Missed Active Storage was added  to case2case`
+      );
+    }
+    return true;
+  }
+}
+
+//////////
+class RCNoSuchNGBSOverage extends Rule {
+  static {
+    super.Register("Removes overages not existing in NGBS");
+  }
+  action(acct) {
+    const extra_ovs = acct.ents.filter(
+      (row) =>
+        !row.Category &&
+        !!row.EXT_PRODUCT_ID &&
+        row.ProductFamily === OVERAGE &&
+        Legacy.SkipOverages(row.EXT_PRODUCT_ID)
+    );
+    extra_ovs.forEach((ent) => {
+      acct.icb_ents = acct.icb_ents.filter(
+        (e) =>
+          !(e.EXT_PRODUCT_ID === ent.EXT_PRODUCT_ID && e.TYPE_NAME === OVERAGE)
+      );
+      acct.ents = acct.ents.filter(
+        (e) =>
+          !(
+            e.EXT_PRODUCT_ID === ent.EXT_PRODUCT_ID &&
+            e.ProductFamily === OVERAGE
+          )
+      );
+      acct.logInfo(
+        this.name,
+        `Removed ${ent.EXT_PRODUCT_ID} "${ent.ITBS_NAME}" - No such overage in NGBS catalog`
+      );
+    });
+    return true;
   }
 }
 
@@ -613,9 +796,9 @@ class RCNiCDirOrdrs extends Rule {
               `${ent.EXT_PRODUCT_ID} amount increased from ${ent.QNTY_THRESHOLD} to ${cbod.Quantity} to match Monthly`
             );
             ent.QNTY_THRESHOLD = cbod.Quantity;
-            acct.icb_ents.find(
-              (ie) => ie.EXT_PRODUCT_ID === ent.EXT_PRODUCT_ID
-            )["QNTY_THRESHOLD"] = cbod.Quantity;
+            acct.icb_ents
+              .filter((ie) => ie.EXT_PRODUCT_ID === ent.EXT_PRODUCT_ID)
+              .forEach((iee) => (iee["QNTY_THRESHOLD"] = cbod.Quantity));
           }
         } else {
           Rule.AddEntitlement({
@@ -682,28 +865,6 @@ class RCNegDiscounts extends Rule {
 }
 
 //////////////////
-class C2CStripXX extends Rule {
-  static {
-    super.Register(
-      "RC: Removes the _XX suffix in C2C (to enable further matching)"
-    );
-  }
-  action(acct) {
-    const listXX = acct.cases
-      .filter((c) => c.skuid.slice(-3) === "-XX")
-      .map((x) => x.skuid);
-    if (listXX.length) {
-      acct.cases.forEach((c2c) => (c2c.skuid = c2c.skuid.replace(/\-XX$/, "")));
-      acct.logWarning(
-        this.name,
-        `Removed "-XX" suffix in the following c2c sku(s): ${listXX.join(", ")}`
-      );
-    }
-    return true;
-  }
-}
-
-//////////////////
 class C2CCorr extends Rule {
   static {
     super.Register("RC: Removes corrupted C2C (with empty SKU)");
@@ -731,31 +892,9 @@ class C2CCorr extends Rule {
 //////////////////
 class FixActiveStorage extends Rule {
   static {
-    super.Register(
-      "Adds Active Storage to cases - to ignore the known exception"
-    );
+    super.Register("Fix Active Storage to cases");
   }
-
   action(acct) {
-    acct.ents
-      .filter(
-        (ent) =>
-          ent.ProductFamily === RECURRING &&
-          Legacy.IsActiveStorage(ent.EXT_PRODUCT_ID) &&
-          !acct.cases.find((c) => c.skuid === ent.EXT_PRODUCT_ID)
-      )
-      .forEach((re) => {
-        Rule.AddCase({
-          account: acct,
-          skuid: re.EXT_PRODUCT_ID,
-          qtty: re.QNTY_THRESHOLD,
-        });
-        acct.logWarning(
-          this.name,
-          `${re.EXT_PRODUCT_ID} "${re.ITEM_NAME}" was added to case2case to match Entitlements`
-        );
-      });
-
     const recActiveStorage = acct.ents.find(
       (e) =>
         Legacy.IsActiveStorage(e.EXT_PRODUCT_ID) &&
@@ -811,8 +950,9 @@ class FixActiveStorage extends Rule {
       Rule.AddCase({
         account: acct,
         skuid: nicActiveStorage.SKU,
-        qtty: 0,
+        qtty: recActiveStorage ? recActiveStorage.QNTY_THRESHOLD : 0,
       });
+
       acct.logWarning(
         this.name,
         `${nicActiveStorage.SKU} was added to case2case to match RCMRC`
@@ -835,7 +975,6 @@ class FixActiveStorage extends Rule {
         `${recActiveStorage.EXT_PRODUCT_ID} "${recActiveStorage.ITEM_NAME}" was added to case2case to match Entitlements`
       );
     }
-
     return true;
   }
 }
@@ -970,7 +1109,7 @@ class RCCMapping extends Rule {
     );
   }
   action(acct) {
-    const bad = acct.ents.filter((row) => row.Category === null);
+    const bad = acct.ents.filter((row) => !row.Category);
     bad.forEach((ent) => {
       acct.logError(
         this.name,

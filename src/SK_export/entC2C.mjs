@@ -14,7 +14,8 @@ export class CaseEntitlements {
           price
       FROM nic_cases, nic_case_items
       WHERE nic_cases.UID=?
-          AND nic_cases.CaseNumber=sfdcCase
+      AND nic_cases.UID=accountID
+      AND nic_cases.CaseNumber=sfdcCase
       ORDER BY 
           ProvisionDate DESC,
           cast(skuid as INTEGER)
