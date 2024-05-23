@@ -47,7 +47,7 @@ export function prepareBatchFiles(batchName, billingMonth) {
       c.phone
   FROM accounts_sfdc a
     INNER JOIN BatchAccounts b ON b.EID = EnterpriseAccountID
-    INNER JOIN nic_cases nic ON nic.UID = EnterpriseAccountID
+    LEFT JOIN nic_cases nic ON nic.UID = EnterpriseAccountID
     LEFT JOIN account_contact_info c ON c.EID=EnterpriseAccountID
   WHERE b.batchID=?
   GROUP BY EnterpriseAccountID  

@@ -91,9 +91,9 @@ class RCCheckSeats extends Rule {
   action(acct) {
     const isReccurentSeat = (ent) => {
       return (
-        Legacy.IsSeat(ent.EXT_PRODUCT_ID) &&
-        ent.ITEM_NAME !== "Seat Overage" &&
-        ent.OldQntyThreshold > 0
+        Legacy.IsSeat(ent.EXT_PRODUCT_ID) && ent.ITEM_NAME !== "Seat Overage"
+        //&&
+        //ent.OldQntyThreshold > 0
       );
     };
     const seats = acct.ents.filter((ent) => isReccurentSeat(ent));
@@ -1174,18 +1174,19 @@ class EntsVsCases extends Rule {
         (ent) =>
           !!ent.EXT_PRODUCT_ID &&
           ent.ProductFamily === RECURRING &&
-          !Legacy.CanBeOrderedDirectly(ent.EXT_PRODUCT_ID) &&
           !acct.cases.find((c) => c.skuid === ent.EXT_PRODUCT_ID)
       )
       .forEach((re) => {
-        acct.logAlarm(
-          this.name,
-          EntsVsCases.RecPortExclusions.includes(re.EXT_PRODUCT_ID)
-            ? `${re.EXT_PRODUCT_ID} ${re.ITBS_NAME} - Recurring port entitlement was not found in NiC. Added!`
-            : acct.facts.NBU
-            ? `${re.EXT_PRODUCT_ID} ${re.ITBS_NAME} - Recurring entitlement is not found in NiC while NBU was found. Added!`
-            : `${re.EXT_PRODUCT_ID} ${re.ITBS_NAME} - Recurring entitlement is not found in NiC. No NBU case found. Added!`
-        );
+        if (!Legacy.CanBeOrderedDirectly(re.EXT_PRODUCT_ID)) {
+          acct.logAlarm(
+            this.name,
+            EntsVsCases.RecPortExclusions.includes(re.EXT_PRODUCT_ID)
+              ? `${re.EXT_PRODUCT_ID} ${re.ITBS_NAME} - Recurring port entitlement was not found in NiC. Added!`
+              : acct.facts.NBU
+              ? `${re.EXT_PRODUCT_ID} ${re.ITBS_NAME} - Recurring entitlement is not found in NiC while NBU was found. Added!`
+              : `${re.EXT_PRODUCT_ID} ${re.ITBS_NAME} - Recurring entitlement is not found in NiC. No NBU case found. Added!`
+          );
+        }
         Rule.AddCase({
           account: acct,
           skuid: re.EXT_PRODUCT_ID,

@@ -91,14 +91,15 @@ export class Legacy {
       "1561-1311-000", // Contact Center: CallVU Monthly Success Package (per BU)
       "1514-1441-000", //Contact Center: Acqueon CRM Server Plug-in (per BU)
       "1514-1442-000", //Contact Center: Acqueon IVR throttling Plug-in (per BU)
-      "3875-2209-000", //	Contact Center: Textel Blast (per BU) Overage
+      "3875-2209-000", //	Contact Center: Textel Blast (per BU)
       "3879-2212-687", // Contact Center: Textel - Long Code - Tier 1 International (USA, CAN, LTU, JEY, GBR, HUN, NLD, LUX)
+      "3883-2335-000", // "Contact Center: Agent Configuration Platform (Per BU)"
       "4400-2190-000", //	Contact Center: Faster SEA Service Up to 150 Users (per BU)
       "4400-2191-000", //	Contact Center: Faster SEA Service Up to 750 Users (per BU)
       "4400-2192-000", //	Contact Center: Faster SEA Service Up to 25,000 Users (per BU)
       "4400-2193-000", //	Contact Center: Faster SEA Service Up to 50,000 Users (per BU)
       "4400-2194-000", // Contact Center: Faster SEA Service Over 50,000 Users (per BU)
-      "1801-1171-000", // Messaging SMS (per BU) Overage
+      "1801-1171-000", // Messaging SMS (per BU)
     ].includes(skuID);
   }
 
