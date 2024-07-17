@@ -35,7 +35,7 @@ export class BatchAccounts {
     wheres.push(
       this.bd.brand !== "Any"
         ? `sf.brand='${this.bd.brand}'`
-        : `(sf.brand='RingCentral' OR sf.brand='RingCentral Canada')`
+        : `(sf.brand='RingCentral' OR sf.brand='RingCentral Canada' OR sf.brand='RingCentral AU' OR sf.brand='RingCentral EU' OR sf.brand='RingCentral UK')`
     );
     if (this.bd.PaymentPlan !== "Any") {
       wheres.push(`sf.PaymentPlan='${this.bd.PaymentPlan}'`);
@@ -98,7 +98,11 @@ export class BatchAccounts {
                 '${
                   this.bd.name
                 }', sf.EnterpriseAccountID, sf.BillingID, sf.inContactBUID, sf.AccountName, sf.brand, 
-                CASE sf.brand WHEN 'RingCentral' THEN 'USD' WHEN 'RingCentral Canada' THEN 'CAD' ELSE sf.PriceperseatCurrency END,
+                CASE sf.brand
+                  WHEN 'RingCentral' THEN 'USD'
+                  WHEN 'RingCentral Canada' THEN 'CAD'
+                  WHEN 'RingCentral AU' THEN 'AUD'
+                  ELSE sf.PriceperseatCurrency END,
                 ${BatchAccounts.defaultSpendingLimit}
             FROM 
                 accounts_sfdc sf

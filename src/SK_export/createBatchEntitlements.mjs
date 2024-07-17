@@ -15,9 +15,15 @@ const flds = [
   { name: "OldQntyThreshold", type: "INTEGER" },
   { name: "QNTY_THRESHOLD", type: "INTEGER" },
   { name: "PriceUSD", type: "NUMBER" },
-  { name: "Price", type: "NUMBER" },
+  { name: "PriceCAD", type: "NUMBER" },
+  { name: "PriceAUD", type: "NUMBER" },
+  { name: "PriceEUR", type: "NUMBER" },
+  { name: "PriceGBP", type: "NUMBER" },
   { name: "DiscountUSD", type: "NUMBER" },
-  { name: "Discount", type: "NUMBER" },
+  { name: "DiscountCAD", type: "NUMBER" },
+  { name: "DiscountAUD", type: "NUMBER" },
+  { name: "DiscountEUR", type: "NUMBER" },
+  { name: "DiscountGBP", type: "NUMBER" },
   { name: "NiCPrice", type: "NUMBER" },
   { name: "Category", type: "TEXT" },
   { name: "PARENT", type: "TEXT" },
@@ -55,11 +61,11 @@ function selectEntitlements(batchName) {
             CatalogSFDC.*,
             itbs_license_name,
             itbs_license_type,
+            ngbs_package_id,
             ngbs_license_id,
             ratio
         FROM itbs_ngbs_maps
         JOIN CatalogSFDC ON ngbs_license_id='CCL_'||L_CATEGORY||'_'||No OR ngbs_license_id='CC_'||L_CATEGORY||'_'||No
-        WHERE ngbs_package_id=880
         )
         SELECT DISTINCT
                 b.EID,
@@ -78,8 +84,14 @@ function selectEntitlements(batchName) {
                 e.QNTY_THRESHOLD * ratio,
                 lc.PRICE_USD,
                 lc.PRICE_CAD,
+                lc.PRICE_AUD,
+                lc.PRICE_EUR,
+                lc.PRICE_GBP,
                 lc.PRICE_USD - (e.RETAIL_PRICE - e.DISCOUNT) * 1.0 / CASE WHEN e.ProductFamily!='Overage' THEN (e.MDURATION * ratio) ELSE 1.0 END AS discountUSD,
-                lc.PRICE_CAD - (e.RETAIL_PRICE - e.DISCOUNT) * 1.0 / CASE WHEN e.ProductFamily!='Overage' THEN (e.MDURATION * ratio) ELSE 1.0 END AS discountCA,
+                lc.PRICE_CAD - (e.RETAIL_PRICE - e.DISCOUNT) * 1.0 / CASE WHEN e.ProductFamily!='Overage' THEN (e.MDURATION * ratio) ELSE 1.0 END AS discountCAD,
+                lc.PRICE_AUD - (e.RETAIL_PRICE - e.DISCOUNT) * 1.0 / CASE WHEN e.ProductFamily!='Overage' THEN (e.MDURATION * ratio) ELSE 1.0 END AS discountAUD,
+                lc.PRICE_EUR - (e.RETAIL_PRICE - e.DISCOUNT) * 1.0 / CASE WHEN e.ProductFamily!='Overage' THEN (e.MDURATION * ratio) ELSE 1.0 END AS discountEUR,
+                lc.PRICE_GBP - (e.RETAIL_PRICE - e.DISCOUNT) * 1.0 / CASE WHEN e.ProductFamily!='Overage' THEN (e.MDURATION * ratio) ELSE 1.0 END AS discountGBP,
                 lc.NIC_PRICE,
                 lc.ngbs_license_id,
                 lc.PARENT,
@@ -95,6 +107,13 @@ function selectEntitlements(batchName) {
                 UPPER(REPLACE(e.ITEM_NAME,CHAR(160),' '))=UPPER(lc.itbs_license_name)
                 AND (e.EXT_PRODUCT_ID=lc.SKU OR e.EXT_PRODUCT_ID is null and lc.SKU is null)
                 AND e.ProductFamily=lc.itbs_license_type
+                AND (
+                    b.brand='RingCentral' AND lc.ngbs_package_id=880 
+                  OR b.brand='RingCentral Canada' AND lc.ngbs_package_id=881
+                  OR b.brand='RingCentral AU' AND lc.ngbs_package_id=2483005
+                  OR b.brand='RingCentral EU' AND lc.ngbs_package_id=2565005
+                  OR b.brand='RingCentral UK' AND lc.ngbs_package_id=2542005
+                )
               )
         WHERE
           STATUS_NAME='Active'

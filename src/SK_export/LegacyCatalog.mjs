@@ -165,6 +165,9 @@ export class Legacy {
           PARENT: lic.PARENT,
           PRICE_USD: lic.PRICE_USD,
           PRICE_CAD: lic.PRICE_CAD,
+          PRICE_AUD: lic.PRICE_AUD,
+          PRICE_EUR: lic.PRICE_EUR,
+          PRICE_GBP: lic.PRICE_GBP,
           EXT_PRODUCT_ID: lic.SKU,
         };
       });
@@ -175,6 +178,9 @@ export class Legacy {
         ITEM_NAME: l.PRODUCT_NAME,
         USD: l.PRICE_USD,
         CAD: l.PRICE_CAD,
+        AUD: l.PRICE_AUD,
+        EUR: l.PRICE_EUR,
+        GBP: l.PRICE_GBP,
         NiCPrice: l.NIC_PRICE,
       };
     };

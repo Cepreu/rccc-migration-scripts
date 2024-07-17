@@ -16,9 +16,18 @@ export class Rule {
   }
 
   static ChoosePrice(acct, tl, months) {
-    const price = acct.CURRENCY === "USD" ? tl.PRICE_USD : tl.PRICE_CAD;
+    const price =
+      acct.CURRENCY === "USD"
+        ? tl.PRICE_USD
+        : acct.CURRENCY === "AUD"
+        ? tl.PRICE_AUD
+        : acct.CURRENCY === "EUR"
+        ? tl.PRICE_EUR
+        : acct.CURRENCY === "GBP"
+        ? tl.PRICE_GBP
+        : tl.PRICE_CAD;
 
-    if (tl.productFamily === OVERAGE) months = 1;
+    if (tl.ProductFamily === OVERAGE) months = 1;
     if (!months)
       acct.info.BILLING_TERM === "Annual" ? (months = 12) : (months = 1);
     return price * months;
@@ -75,6 +84,7 @@ export class Rule {
     acct,
     sku,
     qtty,
+    price,
     productFamily = RECURRING,
     batchID = "",
     correctICB = false,
@@ -88,6 +98,20 @@ export class Rule {
     if (!tl) {
       throw new Error(`${sku} - ${productFamily} was not found in the catalog`);
     }
+
+    console.log(
+      "price==>",
+      price,
+      "acct==>",
+      acct.info.BILLING_TERM,
+      "sku-->",
+      sku,
+      "family===>",
+      productFamily,
+      Rule.ChoosePrice(acct, tl, 1),
+      Rule.ChoosePrice(acct, tl)
+    );
+
     const newEnt = {
       ENTERPRISE_ACCOUNT_ID: acct.info.ENTERPRISE_ACCOUNT_ID,
       EXT_PRODUCT_ID: sku,
@@ -144,7 +168,7 @@ export class Rule {
     const icb_ent = acct.icb_ents.find(
       (icb) =>
         icb.EXT_PRODUCT_ID === ent.EXT_PRODUCT_ID &&
-        icb.productFamily === ent.productFamily
+        icb.TYPE_NAME === ent.ProductFamily
     );
     if (icb_ent) {
       icb_ent.RETAIL_PRICE = ent.PRICE;

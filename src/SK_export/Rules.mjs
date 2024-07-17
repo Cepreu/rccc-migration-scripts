@@ -150,7 +150,16 @@ class RCCSeatOverage extends Rule {
         ITEM_NAME: "Seat Overage",
         QNTY_THRESHOLD: 0,
         OldQntyThreshold: acct.facts.seat.OldQntyThreshold,
-        PRICE: acct.facts.seat.CURRENCY ? SOLic.PRICE_USD : SOLic.PRICE_CAD,
+        PRICE:
+          acct.facts.seat.CURRENCY === "USD"
+            ? SOLic.PRICE_USD
+            : acct.facts.seat.CURRENCY === "AUD"
+            ? SOLic.PRICE_AUD
+            : acct.facts.seat.CURRENCY === "EUR"
+            ? SOLic.PRICE_EUR
+            : acct.facts.seat.CURRENCY === "GBP"
+            ? SOLic.PRICE_GBP
+            : SOLic.PRICE_CAD,
         DISCOUNT: 0,
         NiCPrice: acct.facts.seat.NiCPrice,
         CURRENCY: acct.facts.seat.CURRENCY,
@@ -424,7 +433,7 @@ class AddActiveStorageOverage extends Rule {
       !acct.nics.find((n) => Legacy.IsActiveStorage(n.SKU)) &&
       !acct.cases.find((c) => Legacy.IsActiveStorage(c.skuid))
     ) {
-      const seat = acct.ents.find((ent) => Legacy.IsSeat(ent.EXT_PRODUCT_ID));
+      //      const seat = acct.ents.find((ent) => Legacy.IsSeat(ent.EXT_PRODUCT_ID));
       let ASOverageEnt = acct.ents
         .filter(
           (ent) =>
@@ -697,10 +706,19 @@ class RCNewTelco extends Rule {
           Category: tl.Category,
           ITEM_NAME: tl.ITEM_NAME,
           QNTY_THRESHOLD: 0,
-          PRICE: acct.CURRENCY === "USD" ? tl.USD : tl.CAD,
+          PRICE:
+            acct.info.CURRENCY === "USD"
+              ? tl.USD
+              : acct.info.CURRENCY === "AUD"
+              ? tl.AUD
+              : acct.info.CURRENCY === "EUR"
+              ? tl.EUR
+              : acct.info.CURRENCY === "GBP"
+              ? tl.GBP
+              : tl.CAD,
           DISCOUNT: 0,
           NiCPrice: 0,
-          CURRENCY: acct.CURRENCY,
+          CURRENCY: acct.info.CURRENCY,
           ProductFamily: OVERAGE,
           batchID: "",
         });
@@ -892,7 +910,7 @@ class C2CCorr extends Rule {
 //////////////////
 class FixActiveStorage extends Rule {
   static {
-    super.Register("Fix Active Storage to cases");
+    super.Register("Fix Active Storage");
   }
   action(acct) {
     const recActiveStorage = acct.ents.find(
@@ -906,12 +924,20 @@ class FixActiveStorage extends Rule {
     const c2cActiveStorage = acct.cases.find((c) =>
       Legacy.IsActiveStorage(c.skuid)
     );
+    let choosenActiveStorageSKU = recActiveStorage
+      ? recActiveStorage.EXT_PRODUCT_ID
+      : nicActiveStorage
+      ? nicActiveStorage.SKU
+      : c2cActiveStorage
+      ? c2cActiveStorage.skuid
+      : "309-1499-000";
 
     if (
       nicActiveStorage &&
       recActiveStorage &&
       nicActiveStorage.SKU !== recActiveStorage.EXT_PRODUCT_ID
     ) {
+      choosenActiveStorageSKU = nicActiveStorage.SKU;
       //replace ents & cases
       acct.ents = acct.ents.filter(
         (e) => !Legacy.IsActiveStorage(e.EXT_PRODUCT_ID)
@@ -922,9 +948,18 @@ class FixActiveStorage extends Rule {
 
       Rule.AddEntitlement({
         acct,
-        sku: nicActiveStorage.SKU,
+        sku: choosenActiveStorageSKU,
         qtty: recActiveStorage.QNTY_THRESHOLD,
         productFamily: RECURRING,
+        correctICB: true,
+        price: recActiveStorage.PRICE,
+      });
+
+      Rule.AddEntitlement({
+        acct,
+        sku: choosenActiveStorageSKU,
+        qtty: recActiveStorage.QNTY_THRESHOLD,
+        productFamily: OVERAGE,
         correctICB: true,
       });
 
@@ -944,6 +979,7 @@ class FixActiveStorage extends Rule {
       nicActiveStorage &&
       (!c2cActiveStorage || nicActiveStorage.SKU !== c2cActiveStorage.skuid)
     ) {
+      choosenActiveStorageSKU = nicActiveStorage.SKU;
       acct.cases = acct.cases.filter(
         (c2c) => !Legacy.IsActiveStorage(c2c.skuid)
       );
@@ -962,6 +998,7 @@ class FixActiveStorage extends Rule {
       (!c2cActiveStorage ||
         c2cActiveStorage.skuid !== recActiveStorage.EXT_PRODUCT_ID)
     ) {
+      choosenActiveStorageSKU = recActiveStorage.EXT_PRODUCT_ID;
       acct.cases = acct.cases.filter(
         (c2c) => !Legacy.IsActiveStorage(c2c.skuid)
       );
@@ -974,6 +1011,32 @@ class FixActiveStorage extends Rule {
         this.name,
         `${recActiveStorage.EXT_PRODUCT_ID} "${recActiveStorage.ITEM_NAME}" was added to case2case to match Entitlements`
       );
+    }
+
+    acct.ents = acct.ents.filter(
+      (e) =>
+        !Legacy.IsActiveStorage(e.EXT_PRODUCT_ID) ||
+        e.EXT_PRODUCT_ID === choosenActiveStorageSKU
+    );
+    acct.icb_ents = acct.icb_ents.filter(
+      (e) =>
+        !Legacy.IsActiveStorage(e.EXT_PRODUCT_ID) ||
+        e.EXT_PRODUCT_ID === choosenActiveStorageSKU
+    );
+    if (
+      !acct.ents.find(
+        (e) =>
+          e.EXT_PRODUCT_ID === choosenActiveStorageSKU &&
+          e.ProductFamily === OVERAGE
+      )
+    ) {
+      Rule.AddEntitlement({
+        acct,
+        sku: choosenActiveStorageSKU,
+        qtty: 1,
+        productFamily: OVERAGE,
+        correctICB: true,
+      });
     }
     return true;
   }
@@ -1269,6 +1332,33 @@ class C2CtoVendCat extends Rule {
             ))
         )
     );
+
+    return true;
+  }
+}
+
+//////////////////
+class CustomOML extends Rule {
+  static {
+    super.Register("Changing Omilia to 10x bundles");
+  }
+  action(acct) {
+    const omilia = acct.icb_ents.find(
+      (ie) =>
+        ie.EXT_PRODUCT_ID === "1510-1612-000" && ie.TYPE_NAME === RECURRING
+    );
+    if (omilia) {
+      omilia.QNTY_THRESHOLD /= 10;
+      omilia.RETAIL_PRICE *= 10;
+      if (omilia.DISCOUNT_TYPE === "Currency") {
+        omilia.DISCOUNT *= 10;
+        omilia.DISCOUNT_VALUE *= 10;
+      }
+      acct.logInfo(
+        this.name,
+        `${omilia.EXT_PRODUCT_ID} -- replaced to 10x bundles`
+      );
+    }
 
     return true;
   }

@@ -25,7 +25,13 @@ export function prepareBatchFiles(batchName, billingMonth) {
       b.batchID, 
       1210 AS ACCT_BRANDID,
       a.Brand AS BRANDNAME,
-      CASE a.brand WHEN 'RingCentral' THEN 'USD' WHEN 'RingCentral Canada' THEN 'CAD' ELSE PriceperSeatCurrency END AS CURRENCY,
+      CASE a.brand
+        WHEN 'RingCentral' THEN 'USD'
+        WHEN 'RingCentral Canada' THEN 'CAD'
+        WHEN 'RingCentral AU' THEN 'AUD'
+         WHEN 'RingCentral EU' THEN 'EUR'
+        WHEN 'RingCentral UK' THEN 'GBP'
+        ELSE PriceperSeatCurrency END AS CURRENCY,
       a.inContactBUID AS INCONTACT_BUID,
       '' AS PACKAGE_ID,
       PaymentPlan AS BILLING_TERM,
@@ -63,8 +69,20 @@ export function prepareBatchFiles(batchName, billingMonth) {
         QNTY_THRESHOLD,
         OldPrice,
         OldQntyThreshold,
-        CASE CURRENCY_CODE WHEN 'USD' THEN round(PRICEUSD,2) WHEN 'CAD' THEN round(PRICE,2) END PRICE,
-        CASE CURRENCY_CODE WHEN 'USD' THEN round(DiscountUSD,2) WHEN 'CAD' THEN round(Discount,2) END DISCOUNT,
+        CASE CURRENCY_CODE
+          WHEN 'USD' THEN round(PRICEUSD,2)
+          WHEN 'CAD' THEN round(PRICECAD,2)
+          WHEN 'AUD' THEN round(PRICEAUD,2)
+          WHEN 'EUR' THEN round(PRICEEUR,2)
+          WHEN 'GBP' THEN round(PRICEGBP,2)
+        END PRICE,
+        CASE CURRENCY_CODE
+          WHEN 'USD' THEN round(DiscountUSD,2)
+          WHEN 'CAD' THEN round(DiscountCAD,2)
+          WHEN 'AUD' THEN round(DiscountAUD,2)
+          WHEN 'EUR' THEN round(DiscountEUR,2)
+          WHEN 'GBP' THEN round(DiscountGBP,2)
+        END DISCOUNT,
         CURRENCY_CODE AS CURRENCY,
         round(NiCPrice,2) NiCPrice,
         PARENT,

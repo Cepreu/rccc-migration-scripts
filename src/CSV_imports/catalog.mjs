@@ -27,6 +27,13 @@ export const CatalogNGBS = () => {
       func: (x) => Number(x.replace(/[^0-9.-]+/g, "")),
     },
     {
+      field: "Named (AUD)",
+      dbcolumn: "PRICE_AUD",
+      type: "NUMERIC",
+      pkey: false,
+      func: (x) => Number(x.replace(/[^0-9.-]+/g, "")),
+    },
+    {
       field: "Named (CAD)",
       dbcolumn: "PRICE_CAD",
       type: "NUMERIC",
@@ -66,6 +73,27 @@ export const CatalogSFDC = () => {
     {
       field: "CAD",
       dbcolumn: "PRICE_CAD",
+      type: "NUMERIC",
+      pkey: false,
+      func: (x) => Number(x.replace(/[^0-9.-]+/g, "")),
+    },
+    {
+      field: "AUD",
+      dbcolumn: "PRICE_AUD",
+      type: "NUMERIC",
+      pkey: false,
+      func: (x) => Number(x.replace(/[^0-9.-]+/g, "")),
+    },
+    {
+      field: "EUR",
+      dbcolumn: "PRICE_EUR",
+      type: "NUMERIC",
+      pkey: false,
+      func: (x) => Number(x.replace(/[^0-9.-]+/g, "")),
+    },
+    {
+      field: "GBP",
+      dbcolumn: "PRICE_GBP",
       type: "NUMERIC",
       pkey: false,
       func: (x) => Number(x.replace(/[^0-9.-]+/g, "")),
