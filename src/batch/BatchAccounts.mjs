@@ -102,6 +102,8 @@ export class BatchAccounts {
                   WHEN 'RingCentral' THEN 'USD'
                   WHEN 'RingCentral Canada' THEN 'CAD'
                   WHEN 'RingCentral AU' THEN 'AUD'
+                  WHEN 'RingCentral EU' THEN 'EUR'
+                  WHEN 'RingCentral UK' THEN 'GBP'
                   ELSE sf.PriceperseatCurrency END,
                 ${BatchAccounts.defaultSpendingLimit}
             FROM 

@@ -27,7 +27,7 @@ export class Rule {
         ? tl.PRICE_GBP
         : tl.PRICE_CAD;
 
-    if (tl.ProductFamily === OVERAGE) months = 1;
+    if (tl.PRODUCT_FAMILY === OVERAGE) months = 1;
     if (!months)
       acct.info.BILLING_TERM === "Annual" ? (months = 12) : (months = 1);
     return price * months;

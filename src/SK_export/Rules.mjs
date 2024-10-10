@@ -425,7 +425,7 @@ class AddActiveStorage extends Rule {
 //////////////////
 class AddActiveStorageOverage extends Rule {
   static {
-    super.Register("Adds Active Storage to cases");
+    super.Register("Adds Active Storage Overage to cases");
   }
 
   action(acct) {
@@ -443,6 +443,7 @@ class AddActiveStorageOverage extends Rule {
         .map((e) => e.EXT_PRODUCT_ID)
         .sort()
         .pop();
+
       if (!ASOverageEnt) {
         //addentitlement
         ASOverageEnt = Legacy.getActiveStorageSkuID(acct.facts.seat);
@@ -931,6 +932,15 @@ class FixActiveStorage extends Rule {
       : c2cActiveStorage
       ? c2cActiveStorage.skuid
       : "309-1499-000";
+    console.log("====================> recActiveStorage=", recActiveStorage);
+    console.log("====================> nicActiveStorage=", nicActiveStorage);
+    console.log("====================> c2cActiveStorage=", c2cActiveStorage);
+    console.log("====================> nicActiveStorage=", nicActiveStorage);
+    console.log("====================> recActiveStorage=", recActiveStorage);
+    console.log(
+      "====================> choosenActiveStorageSKU=",
+      choosenActiveStorageSKU
+    );
 
     if (
       nicActiveStorage &&

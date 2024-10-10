@@ -104,7 +104,8 @@ function selectEntitlements(batchName) {
               ON EID=USERID AND b.batchID='${batchName}'
           LEFT JOIN mapping lc 
               ON (
-                UPPER(REPLACE(e.ITEM_NAME,CHAR(160),' '))=UPPER(lc.itbs_license_name)
+                (UPPER(REPLACE(e.ITEM_NAME,CHAR(160),' '))=UPPER(lc.itbs_license_name) 
+                OR e.ITEM_NAME=lc.itbs_license_name)
                 AND (e.EXT_PRODUCT_ID=lc.SKU OR e.EXT_PRODUCT_ID is null and lc.SKU is null)
                 AND e.ProductFamily=lc.itbs_license_type
                 AND (
