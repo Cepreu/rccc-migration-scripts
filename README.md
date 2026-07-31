@@ -49,7 +49,19 @@ Clone the directory to an appropriate directory on your computer. The package co
 
 - _SQL_ - contains SQL scripts for initial configuration of the SQLite database
 - _DWH_SQL_ - contains SQL requests supposed to be run on DWH database
-- _src_ - contains a set of JavaScripts files used for data uploading to SQLite and manipulations
+- _src_ - contains the TypeScript modules used for data uploading to SQLite and data manipulation
+
+### Build
+
+From the workspace root, run:
+
+```sh
+npm run typecheck
+npm run build
+npm test
+```
+
+Compiled ESM files and source maps are written to `rccc-migration-scripts/dist`.
 
 ### Initial configuration of the Database
 
